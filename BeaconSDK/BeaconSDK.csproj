@@ -1,0 +1,73 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+
+        <RootNamespace>Tavstal.BeaconSDK</RootNamespace>
+        <AssemblyName>BeaconSDK</AssemblyName>
+        <AssemblyTitle>BeaconSDK</AssemblyTitle>
+        <Product>BeaconSDK</Product>
+        <Description></Description>
+        <Company>Tavstal</Company>
+        <Authors>Tavstal</Authors>
+        <Copyright>Copyright © 2026 Tavstal</Copyright>
+        <AssemblyVersion>1.0.0.0</AssemblyVersion>
+        <FileVersion>1.0.0</FileVersion>
+        <Version>1.0.0</Version>
+        <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+
+        <PackageTags>api sdk client minecraft minecraft-launcher</PackageTags>
+        <PackageProjectUrl>https://github.com/TavstalDev/BeaconSDK</PackageProjectUrl>
+        <PackageReleaseNotes>https://github.com/TavstalDev/BeaconSDK/releases</PackageReleaseNotes>
+        <RepositoryUrl>https://github.com/TavstalDev/BeaconSDK</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <DebugType>portable</DebugType>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+
+        <IsTrimmable>true</IsTrimmable>
+        <IsAotCompatible>true</IsAotCompatible>
+        <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+        <EnableAotAnalyzer>true</EnableAotAnalyzer>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="README.md" Pack="true" PackagePath="\" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Hardware.Info" Version="110.0.0.1" />
+        <PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="10.0.12" />
+        <PackageReference Include="NbtLib" Version="1.0.1" />
+        <PackageReference Include="SharpZipLib" Version="1.4.2" />
+        <PackageReference Include="SkiaSharp" Version="4.152.1" />
+        <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.12" />
+        <PackageReference Include="MinecraftSkinRender" Version="1.2.0" />
+        <PackageReference Include="MinecraftSkinRender.Image" Version="1.2.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Include="Assets\Fmllib\argo-2.25.jar" />
+        <EmbeddedResource Include="Assets\Fmllib\argo-small-3.2.jar" />
+        <EmbeddedResource Include="Assets\Fmllib\asm-all-4.0.jar" />
+        <EmbeddedResource Include="Assets\Fmllib\asm-all-4.1.jar" />
+        <EmbeddedResource Include="Assets\Fmllib\bcprov-jdk15on-147.jar" />
+        <EmbeddedResource Include="Assets\Fmllib\bcprov-jdk15on-148.jar" />
+        <EmbeddedResource Include="Assets\Fmllib\deobfuscation_data_1.5.1.zip" />
+        <EmbeddedResource Include="Assets\Fmllib\deobfuscation_data_1.5.2.zip" />
+        <EmbeddedResource Include="Assets\Fmllib\deobfuscation_data_1.5.zip" />
+        <EmbeddedResource Include="Assets\Fmllib\guava-12.0.1.jar" />
+        <EmbeddedResource Include="Assets\Fmllib\guava-14.0-rc3.jar" />
+        <EmbeddedResource Include="Assets\Fmllib\scala-library.jar" />
+        <EmbeddedResource Include="Assets\launchWrapper-1.0.jar" />
+    </ItemGroup>
+</Project>
