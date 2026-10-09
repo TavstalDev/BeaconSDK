@@ -4,33 +4,22 @@ using Tavstal.BeaconSDK.Enums;
 namespace Tavstal.BeaconSDK.Models.ModLoaders.Forge;
 
 /// <summary>
-/// Represents the manifest for a Forge mod loader, containing details about the version
-/// and the associated game version.
+///     Represents the manifest for a Forge mod loader, containing details about the version
+///     and the associated game version.
 /// </summary>
 public class ForgeManifest : IModManifest
 {
-    /// <inheritdoc/>
-    [JsonPropertyName("gameVersion")]
-    public string GameVersion { get; set; }
-
-    /// <inheritdoc/>
-    [JsonPropertyName("version")]
-    public string Version { get; set; }
-    
-    /// <inheritdoc/>
-    [JsonIgnore]
-    public EMinecraftKind LoaderKind { get;  } = EMinecraftKind.FORGE;
-    
-    /// <inheritdoc/>
-    public bool EqualsGameVersion(string gameVersion) => GameVersion == gameVersion;
-    
     /// <summary>
-    /// Initializes a new instance of the <see cref="ForgeManifest"/> class with default values.
+    ///     Initializes a new instance of the <see cref="ForgeManifest" /> class with default values.
     /// </summary>
-    public ForgeManifest() {}
+    public ForgeManifest()
+    {
+        GameVersion = string.Empty;
+        Version = string.Empty;
+    }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ForgeManifest"/> class with specified values.
+    ///     Initializes a new instance of the <see cref="ForgeManifest" /> class with specified values.
     /// </summary>
     /// <param name="version">The version of the Forge mod loader.</param>
     /// <param name="gameVersion">The game version associated with this Forge manifest.</param>
@@ -38,5 +27,23 @@ public class ForgeManifest : IModManifest
     {
         Version = version;
         GameVersion = gameVersion;
+    }
+
+    /// <inheritdoc />
+    [JsonPropertyName("gameVersion")]
+    public string GameVersion { get; set; }
+
+    /// <inheritdoc />
+    [JsonPropertyName("version")]
+    public string Version { get; set; }
+
+    /// <inheritdoc />
+    [JsonIgnore]
+    public EMinecraftKind LoaderKind { get; } = EMinecraftKind.FORGE;
+
+    /// <inheritdoc />
+    public bool EqualsGameVersion(string gameVersion)
+    {
+        return GameVersion == gameVersion;
     }
 }

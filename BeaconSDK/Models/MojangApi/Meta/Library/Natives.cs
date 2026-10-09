@@ -1,38 +1,25 @@
-﻿
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace Tavstal.BeaconSDK.Models.MojangApi.Meta.Library;
 
 /// <summary>
-/// Represents the native configurations for different operating systems.
+///     Represents the native configurations for different operating systems.
 /// </summary>
 public class Natives
 {
     /// <summary>
-    /// Gets or sets the native configuration for Windows.
+    ///     Initializes a new instance of the <see cref="Natives" /> class.
     /// </summary>
-    [JsonPropertyName("windows")]
-    public string Windows { get; set; }
+    public Natives()
+    {
+        Windows = string.Empty;
+        Osx = string.Empty;
+        Linux = string.Empty;
+    }
 
     /// <summary>
-    /// Gets or sets the native configuration for macOS.
-    /// </summary>
-    [JsonPropertyName("osx")]
-    public string Osx { get; set; }
-
-    /// <summary>
-    /// Gets or sets the native configuration for Linux.
-    /// </summary>
-    [JsonPropertyName("linux")]
-    public string Linux { get; set; }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="Natives"/> class.
-    /// </summary>
-    public Natives() { }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="Natives"/> class with specified configurations for Windows, macOS, and Linux.
+    ///     Initializes a new instance of the <see cref="Natives" /> class with specified configurations for Windows, macOS,
+    ///     and Linux.
     /// </summary>
     /// <param name="windows">The native configuration for Windows.</param>
     /// <param name="osx">The native configuration for macOS.</param>
@@ -43,4 +30,22 @@ public class Natives
         Osx = osx;
         Linux = linux;
     }
+
+    /// <summary>
+    ///     Gets or sets the native configuration for Windows.
+    /// </summary>
+    [JsonPropertyName("windows")]
+    public string Windows { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the native configuration for macOS.
+    /// </summary>
+    [JsonPropertyName("osx")]
+    public string Osx { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the native configuration for Linux.
+    /// </summary>
+    [JsonPropertyName("linux")]
+    public string Linux { get; set; }
 }

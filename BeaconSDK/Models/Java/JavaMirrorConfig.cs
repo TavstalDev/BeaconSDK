@@ -1,34 +1,14 @@
-
 using System.Text.Json.Serialization;
 
-
-namespace Tavstal.KonkordLauncher.Common.Models.Java;
+namespace Tavstal.BeaconSDK.Models.Java;
 
 /// <summary>
-/// Represents the configuration for Java mirrors across different operating systems.
+///     Represents the configuration for Java mirrors across different operating systems.
 /// </summary>
 public class JavaMirrorConfig
 {
     /// <summary>
-    /// Gets or sets the Java mirror configuration for Windows.
-    /// </summary>
-    [JsonPropertyName("windows")]
-    public JavaMirrorJdks Windows { get; set; }
-    
-    /// <summary>
-    /// Gets or sets the Java mirror configuration for Linux.
-    /// </summary>
-    [JsonPropertyName("linux")]
-    public JavaMirrorJdks Linux { get; set; }
-    
-    /// <summary>
-    /// Gets or sets the Java mirror configuration for macOS.
-    /// </summary>
-    [JsonPropertyName("mac")]
-    public JavaMirrorJdks Mac { get; set; }
-    
-    /// <summary>
-    /// Initializes a new instance of the <see cref="JavaMirrorConfig"/> class with default values.
+    ///     Initializes a new instance of the <see cref="JavaMirrorConfig" /> class with default values.
     /// </summary>
     public JavaMirrorConfig()
     {
@@ -74,7 +54,7 @@ public class JavaMirrorConfig
                 "https://github.com/adoptium/temurin25-binaries/releases/download/jdk-25.0.2%2B10/OpenJDK25U-jdk_x64_windows_hotspot_25.0.2_10.zip",
                 // arm
                 ""
-                )
+            )
         );
         Linux = new JavaMirrorJdks(
             // Java 7
@@ -165,9 +145,9 @@ public class JavaMirrorConfig
             )
         );
     }
-    
+
     /// <summary>
-    /// Initializes a new instance of the <see cref="JavaMirrorConfig"/> class with specified values.
+    ///     Initializes a new instance of the <see cref="JavaMirrorConfig" /> class with specified values.
     /// </summary>
     /// <param name="windows">The Java mirror configuration for Windows.</param>
     /// <param name="linux">The Java mirror configuration for Linux.</param>
@@ -178,4 +158,22 @@ public class JavaMirrorConfig
         Linux = linux;
         Mac = mac;
     }
+
+    /// <summary>
+    ///     Gets or sets the Java mirror configuration for Windows.
+    /// </summary>
+    [JsonPropertyName("windows")]
+    public JavaMirrorJdks Windows { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the Java mirror configuration for Linux.
+    /// </summary>
+    [JsonPropertyName("linux")]
+    public JavaMirrorJdks Linux { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the Java mirror configuration for macOS.
+    /// </summary>
+    [JsonPropertyName("mac")]
+    public JavaMirrorJdks Mac { get; set; }
 }

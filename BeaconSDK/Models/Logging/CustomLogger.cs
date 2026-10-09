@@ -1,24 +1,25 @@
+using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Tavstal.BeaconSDK.Helpers;
 
 namespace Tavstal.BeaconSDK.Models.Logging;
 
-/// <inheritdoc/>
-public class CustomLogger : ICustomLogger 
+/// <inheritdoc />
+public class CustomLogger : ICustomLogger
 {
-    private readonly Lock _logLock = new();
-    private readonly LogLevel _logLevel;
-    private readonly bool _printLogs;
-    private readonly string _moduleName;
     private readonly string? _customLogFilePath;
-    
+    private readonly LogLevel _logLevel;
+    private readonly Lock _logLock = new();
+    private readonly string _moduleName;
+    private readonly bool _printLogs;
+
     /// <summary>
-    /// Initializes a new instance of the <see cref="CustomLogger"/> class.
+    ///     Initializes a new instance of the <see cref="CustomLogger" /> class.
     /// </summary>
     /// <param name="moduleName">Name of the module or component producing logs (used in output).</param>
-    /// <param name="logLevel">Minimum <see cref="LogLevel"/> that will be emitted by this logger.</param>
+    /// <param name="logLevel">Minimum <see cref="LogLevel" /> that will be emitted by this logger.</param>
     /// <param name="printLogs">If true, log messages are also printed to the console.</param>
-    /// <param name="customLogFilePath">Optional path to a custom log file (passed to <see cref="LoggerHelper"/>).</param>
+    /// <param name="customLogFilePath">Optional path to a custom log file (passed to <see cref="LoggerHelper" />).</param>
     public CustomLogger(string moduleName, LogLevel logLevel, bool printLogs = true, string? customLogFilePath = null)
     {
         _moduleName = moduleName;
@@ -26,16 +27,16 @@ public class CustomLogger : ICustomLogger
         _printLogs = printLogs;
         _customLogFilePath = customLogFilePath;
     }
-    
-    /// <inheritdoc/>
-    public void Log(LogLevel logLevel, LogEntry entry, Exception? exception, Func<LogEntry, Exception?, string> formatter)
+
+    /// <inheritdoc />
+    public void Log(LogLevel logLevel, LogEntry entry, Exception? exception,
+        Func<LogEntry, Exception?, string> formatter)
     {
         if (_logLevel > logLevel)
             return;
-        
-        string text = formatter(entry, exception);
+
+        var text = formatter(entry, exception);
         if (_printLogs)
-        {
             lock (_logLock)
             {
                 try
@@ -46,25 +47,30 @@ public class CustomLogger : ICustomLogger
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"[Logger Console Error] {ex.Message}");
+                    Debug.WriteLine($"[Logger Console Error] {ex.Message}");
                 }
             }
-        }
-        
+
         LoggerHelper.EnqueueLog(text, _customLogFilePath);
     }
 
-    /// <inheritdoc/>
-    public string GetModuleName() => _moduleName;
-    
-    /// <inheritdoc/>
-    public LogLevel GetLogLevel() => _logLevel;
+    /// <inheritdoc />
+    public string GetModuleName()
+    {
+        return _moduleName;
+    }
+
+    /// <inheritdoc />
+    public LogLevel GetLogLevel()
+    {
+        return _logLevel;
+    }
 
     /// <summary>
-    /// Maps a <see cref="LogLevel"/> to a <see cref="ConsoleColor"/> for console output.
+    ///     Maps a <see cref="LogLevel" /> to a <see cref="ConsoleColor" /> for console output.
     /// </summary>
     /// <param name="logLevel">The log level to map.</param>
-    /// <returns>A <see cref="ConsoleColor"/> suitable for the given level.</returns>
+    /// <returns>A <see cref="ConsoleColor" /> suitable for the given level.</returns>
     private static ConsoleColor GetLogLevelColor(LogLevel logLevel)
     {
         return logLevel switch
@@ -84,23 +90,27 @@ public class CustomLogger : ICustomLogger
 public class CustomLogger<T> : CustomLogger, ICustomLogger<T> where T : class
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="CustomLogger{T}"/> class with default settings.
-    /// Used by dependency injection to instantiate loggers without explicit parameter passing.
+    ///     Initializes a new instance of the <see cref="CustomLogger{T}" /> class with default settings.
+    ///     Used by dependency injection to instantiate loggers without explicit parameter passing.
     /// </summary>
 #if DEBUG
-    public CustomLogger() 
-        : this(LogLevel.Debug) { }
-#else 
+    public CustomLogger()
+        : this(LogLevel.Debug)
+    {
+    }
+#else
     public CustomLogger() 
         : this(LogLevel.Information) { }
 #endif
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="CustomLogger{T}"/> class.
+    ///     Initializes a new instance of the <see cref="CustomLogger{T}" /> class.
     /// </summary>
     /// <param name="logLevel">Minimum level to log.</param>
     /// <param name="printLogs">Whether messages are printed to the console.</param>
     /// <param name="customLogFilePath">Optional custom file path for persisted logs.</param>
-    public CustomLogger(LogLevel logLevel, bool printLogs = true, string? customLogFilePath = null) 
-        : base(typeof(T).Name, logLevel, printLogs, customLogFilePath) { }
+    public CustomLogger(LogLevel logLevel, bool printLogs = true, string? customLogFilePath = null)
+        : base(typeof(T).Name, logLevel, printLogs, customLogFilePath)
+    {
+    }
 }

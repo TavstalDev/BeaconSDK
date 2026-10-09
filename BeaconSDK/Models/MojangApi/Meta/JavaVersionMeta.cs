@@ -1,27 +1,14 @@
-﻿
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace Tavstal.BeaconSDK.Models.MojangApi.Meta;
 
 /// <summary>
-/// Represents metadata for a specific Java version required by Minecraft.
+///     Represents metadata for a specific Java version required by Minecraft.
 /// </summary>
 public class JavaVersionMeta
 {
     /// <summary>
-    /// Gets or sets the component name of the Java version.
-    /// </summary>
-    [JsonPropertyName("component")]
-    public string Component { get; set; }
-
-    /// <summary>
-    /// Gets or sets the major version number of the Java version.
-    /// </summary>
-    [JsonPropertyName("majorVersion")]
-    public int MajorVersion { get; set; }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="JavaVersionMeta"/> class with specified component and major version.
+    ///     Initializes a new instance of the <see cref="JavaVersionMeta" /> class with specified component and major version.
     /// </summary>
     /// <param name="component">The component name of the Java version.</param>
     /// <param name="majorVersion">The major version number of the Java version.</param>
@@ -32,9 +19,22 @@ public class JavaVersionMeta
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="JavaVersionMeta"/> class.
+    ///     Initializes a new instance of the <see cref="JavaVersionMeta" /> class.
     /// </summary>
     public JavaVersionMeta()
     {
+        Component = string.Empty;
     }
+
+    /// <summary>
+    ///     Gets or sets the component name of the Java version.
+    /// </summary>
+    [JsonPropertyName("component")]
+    public string Component { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the major version number of the Java version.
+    /// </summary>
+    [JsonPropertyName("majorVersion")]
+    public int MajorVersion { get; set; }
 }

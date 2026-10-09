@@ -9,29 +9,21 @@ using CoreJsonContext = Tavstal.BeaconSDK.Models.Json.CoreJsonContext;
 namespace Tavstal.BeaconSDK.Models.MojangApi.Meta;
 
 /// <summary>
-/// Represents metadata for game and JVM arguments used in Minecraft.
+///     Represents metadata for game and JVM arguments used in Minecraft.
 /// </summary>
 public class ArgumentMeta
 {
     /// <summary>
-    /// Gets or sets the list of game arguments.
+    ///     Initializes a new instance of the <see cref="ArgumentMeta" /> class.
     /// </summary>
-    [JsonPropertyName("game")]
-    public List<object> Game { get; set; }
+    public ArgumentMeta()
+    {
+        Game = [];
+        Jvm = [];
+    }
 
     /// <summary>
-    /// Gets or sets the list of JVM arguments.
-    /// </summary>
-    [JsonPropertyName("jvm")]
-    public List<object> Jvm { get; set; }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ArgumentMeta"/> class.
-    /// </summary>
-    public ArgumentMeta() { }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ArgumentMeta"/> class with specified game and JVM arguments.
+    ///     Initializes a new instance of the <see cref="ArgumentMeta" /> class with specified game and JVM arguments.
     /// </summary>
     /// <param name="game">The list of game arguments.</param>
     /// <param name="jvm">The list of JVM arguments.</param>
@@ -42,7 +34,19 @@ public class ArgumentMeta
     }
 
     /// <summary>
-    /// Retrieves the game arguments as a list of strings.
+    ///     Gets or sets the list of game arguments.
+    /// </summary>
+    [JsonPropertyName("game")]
+    public List<object> Game { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the list of JVM arguments.
+    /// </summary>
+    [JsonPropertyName("jvm")]
+    public List<object> Jvm { get; set; }
+
+    /// <summary>
+    ///     Retrieves the game arguments as a list of strings.
     /// </summary>
     /// <returns>A list of game arguments.</returns>
     public List<string> GetGameArgs()
@@ -53,23 +57,18 @@ public class ArgumentMeta
 
         List<string> local = [];
         foreach (var item in Game)
-        {
             if (item is string s)
                 local.Add(s);
-        }
 
         List<string> result = [];
 
-        for (int i = 0; i < local.Count; i += 2)
-        {
-            result.Add(local[i] + " " + local[i + 1]);
-        }
+        for (var i = 0; i < local.Count; i += 2) result.Add(local[i] + " " + local[i + 1]);
 
         return result;
     }
 
     /// <summary>
-    /// Retrieves the game arguments as a single concatenated string.
+    ///     Retrieves the game arguments as a single concatenated string.
     /// </summary>
     /// <returns>A string containing the game arguments.</returns>
     public string GetGameArgString()
@@ -80,28 +79,28 @@ public class ArgumentMeta
 
         List<string> local = [];
         foreach (var item in Game)
-        {
             if (item is string s)
+            {
                 local.Add(s);
+            }
             else if (item is JsonElement element)
             {
                 if (element.ValueKind != JsonValueKind.String)
                     continue;
-                string? value = element.GetString();
+                var value = element.GetString();
                 if (string.IsNullOrEmpty(value))
                     continue;
                 local.Add(value);
             }
-        }
 
-        string result = string.Empty;
-        for (int i = 0; i < local.Count; i += 2)
+        var result = string.Empty;
+        for (var i = 0; i < local.Count; i += 2)
             result += $"{local[i]} {local[i + 1]} ";
         return result;
     }
 
     /// <summary>
-    /// Retrieves the JVM arguments as a list of strings.
+    ///     Retrieves the JVM arguments as a list of strings.
     /// </summary>
     /// <returns>A list of JVM arguments.</returns>
     public List<string> GetJvmArgs()
@@ -112,28 +111,28 @@ public class ArgumentMeta
 
         List<string> local = [];
         foreach (var item in Jvm)
-        {
             if (item is string s)
+            {
                 local.Add(s);
+            }
             else
             {
                 var raw = item.ToString();
                 if (raw == null)
                     continue;
-               
+
                 var ruleResult = GetRuleResult(raw);
                 if (string.IsNullOrEmpty(ruleResult))
                     continue;
-                
+
                 local.Add(ruleResult);
             }
-        }
 
         return local;
     }
 
     /// <summary>
-    /// Retrieves the JVM arguments as a single concatenated string.
+    ///     Retrieves the JVM arguments as a single concatenated string.
     /// </summary>
     /// <returns>A string containing the JVM arguments.</returns>
     public string GetJvmArgString()
@@ -142,9 +141,8 @@ public class ArgumentMeta
         if (Jvm == null)
             return string.Empty;
 
-        string local = string.Empty;
+        var local = string.Empty;
         foreach (var item in Jvm)
-        {
             if (item is string s)
             {
                 local += $"{s} ";
@@ -154,43 +152,42 @@ public class ArgumentMeta
                 var raw = item.ToString();
                 if (raw == null)
                     continue;
-               
+
                 var ruleResult = GetRuleResult(raw);
                 if (string.IsNullOrEmpty(ruleResult))
                     continue;
-                
+
                 local += $"{ruleResult} ";
             }
-        }
 
         return local;
     }
 
     /// <summary>
-    /// Evaluates a set of rules from a JSON string and determines whether the rules allow or deny access.
+    ///     Evaluates a set of rules from a JSON string and determines whether the rules allow or deny access.
     /// </summary>
     /// <param name="json">The JSON string containing the rules and value to evaluate.</param>
     /// <returns>
-    /// The value from the JSON if the rules allow access; otherwise, <c>null</c>.
+    ///     The value from the JSON if the rules allow access; otherwise, <c>null</c>.
     /// </returns>
     public string? GetRuleResult(string json)
     {
         if (string.IsNullOrEmpty(json))
             return null;
-        
-        if (!(json.StartsWith('{') && json.EndsWith('}') || json.StartsWith('[') && json.EndsWith(']')))
+
+        if (!((json.StartsWith('{') && json.EndsWith('}')) || (json.StartsWith('[') && json.EndsWith(']'))))
             return json;
 
         try
         {
-            JsonNode? node = JsonNode.Parse(json);
+            var node = JsonNode.Parse(json);
             if (node == null)
                 return null;
-            
-            JsonObject jobj = node.AsObject();
+
+            var jobj = node.AsObject();
             if (!jobj.TryGetPropertyValue("value", out var valueResult))
                 return null;
-            
+
             string? value = null;
             if (valueResult is JsonArray valueArray)
             {
@@ -204,7 +201,7 @@ public class ArgumentMeta
             {
                 value = valueResult.GetValue<string>();
             }
-            
+
             if (string.IsNullOrEmpty(value))
                 return null;
 
@@ -214,14 +211,14 @@ public class ArgumentMeta
             var rawRules = rulesResult.ToJsonString();
             if (string.IsNullOrEmpty(rawRules))
                 return null;
-            
+
             List<Rule>? rules = JsonSerializer.Deserialize(rawRules, CoreJsonContext.Default.ListRule);
             if (rules == null || rules.Count == 0)
                 return null;
 
-            bool localResult = false;
+            var localResult = false;
             var operatingSystem = OSHelper.GetOperatingSystem();
-            foreach (Rule rule in rules)
+            foreach (var rule in rules)
             {
                 if (string.IsNullOrEmpty(rule.Os.Name))
                 {

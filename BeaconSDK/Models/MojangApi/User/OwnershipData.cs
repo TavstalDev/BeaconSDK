@@ -1,39 +1,25 @@
-﻿
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace Tavstal.BeaconSDK.Models.MojangApi.User;
 
 /// <summary>
-/// Represents Mojang ownership data, including the public key identifier, signature,
-/// and the collection of owned entitlement items.
+///     Represents Mojang ownership data, including the public key identifier, signature,
+///     and the collection of owned entitlement items.
 /// </summary>
 public class OwnershipData
 {
     /// <summary>
-    /// Gets or sets the key identifier associated with this ownership payload.
+    ///     Initializes a new, empty instance of the <see cref="OwnershipData" /> class.
     /// </summary>
-    [JsonPropertyName("keyId")]
-    public string KeyId { get; set; }
+    public OwnershipData()
+    {
+        KeyId = string.Empty;
+        Signature = string.Empty;
+        Items = [];
+    }
 
     /// <summary>
-    /// Gets or sets the signature that validates the ownership data.
-    /// </summary>
-    [JsonPropertyName("signature")]
-    public string Signature { get; set; }
-
-    /// <summary>
-    /// Gets or sets the collection of ownership items contained in this payload.
-    /// </summary>
-    [JsonPropertyName("items")]
-    public List<OwnershipItem> Items {  get; set; }
-
-    /// <summary>
-    /// Initializes a new, empty instance of the <see cref="OwnershipData"/> class.
-    /// </summary>
-    public OwnershipData() { }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="OwnershipData"/> class with the specified values.
+    ///     Initializes a new instance of the <see cref="OwnershipData" /> class with the specified values.
     /// </summary>
     /// <param name="keyId">The key identifier for the ownership payload.</param>
     /// <param name="signature">The signature associated with the payload.</param>
@@ -44,4 +30,22 @@ public class OwnershipData
         Signature = signature;
         Items = items;
     }
+
+    /// <summary>
+    ///     Gets or sets the key identifier associated with this ownership payload.
+    /// </summary>
+    [JsonPropertyName("keyId")]
+    public string KeyId { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the signature that validates the ownership data.
+    /// </summary>
+    [JsonPropertyName("signature")]
+    public string Signature { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the collection of ownership items contained in this payload.
+    /// </summary>
+    [JsonPropertyName("items")]
+    public List<OwnershipItem> Items { get; set; }
 }

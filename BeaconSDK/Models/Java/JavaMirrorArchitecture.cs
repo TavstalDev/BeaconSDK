@@ -1,28 +1,14 @@
-
 using System.Text.Json.Serialization;
 
-
-namespace Tavstal.KonkordLauncher.Common.Models.Java;
+namespace Tavstal.BeaconSDK.Models.Java;
 
 /// <summary>
-/// Represents a Java mirror with download URLs for different architectures.
+///     Represents a Java mirror with download URLs for different architectures.
 /// </summary>
 public class JavaMirrorArchitecture
 {
     /// <summary>
-    /// Gets or sets the download URL for the x86_64 architecture.
-    /// </summary>
-    [JsonPropertyName("x86_64")]
-    public string X86_64 { get; set; }
-
-    /// <summary>
-    /// Gets or sets the download URL for the ARM architecture.
-    /// </summary>
-    [JsonPropertyName("arm")]
-    public string Arm { get; set; }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="JavaMirrorArchitecture"/> class with default values.
+    ///     Initializes a new instance of the <see cref="JavaMirrorArchitecture" /> class with default values.
     /// </summary>
     public JavaMirrorArchitecture()
     {
@@ -31,7 +17,7 @@ public class JavaMirrorArchitecture
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="JavaMirrorArchitecture"/> class with specified values.
+    ///     Initializes a new instance of the <see cref="JavaMirrorArchitecture" /> class with specified values.
     /// </summary>
     /// <param name="x8664">The download URL for the x86_64 architecture.</param>
     /// <param name="arm">The download URL for the ARM architecture.</param>
@@ -40,4 +26,16 @@ public class JavaMirrorArchitecture
         X86_64 = x8664;
         Arm = arm;
     }
+
+    /// <summary>
+    ///     Gets or sets the download URL for the x86_64 architecture.
+    /// </summary>
+    [JsonPropertyName("x86_64")]
+    public string X86_64 { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the download URL for the ARM architecture.
+    /// </summary>
+    [JsonPropertyName("arm")]
+    public string Arm { get; set; }
 }

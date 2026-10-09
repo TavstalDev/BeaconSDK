@@ -2,27 +2,26 @@ using System.Text.Json.Serialization;
 
 namespace Tavstal.BeaconSDK.Models.Microsoft;
 
-
 /// <summary>
-/// Represents properties required for Xbox token authentication.
+///     Represents properties required for Xbox token authentication.
 /// </summary>
 public class XboxTokenProperties
 {
     /// <summary>
-    /// Gets or sets the authentication method used.
+    ///     Gets or sets the authentication method used.
     /// </summary>
     [JsonPropertyName("AuthMethod")]
-    public string AuthMethod { get; set; }
-    
+    public string AuthMethod { get; set; } = string.Empty;
+
     /// <summary>
-    /// Gets or sets the site name.
+    ///     Gets or sets the site name.
     /// </summary>
     [JsonPropertyName("SiteName")]
-    public string SiteName { get; set; }
-    
+    public string SiteName { get; set; } = string.Empty;
+
     /// <summary>
-    /// Gets or sets the RPS ticket.
+    ///     Gets or sets the RPS ticket.
     /// </summary>
     [JsonPropertyName("RpsTicket")]
-    public string RpsTicket { get; set; }
+    public string RpsTicket { get; set; } = string.Empty;
 }

@@ -1,7 +1,7 @@
 namespace Tavstal.BeaconSDK.Models.Logging;
 
 /// <summary>
-/// Represents a single log entry produced by the launcher or its subsystems.
+///     Represents a single log entry produced by the launcher or its subsystems.
 /// </summary>
 /// <param name="LogLevel">The severity level of the log (e.g. "Debug", "Info", "Warn", "Error").</param>
 /// <param name="ModuleName">The name of the module or component that emitted the log.</param>

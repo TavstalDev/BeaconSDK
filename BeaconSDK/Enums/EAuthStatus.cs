@@ -1,32 +1,32 @@
 namespace Tavstal.BeaconSDK.Enums;
 
 /// <summary>
-/// Represents the status of an authentication process.
+///     Represents the status of an authentication process.
 /// </summary>
 public enum EAuthStatus
 {
     /// <summary>
-    /// Represents an undefined or uninitialized authentication status.
+    ///     Represents an undefined or uninitialized authentication status.
     /// </summary>
     NONE = 0,
-    
+
     /// <summary>
-    /// The authentication process is pending.
+    ///     The authentication process is pending.
     /// </summary>
     PENDING = 1,
 
     /// <summary>
-    /// The authentication process is currently in progress.
+    ///     The authentication process is currently in progress.
     /// </summary>
     PROCESSING = 2,
-    
+
     /// <summary>
-    /// The authentication process was successful.
+    ///     The authentication process was successful.
     /// </summary>
     SUCCESS = 3,
 
     /// <summary>
-    /// The authentication process failed.
+    ///     The authentication process failed.
     /// </summary>
-    FAILED = 4,
+    FAILED = 4
 }

@@ -16,7 +16,7 @@ using ForgeVersionMetaLegacy = Tavstal.BeaconSDK.Models.ModLoaders.Forge.Legacy.
 namespace Tavstal.BeaconSDK.Models.Json;
 
 /// <summary>
-/// Represents a custom JSON serializer context for serializing various game-related objects.
+///     Represents a custom JSON serializer context for serializing various game-related objects.
 /// </summary>
 [JsonSerializable(typeof(VersionManifest))]
 [JsonSerializable(typeof(FabricVersionMeta))]
@@ -36,8 +36,7 @@ namespace Tavstal.BeaconSDK.Models.Json;
 [JsonSerializable(typeof(VersionMeta))]
 [JsonSerializable(typeof(ShowCapeRequestBody))]
 [JsonSerializable(typeof(ChangeSkinRequestBody))]
-[JsonSourceGenerationOptions(WriteIndented = true, IgnoreReadOnlyProperties = true, IgnoreReadOnlyFields = true )]
+[JsonSourceGenerationOptions(WriteIndented = true, IgnoreReadOnlyProperties = true, IgnoreReadOnlyFields = true)]
 public partial class CoreJsonContext : JsonSerializerContext
 {
-    
 }

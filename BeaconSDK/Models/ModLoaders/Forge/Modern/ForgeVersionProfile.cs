@@ -5,61 +5,61 @@ using Tavstal.BeaconSDK.Models.MojangApi.Meta;
 namespace Tavstal.BeaconSDK.Models.ModLoaders.Forge.Modern;
 
 /// <summary>
-/// Represents the profile for a specific version of the Forge mod loader.
+///     Represents the profile for a specific version of the Forge mod loader.
 /// </summary>
 public class ForgeVersionProfile
 {
     /// <summary>
-    /// Gets or sets the specification version of the Forge profile.
+    ///     Gets or sets the specification version of the Forge profile.
     /// </summary>
     [JsonPropertyName("spec")]
     public int Spec { get; set; }
 
     /// <summary>
-    /// Gets or sets the profile name of the Forge version.
+    ///     Gets or sets the profile name of the Forge version.
     /// </summary>
     [JsonPropertyName("profile")]
-    public string Profile { get; set; }
+    public string Profile { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the version of the Forge mod loader.
+    ///     Gets or sets the version of the Forge mod loader.
     /// </summary>
     [JsonPropertyName("version")]
-    public string Version { get; set; }
+    public string Version { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the optional path for the Forge version profile.
+    ///     Gets or sets the optional path for the Forge version profile.
     /// </summary>
     [JsonPropertyName("path")]
     public string? Path { get; set; }
 
     /// <summary>
-    /// Gets or sets the version of Minecraft associated with this Forge profile.
+    ///     Gets or sets the version of Minecraft associated with this Forge profile.
     /// </summary>
     [JsonPropertyName("minecraft")]
-    public string Minecraft { get; set; }
+    public string Minecraft { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the path to the server JAR file for the Forge version.
+    ///     Gets or sets the path to the server JAR file for the Forge version.
     /// </summary>
     [JsonPropertyName("serverJarPath")]
-    public string ServerJarPath { get; set; }
+    public string ServerJarPath { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets additional data associated with the Forge version profile.
+    ///     Gets or sets additional data associated with the Forge version profile.
     /// </summary>
     [JsonPropertyName("data")]
     public JsonElement? Data { get; set; }
 
     /// <summary>
-    /// Gets or sets the list of processors required by the Forge version.
+    ///     Gets or sets the list of processors required by the Forge version.
     /// </summary>
     [JsonPropertyName("processors")]
     public JsonElement Processors { get; set; }
 
     /// <summary>
-    /// Gets or sets the list of libraries required by the Forge version.
+    ///     Gets or sets the list of libraries required by the Forge version.
     /// </summary>
     [JsonPropertyName("libraries")]
-    public List<LibraryMeta> Libraries { get; set; }
+    public List<LibraryMeta> Libraries { get; set; } = [];
 }

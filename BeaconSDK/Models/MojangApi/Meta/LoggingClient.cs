@@ -1,38 +1,24 @@
-﻿
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace Tavstal.BeaconSDK.Models.MojangApi.Meta;
 
 /// <summary>
-/// Represents the logging client configuration, including arguments, file metadata, and type.
+///     Represents the logging client configuration, including arguments, file metadata, and type.
 /// </summary>
 public class LoggingClient
 {
     /// <summary>
-    /// Gets or sets the argument used for the logging client configuration.
+    ///     Initializes a new instance of the <see cref="LoggingClient" /> class.
     /// </summary>
-    [JsonPropertyName("argument")]
-    public string Argument { get; set; }
+    public LoggingClient()
+    {
+        Type = string.Empty;
+        Argument = string.Empty;
+        File = new LoggingFile();
+    }
 
     /// <summary>
-    /// Gets or sets the logging file metadata associated with the logging client.
-    /// </summary>
-    [JsonPropertyName("file")]
-    public LoggingFile File { get; set; }
-
-    /// <summary>
-    /// Gets or sets the type of the logging client configuration.
-    /// </summary>
-    [JsonPropertyName("type")]
-    public string Type { get; set; }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="LoggingClient"/> class.
-    /// </summary>
-    public LoggingClient() { }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="LoggingClient"/> class with specified properties.
+    ///     Initializes a new instance of the <see cref="LoggingClient" /> class with specified properties.
     /// </summary>
     /// <param name="argument">The argument used for the logging client configuration.</param>
     /// <param name="file">The logging file metadata associated with the logging client.</param>
@@ -43,4 +29,22 @@ public class LoggingClient
         File = file;
         Type = type;
     }
+
+    /// <summary>
+    ///     Gets or sets the argument used for the logging client configuration.
+    /// </summary>
+    [JsonPropertyName("argument")]
+    public string Argument { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the logging file metadata associated with the logging client.
+    /// </summary>
+    [JsonPropertyName("file")]
+    public LoggingFile File { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the type of the logging client configuration.
+    /// </summary>
+    [JsonPropertyName("type")]
+    public string Type { get; set; }
 }

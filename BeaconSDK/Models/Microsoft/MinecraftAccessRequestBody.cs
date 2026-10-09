@@ -3,19 +3,19 @@ using System.Text.Json.Serialization;
 namespace Tavstal.BeaconSDK.Models.Microsoft;
 
 /// <summary>
-/// Represents the request body for accessing Minecraft.
+///     Represents the request body for accessing Minecraft.
 /// </summary>
 public class MinecraftAccessRequestBody
 {
     /// <summary>
-    /// Gets or sets the identity token used for authentication.
+    ///     Gets or sets the identity token used for authentication.
     /// </summary>
     [JsonPropertyName("identityToken")]
-    public string IdentityToken { get; set; }
+    public string IdentityToken { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets a value indicating whether to ensure legacy mode is enabled.
+    ///     Gets or sets a value indicating whether to ensure legacy mode is enabled.
     /// </summary>
-    [JsonPropertyName("ensureLegacyEnabled")] 
+    [JsonPropertyName("ensureLegacyEnabled")]
     public bool EnsureLegacyEnabled { get; set; }
 }

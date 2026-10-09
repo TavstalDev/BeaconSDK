@@ -1,46 +1,25 @@
-﻿
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace Tavstal.BeaconSDK.Models.MojangApi.Meta;
 
 /// <summary>
-/// Represents metadata for various Minecraft downloads, including client, server, and their mappings.
+///     Represents metadata for various Minecraft downloads, including client, server, and their mappings.
 /// </summary>
 public class DownloadsMeta
 {
     /// <summary>
-    /// Gets or sets the download data for the Minecraft client.
-    /// </summary>
-    [JsonPropertyName("client")]
-    public DownloadData Client { get; set; }
-
-    /// <summary>
-    /// Gets or sets the download data for the Minecraft client mappings.
-    /// </summary>
-    [JsonPropertyName("client_mappings")]
-    public DownloadData ClientMappings { get; set; }
-
-    /// <summary>
-    /// Gets or sets the download data for the Minecraft server.
-    /// </summary>
-    [JsonPropertyName("server")]
-    public DownloadData Server { get; set; }
-
-    /// <summary>
-    /// Gets or sets the download data for the Minecraft server mappings.
-    /// </summary>
-    [JsonPropertyName("server_mappings")]
-    public DownloadData ServerMappings { get; set; }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="DownloadsMeta"/> class.
+    ///     Initializes a new instance of the <see cref="DownloadsMeta" /> class.
     /// </summary>
     public DownloadsMeta()
     {
+        Client = new DownloadData();
+        ClientMappings = new DownloadData();
+        Server = new DownloadData();
+        ServerMappings = new DownloadData();
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="DownloadsMeta"/> class with specified download data.
+    ///     Initializes a new instance of the <see cref="DownloadsMeta" /> class with specified download data.
     /// </summary>
     /// <param name="client">The download data for the Minecraft client.</param>
     /// <param name="clientMappings">The download data for the Minecraft client mappings.</param>
@@ -54,4 +33,28 @@ public class DownloadsMeta
         Server = server;
         ServerMappings = serverMappings;
     }
+
+    /// <summary>
+    ///     Gets or sets the download data for the Minecraft client.
+    /// </summary>
+    [JsonPropertyName("client")]
+    public DownloadData Client { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the download data for the Minecraft client mappings.
+    /// </summary>
+    [JsonPropertyName("client_mappings")]
+    public DownloadData ClientMappings { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the download data for the Minecraft server.
+    /// </summary>
+    [JsonPropertyName("server")]
+    public DownloadData Server { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the download data for the Minecraft server mappings.
+    /// </summary>
+    [JsonPropertyName("server_mappings")]
+    public DownloadData ServerMappings { get; set; }
 }

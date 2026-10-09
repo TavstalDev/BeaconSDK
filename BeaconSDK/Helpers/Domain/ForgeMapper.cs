@@ -4,18 +4,18 @@ using Tavstal.BeaconSDK.Models.ModLoaders.Forge;
 namespace Tavstal.BeaconSDK.Helpers.Domain;
 
 /// <summary>
-/// Provides methods for mapping and interpolation.
-/// Source: https://github.com/CmlLib/CmlLib.Core.Installer.Forge
+///     Provides methods for mapping and interpolation.
+///     Source: https://github.com/CmlLib/CmlLib.Core.Installer.Forge
 /// </summary>
 public static class ForgeMapper
 {
     /// <summary>
-    /// A regular expression used to match arguments enclosed in curly brackets.
+    ///     A regular expression used to match arguments enclosed in curly brackets.
     /// </summary>
     private static readonly Regex ArgBracket = new(@"\$?\{(.*?)}");
 
     /// <summary>
-    /// Maps an array of arguments by interpolating values from a dictionary and optionally converting paths to full paths.
+    ///     Maps an array of arguments by interpolating values from a dictionary and optionally converting paths to full paths.
     /// </summary>
     /// <param name="args">The array of arguments to map.</param>
     /// <param name="dictionaries">A dictionary containing key-value pairs for interpolation.</param>
@@ -23,11 +23,11 @@ public static class ForgeMapper
     /// <returns>An array of mapped arguments.</returns>
     public static string[] Map(string[] args, Dictionary<string, string?> dictionaries, string prePath)
     {
-        bool flag = !string.IsNullOrEmpty(prePath);
-        List<string> list = new List<string>(args.Length);
+        var flag = !string.IsNullOrEmpty(prePath);
+        var list = new List<string>(args.Length);
         foreach (var arg in args)
         {
-            string text = Interpolation(arg, dictionaries, handleEmpty: false);
+            var text = Interpolation(arg, dictionaries, false);
             if (flag)
                 text = ToFullPath(text, prePath);
             list.Add(HandleEmptyArg(text));
@@ -37,7 +37,7 @@ public static class ForgeMapper
     }
 
     /// <summary>
-    /// Interpolates placeholders in a string using values from a dictionary.
+    ///     Interpolates placeholders in a string using values from a dictionary.
     /// </summary>
     /// <param name="str">The string containing placeholders to interpolate.</param>
     /// <param name="dictionaries">A dictionary containing key-value pairs for interpolation.</param>
@@ -51,7 +51,7 @@ public static class ForgeMapper
                 return match.Value;
 
             var key = match.Groups[1].Value;
-            if (dictionaries.TryGetValue(key, out string? value))
+            if (dictionaries.TryGetValue(key, out var value))
             {
                 value ??= "";
                 return value;
@@ -64,7 +64,7 @@ public static class ForgeMapper
     }
 
     /// <summary>
-    /// Converts a string to a full path based on a base path if applicable.
+    ///     Converts a string to a full path based on a base path if applicable.
     /// </summary>
     /// <param name="str">The string to convert to a full path.</param>
     /// <param name="prePath">The base path to prepend to the string.</param>
@@ -73,9 +73,9 @@ public static class ForgeMapper
     {
         if (str.StartsWith("[") && str.EndsWith("]") && !string.IsNullOrEmpty(prePath))
         {
-            string[] array = str.TrimStart('[').TrimEnd(']').Split('@');
-            string name = array[0];
-            string extension = "jar";
+            var array = str.TrimStart('[').TrimEnd(']').Split('@');
+            var name = array[0];
+            var extension = "jar";
             if (array.Length > 1)
                 extension = array[1];
 
@@ -89,7 +89,7 @@ public static class ForgeMapper
     }
 
     /// <summary>
-    /// Handles empty arguments by enclosing them in quotes if necessary.
+    ///     Handles empty arguments by enclosing them in quotes if necessary.
     /// </summary>
     /// <param name="input">The input string to process.</param>
     /// <returns>The processed string with empty arguments handled.</returns>
@@ -97,7 +97,7 @@ public static class ForgeMapper
     {
         if (input.Contains('='))
         {
-            string[] array = input.Split('=');
+            var array = input.Split('=');
             if (array[1].Contains(' ') && !CheckEmptyHandled(array[1]))
                 return array[0] + "=\"" + array[1] + "\"";
 
@@ -111,9 +111,12 @@ public static class ForgeMapper
     }
 
     /// <summary>
-    /// Checks whether a string is already enclosed in quotes.
+    ///     Checks whether a string is already enclosed in quotes.
     /// </summary>
     /// <param name="str">The string to check.</param>
     /// <returns>True if the string is enclosed in quotes, otherwise false.</returns>
-    private static bool CheckEmptyHandled(string str) => str.StartsWith("\"") || str.EndsWith("\"");
+    private static bool CheckEmptyHandled(string str)
+    {
+        return str.StartsWith("\"") || str.EndsWith("\"");
+    }
 }

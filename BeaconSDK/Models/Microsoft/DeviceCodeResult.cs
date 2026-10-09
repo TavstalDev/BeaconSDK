@@ -1,51 +1,25 @@
-
 using System.Text.Json.Serialization;
 
 namespace Tavstal.BeaconSDK.Models.Microsoft;
 
 /// <summary>
-/// Represents the result of a device code request for Microsoft OAuth authentication.
-/// Contains information such as the device code, user code, verification URI, expiration time, and polling interval.
+///     Represents the result of a device code request for Microsoft OAuth authentication.
+///     Contains information such as the device code, user code, verification URI, expiration time, and polling interval.
 /// </summary>
 public class DeviceCodeResult
 {
     /// <summary>
-    /// Gets or sets the device code used for authentication.
+    ///     Initializes a new instance of the <see cref="DeviceCodeResult" /> class.
     /// </summary>
-    [JsonPropertyName("device_code")]
-    public string DeviceCode { get; set; }
+    public DeviceCodeResult()
+    {
+        DeviceCode = string.Empty;
+        UserCode = string.Empty;
+        VerificationUri = string.Empty;
+    }
 
     /// <summary>
-    /// Gets or sets the user code displayed to the user for authentication.
-    /// </summary>
-    [JsonPropertyName("user_code")]
-    public string UserCode { get; set; }
-
-    /// <summary>
-    /// Gets or sets the URI where the user can verify their device code.
-    /// </summary>
-    [JsonPropertyName("verification_uri")]
-    public string VerificationUri { get; set; }
-
-    /// <summary>
-    /// Gets or sets the time in seconds until the device code expires.
-    /// </summary>
-    [JsonPropertyName("expires_in")]
-    public int ExpiresIn { get; set; }
-
-    /// <summary>
-    /// Gets or sets the interval in seconds at which the client should poll for token updates.
-    /// </summary>
-    [JsonPropertyName("interval")]
-    public int Interval { get; set; }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="DeviceCodeResult"/> class.
-    /// </summary>
-    public DeviceCodeResult() {}
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="DeviceCodeResult"/> class with the specified properties.
+    ///     Initializes a new instance of the <see cref="DeviceCodeResult" /> class with the specified properties.
     /// </summary>
     /// <param name="deviceCode">The device code used for authentication.</param>
     /// <param name="userCode">The user code displayed to the user for authentication.</param>
@@ -60,4 +34,34 @@ public class DeviceCodeResult
         ExpiresIn = expiresIn;
         Interval = interval;
     }
+
+    /// <summary>
+    ///     Gets or sets the device code used for authentication.
+    /// </summary>
+    [JsonPropertyName("device_code")]
+    public string DeviceCode { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the user code displayed to the user for authentication.
+    /// </summary>
+    [JsonPropertyName("user_code")]
+    public string UserCode { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the URI where the user can verify their device code.
+    /// </summary>
+    [JsonPropertyName("verification_uri")]
+    public string VerificationUri { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the time in seconds until the device code expires.
+    /// </summary>
+    [JsonPropertyName("expires_in")]
+    public int ExpiresIn { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the interval in seconds at which the client should poll for token updates.
+    /// </summary>
+    [JsonPropertyName("interval")]
+    public int Interval { get; set; }
 }

@@ -1,52 +1,24 @@
-﻿
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace Tavstal.BeaconSDK.Models.MojangApi.Meta;
 
 /// <summary>
-/// Represents metadata for a Minecraft asset, including its ID, hash, size, and download URL.
+///     Represents metadata for a Minecraft asset, including its ID, hash, size, and download URL.
 /// </summary>
 public class AssetMeta
 {
     /// <summary>
-    /// Gets or sets the unique identifier for the asset.
-    /// </summary>
-    [JsonPropertyName("id")]
-    public string Id { get; set; }
-
-    /// <summary>
-    /// Gets or sets the SHA-1 hash of the asset.
-    /// </summary>
-    [JsonPropertyName("sha1")]
-    public string Sha1 { get; set; }
-
-    /// <summary>
-    /// Gets or sets the size of the asset in bytes.
-    /// </summary>
-    [JsonPropertyName("size")]
-    public int Size { get; set; }
-
-    /// <summary>
-    /// Gets or sets the total size of the asset in bytes.
-    /// </summary>
-    [JsonPropertyName("totalSize")]
-    public int TotalSize { get; set; }
-
-    /// <summary>
-    /// Gets or sets the URL to download the asset.
-    /// </summary>
-    [JsonPropertyName("url")]
-    public string Url { get; set; }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="AssetMeta"/> class.
+    ///     Initializes a new instance of the <see cref="AssetMeta" /> class.
     /// </summary>
     public AssetMeta()
     {
+        Id = string.Empty;
+        Sha1 = string.Empty;
+        Url = string.Empty;
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="AssetMeta"/> class with specified properties.
+    ///     Initializes a new instance of the <see cref="AssetMeta" /> class with specified properties.
     /// </summary>
     /// <param name="id">The unique identifier for the asset.</param>
     /// <param name="sha1">The SHA-1 hash of the asset.</param>
@@ -61,4 +33,34 @@ public class AssetMeta
         TotalSize = totalSize;
         Url = url;
     }
+
+    /// <summary>
+    ///     Gets or sets the unique identifier for the asset.
+    /// </summary>
+    [JsonPropertyName("id")]
+    public string Id { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the SHA-1 hash of the asset.
+    /// </summary>
+    [JsonPropertyName("sha1")]
+    public string Sha1 { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the size of the asset in bytes.
+    /// </summary>
+    [JsonPropertyName("size")]
+    public int Size { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the total size of the asset in bytes.
+    /// </summary>
+    [JsonPropertyName("totalSize")]
+    public int TotalSize { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the URL to download the asset.
+    /// </summary>
+    [JsonPropertyName("url")]
+    public string Url { get; set; }
 }

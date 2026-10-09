@@ -3,19 +3,19 @@ using System.Text.Json.Serialization;
 namespace Tavstal.BeaconSDK.Models.MojangApi.Requests;
 
 /// <summary>
-/// Represents the request body for changing a skin.
+///     Represents the request body for changing a skin.
 /// </summary>
 public class ChangeSkinRequestBody
 {
     /// <summary>
-    /// Gets or sets the variant of the skin.
+    ///     Gets or sets the variant of the skin.
     /// </summary>
     [JsonPropertyName("variant")]
-    public string Variant { get; set; }
+    public string Variant { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the URL of the skin.
+    ///     Gets or sets the URL of the skin.
     /// </summary>
     [JsonPropertyName("url")]
-    public string Url { get; set; }
+    public string Url { get; set; } = string.Empty;
 }

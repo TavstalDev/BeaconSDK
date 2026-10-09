@@ -1,33 +1,20 @@
-﻿
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace Tavstal.BeaconSDK.Models.Instance;
 
 /// <summary>
-/// Represents the resolution of a display or window, defined by its width (X) and height (Y).
+///     Represents the resolution of a display or window, defined by its width (X) and height (Y).
 /// </summary>
 [Serializable]
 public class Resolution
 {
     /// <summary>
-    /// Gets or sets the width of the resolution in pixels.
-    /// </summary>
-    [JsonPropertyName("x")]
-    public uint X { get; set; }
-
-    /// <summary>
-    /// Gets or sets the height of the resolution in pixels.
-    /// </summary>
-    [JsonPropertyName("y")]
-    public uint Y { get; set; }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="Resolution"/> class with default values.
+    ///     Initializes a new instance of the <see cref="Resolution" /> class with default values.
     /// </summary>
     public Resolution() { }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="Resolution"/> class with specified width and height.
+    ///     Initializes a new instance of the <see cref="Resolution" /> class with specified width and height.
     /// </summary>
     /// <param name="x">The width of the resolution in pixels.</param>
     /// <param name="y">The height of the resolution in pixels.</param>
@@ -36,4 +23,16 @@ public class Resolution
         X = x;
         Y = y;
     }
+
+    /// <summary>
+    ///     Gets or sets the width of the resolution in pixels.
+    /// </summary>
+    [JsonPropertyName("x")]
+    public uint X { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the height of the resolution in pixels.
+    /// </summary>
+    [JsonPropertyName("y")]
+    public uint Y { get; set; }
 }

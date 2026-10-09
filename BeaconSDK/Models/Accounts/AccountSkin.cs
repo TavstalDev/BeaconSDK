@@ -1,44 +1,23 @@
-
 using System.Text.Json.Serialization;
 
 namespace Tavstal.BeaconSDK.Models.Accounts;
 
 /// <summary>
-/// Represents an account skin with associated properties such as ID, model, cape ID, and Mojang ID.
+///     Represents an account skin with associated properties such as ID, model, cape ID, and Mojang ID.
 /// </summary>
 public class AccountSkin
 {
     /// <summary>
-    /// Gets or sets the unique identifier for the account skin.
+    ///     Initializes a new instance of the <see cref="AccountSkin" /> class.
     /// </summary>
-    [JsonPropertyName("id")]
-    public string Id { get; set; }
-    
+    public AccountSkin()
+    {
+        Id = string.Empty;
+        Model = string.Empty;
+    }
+
     /// <summary>
-    /// Gets or sets the model type of the account skin.
-    /// </summary>
-    [JsonPropertyName("model")]
-    public string Model { get; set; }
-    
-    /// <summary>
-    /// Gets or sets the optional cape identifier for the account skin.
-    /// </summary>
-    [JsonPropertyName("capeId")]
-    public string? CapeId { get; set; }
-    
-    /// <summary>
-    /// Gets or sets the optional Mojang identifier for the account skin.
-    /// </summary>
-    [JsonPropertyName("mojangId")]
-    public string? MojangId { get; set; }
-    
-    /// <summary>
-    /// Initializes a new instance of the <see cref="AccountSkin"/> class.
-    /// </summary>
-    public AccountSkin() {}
-    
-    /// <summary>
-    /// Initializes a new instance of the <see cref="AccountSkin"/> class with specified properties.
+    ///     Initializes a new instance of the <see cref="AccountSkin" /> class with specified properties.
     /// </summary>
     /// <param name="id">The unique identifier for the account skin.</param>
     /// <param name="model">The model type of the account skin.</param>
@@ -51,4 +30,28 @@ public class AccountSkin
         CapeId = capeId;
         MojangId = mojangId;
     }
+
+    /// <summary>
+    ///     Gets or sets the unique identifier for the account skin.
+    /// </summary>
+    [JsonPropertyName("id")]
+    public string Id { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the model type of the account skin.
+    /// </summary>
+    [JsonPropertyName("model")]
+    public string Model { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the optional cape identifier for the account skin.
+    /// </summary>
+    [JsonPropertyName("capeId")]
+    public string? CapeId { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the optional Mojang identifier for the account skin.
+    /// </summary>
+    [JsonPropertyName("mojangId")]
+    public string? MojangId { get; set; }
 }

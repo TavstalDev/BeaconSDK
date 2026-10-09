@@ -1,28 +1,27 @@
-﻿
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace Tavstal.BeaconSDK.Models.ModLoaders.Forge.Legacy;
 
 /// <summary>
-/// Represents a Forge profile containing installation details, version metadata, and optional settings.
+///     Represents a Forge profile containing installation details, version metadata, and optional settings.
 /// </summary>
 public class ForgeProfile
 {
     /// <summary>
-    /// Gets or sets the installation information for the Forge profile.
+    ///     Gets or sets the installation information for the Forge profile.
     /// </summary>
     [JsonPropertyName("install")]
-    public ForgeProfileInfo Install { get; set; }
+    public ForgeProfileInfo Install { get; set; } = new();
 
     /// <summary>
-    /// Gets or sets the version metadata for the Forge profile.
+    ///     Gets or sets the version metadata for the Forge profile.
     /// </summary>
     [JsonPropertyName("versionInfo")]
-    public ForgeVersionMeta VersionInfo { get; set; }
+    public ForgeVersionMeta VersionInfo { get; set; } = new();
 
     /// <summary>
-    /// Gets or sets the optional settings for the Forge profile.
+    ///     Gets or sets the optional settings for the Forge profile.
     /// </summary>
     [JsonPropertyName("optionals")]
-    public object Optionals { get; set; }
+    public object Optionals { get; set; } = new();
 }

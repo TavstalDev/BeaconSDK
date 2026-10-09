@@ -1,28 +1,15 @@
-﻿
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace Tavstal.BeaconSDK.Models.MojangApi;
 
 /// <summary>
-/// Represents the latest release and snapshot versions from the Mojang version manifest.
+///     Represents the latest release and snapshot versions from the Mojang version manifest.
 /// </summary>
 public class VersionManifestLatest
 {
     /// <summary>
-    /// Gets or sets the latest stable release version.
-    /// </summary>
-    [JsonPropertyName("release")]
-    public string Release { get; set; }
-
-    /// <summary>
-    /// Gets or sets the latest snapshot version.
-    /// </summary>
-    [JsonPropertyName("snapshot")]
-    public string Snapshot { get; set; }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="VersionManifestLatest"/> class
-    /// with empty release and snapshot values.
+    ///     Initializes a new instance of the <see cref="VersionManifestLatest" /> class
+    ///     with empty release and snapshot values.
     /// </summary>
     public VersionManifestLatest()
     {
@@ -31,8 +18,8 @@ public class VersionManifestLatest
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="VersionManifestLatest"/> class
-    /// with the specified release and snapshot versions.
+    ///     Initializes a new instance of the <see cref="VersionManifestLatest" /> class
+    ///     with the specified release and snapshot versions.
     /// </summary>
     /// <param name="release">The latest stable release version.</param>
     /// <param name="snapshot">The latest snapshot version.</param>
@@ -41,4 +28,16 @@ public class VersionManifestLatest
         Release = release;
         Snapshot = snapshot;
     }
+
+    /// <summary>
+    ///     Gets or sets the latest stable release version.
+    /// </summary>
+    [JsonPropertyName("release")]
+    public string Release { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the latest snapshot version.
+    /// </summary>
+    [JsonPropertyName("snapshot")]
+    public string Snapshot { get; set; }
 }

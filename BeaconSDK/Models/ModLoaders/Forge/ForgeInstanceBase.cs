@@ -12,10 +12,10 @@ using Tavstal.BeaconSDK.Models.MojangApi;
 namespace Tavstal.BeaconSDK.Models.ModLoaders.Forge;
 
 /// <summary>
-/// Represents the base class for a Forge instance, inheriting from MinecraftInstance.
+///     Represents the base class for a Forge instance, inheriting from MinecraftInstance.
 /// </summary>
 /// <param name="id">Unique instance identifier.</param>
-/// <param name="gameVersion">Selected vanilla <see cref="MinecraftVersion"/> metadata.</param>
+/// <param name="gameVersion">Selected vanilla <see cref="MinecraftVersion" /> metadata.</param>
 /// <param name="gameDetails">Details about the game, such as version and paths.</param>
 /// <param name="pathDetails">Details about the file paths used by the instance.</param>
 /// <param name="launcherDetails">Details about the launcher configuration.</param>
@@ -33,13 +33,14 @@ public abstract class ForgeInstanceBase(
     ICustomLogger logger,
     Resolution? resolution = null,
     IProgressReporter? progressReporter = null)
-    : MinecraftInstance(id, gameVersion, gameDetails, pathDetails, launcherDetails, clientDetails, logger, resolution, progressReporter)
+    : MinecraftInstance(id, gameVersion, gameDetails, pathDetails, launcherDetails, clientDetails, logger, resolution,
+        progressReporter)
 {
     // The following methods are originally from https://github.com/CmlLib
     // but have been adapted to fit the current code structure and conventions.
-    
+
     /// <summary>
-    /// Maps processor data and starts the processors for a Forge installation.
+    ///     Maps processor data and starts the processors for a Forge installation.
     /// </summary>
     /// <param name="installProfile">The Forge version profile containing installation data.</param>
     /// <param name="installerDir">The directory where the installer is located.</param>
@@ -52,9 +53,9 @@ public abstract class ForgeInstanceBase(
         // Starts the processors using the mapped data.
         await StartProcessors(installProfile.Processors, mapData);
     }
-    
+
     /// <summary>
-    /// Maps processor data to a dictionary for use during installation.
+    ///     Maps processor data to a dictionary for use during installation.
     /// </summary>
     /// <param name="data">The JSON object containing processor data.</param>
     /// <param name="minecraftJar">The path to the Minecraft jar file.</param>
@@ -73,23 +74,23 @@ public abstract class ForgeInstanceBase(
                 continue;
 
             var fullPath = ForgeMapper.ToFullPath(value, PathDetails.LibrariesDir);
-            dataMapping[key] = fullPath == value 
-                ? Path.Combine(installDir, value.Trim('/')) 
+            dataMapping[key] = fullPath == value
+                ? Path.Combine(installDir, value.Trim('/'))
                 : fullPath;
         }
 
         // Adds additional required mappings.
         dataMapping.Add("SIDE", "client");
         dataMapping.Add("MINECRAFT_JAR", minecraftJar);
-        
-        string parentDir = Path.GetDirectoryName(installDir)!;
+
+        var parentDir = Path.GetDirectoryName(installDir)!;
         dataMapping.Add("INSTALLER", Path.Combine(parentDir, "installer.jar"));
 
         return dataMapping;
     }
-    
+
     /// <summary>
-    /// Starts the processors for the Forge installation.
+    ///     Starts the processors for the Forge installation.
     /// </summary>
     /// <param name="processors">The array of processors to execute.</param>
     /// <param name="mapData">The mapped processor data.</param>
@@ -97,7 +98,7 @@ public abstract class ForgeInstanceBase(
     {
         if (processors.ValueKind != JsonValueKind.Array)
             return;
-        
+
         var count = processors.EnumerateArray().Count();
         double processed = 0;
         // Iterates through each processor and starts it if necessary.
@@ -109,38 +110,36 @@ public abstract class ForgeInstanceBase(
                 processed++;
                 continue;
             }
-            
+
             if (!processor.TryGetProperty("sides", out var sides) || CheckClientSides(sides))
                 await StartProcessor(processor, mapData);
-            
+
             // Updates the progress reporter with the current progress.
-            double percent = processed / count * 100d;
-            _progressReporter?.UpdateStatusTranslated("instance.building", "forge", percent.ToString("0.00"));
+            var percent = processed / count * 100d;
+            _progressReporter?.Report(EProgressKind.INSTANCE_BUILDING_FORGE, percent);
         }
     }
-    
+
     /// <summary>
-    /// Checks if the client sides array contains any "server" entries.
+    ///     Checks if the client sides array contains any "server" entries.
     /// </summary>
     /// <param name="sides">The JSON element containing the client sides.</param>
     /// <returns>True if no "server" entries are found, otherwise false.</returns>
     private bool CheckClientSides(JsonElement sides)
     {
         if (sides.ValueKind == JsonValueKind.Array)
-        {
             foreach (var item in sides.EnumerateArray())
             {
                 if (item.GetString() == "server")
                     return false;
                 break;
             }
-        }
 
         return true;
     }
-    
+
     /// <summary>
-    /// Checks if the processor outputs are valid by verifying file existence and SHA1 hashes.
+    ///     Checks if the processor outputs are valid by verifying file existence and SHA1 hashes.
     /// </summary>
     /// <param name="outputs">The JSON object containing the processor outputs.</param>
     /// <param name="mapData">The mapped processor data.</param>
@@ -149,13 +148,12 @@ public abstract class ForgeInstanceBase(
     {
         if (outputs.ValueKind != JsonValueKind.Object)
             return true;
-        
+
         foreach (var item in outputs.EnumerateObject())
         {
-            
             // Interpolates the key and value using the mapped data.
-            string key = ForgeMapper.Interpolation(item.Name, mapData, true);
-            string value = ForgeMapper.Interpolation(item.Value.ToString(), mapData, true);
+            var key = ForgeMapper.Interpolation(item.Name, mapData, true);
+            var value = ForgeMapper.Interpolation(item.Value.ToString(), mapData, true);
 
             // Verifies the file existence and SHA1 hash.
             if (!File.Exists(key) || !FileSystemHelper.CheckSHA1(key, value))
@@ -164,9 +162,9 @@ public abstract class ForgeInstanceBase(
 
         return true;
     }
-        
+
     /// <summary>
-    /// Starts a single processor by executing its associated jar file.
+    ///     Starts a single processor by executing its associated jar file.
     /// </summary>
     /// <param name="processor">The JSON token representing the processor.</param>
     /// <param name="mapData">The mapped processor data.</param>
@@ -175,21 +173,21 @@ public abstract class ForgeInstanceBase(
         string? name = null;
         if (processor.TryGetProperty("jar", out var jarProp) && jarProp.ValueKind == JsonValueKind.String)
             name = jarProp.GetString();
-        
+
         if (string.IsNullOrEmpty(name))
             return;
 
         var jarPath = Path.Combine(PathDetails.LibrariesDir, PackageName.Parse(name).GetPath());
         var jarManifest = new ProcessorJarFile(jarPath).GetManifest();
 
-        if (jarManifest == null || !jarManifest.TryGetValue("Main-Class", out var mainClass) || string.IsNullOrEmpty(mainClass))
+        if (jarManifest == null || !jarManifest.TryGetValue("Main-Class", out var mainClass) ||
+            string.IsNullOrEmpty(mainClass))
             return;
 
         // Constructs the classpath for the processor.
         var classpath = new List<string>();
-        if (processor.TryGetProperty("classpath", out var classpathProp) && 
+        if (processor.TryGetProperty("classpath", out var classpathProp) &&
             classpathProp.ValueKind == JsonValueKind.Array)
-        {
             foreach (var libName in classpathProp.EnumerateArray())
             {
                 var libNameString = libName.GetString();
@@ -199,12 +197,12 @@ public abstract class ForgeInstanceBase(
                 var lib = Path.Combine(PathDetails.LibrariesDir, PackageName.Parse(libNameString).GetPath());
                 classpath.Add(lib);
             }
-        }
+
         classpath.Add(jarPath);
 
         // Constructs the arguments for the processor.
         string[] args = [];
-        if (processor.TryGetProperty("args", out var argsProp) && 
+        if (processor.TryGetProperty("args", out var argsProp) &&
             argsProp.ValueKind == JsonValueKind.Array)
         {
             var arrStrs = argsProp.EnumerateArray().Select(x => x.ToString()).ToArray();
@@ -214,26 +212,26 @@ public abstract class ForgeInstanceBase(
 
         await StartJava(classpath.ToArray(), mainClass, args);
     }
-    
+
     /// <summary>
-    /// Starts a Java process with the specified classpath, main class, and arguments.
+    ///     Starts a Java process with the specified classpath, main class, and arguments.
     /// </summary>
     /// <param name="classpath">The array of classpath entries.</param>
     /// <param name="mainClass">The main class to execute.</param>
     /// <param name="args">The arguments to pass to the Java process.</param>
     private async Task StartJava(string[] classpath, string mainClass, string[]? args)
     {
-        string defaultJava = string.IsNullOrEmpty(GameDetails.JavaPath) ? "java" : GameDetails.JavaPath;
+        var defaultJava = string.IsNullOrEmpty(GameDetails.JavaPath) ? "java" : GameDetails.JavaPath;
         if (string.IsNullOrEmpty(defaultJava))
             throw new InvalidOperationException("JavaPath was empty");
 
         _logger.LogDebug($"Forge processor java: {defaultJava}");
-        
+
         // Constructs the combined classpath string.
-        string combinedPath = string.Join(Path.PathSeparator.ToString(),
+        var combinedPath = string.Join(Path.PathSeparator.ToString(),
             classpath.Select(x =>
             {
-                string path = Path.GetFullPath(x);
+                var path = Path.GetFullPath(x);
                 if (path.Contains(' '))
                     return "\"" + path + "\"";
                 return path;
@@ -242,28 +240,26 @@ public abstract class ForgeInstanceBase(
         // Constructs the argument string for the Java process.
         _logger.LogDebug("Combined classpath: " + combinedPath);
         _logger.LogDebug("Main class: " + mainClass);
-        string arg = $"-cp {combinedPath} {mainClass}";
+        var arg = $"-cp {combinedPath} {mainClass}";
 
         if (args is { Length: > 0 })
         {
             arg += " " + string.Join(" ", args);
             _logger.LogDebug("Arguments: " + arg.Replace(combinedPath, "[classpath_placeholder]"));
         }
-        
-        Process process = new Process
+
+        var process = new Process
         {
             StartInfo = new ProcessStartInfo
             {
-                FileName = defaultJava,
-                Arguments = arg,
-                RedirectStandardError = true
+                FileName = defaultJava, Arguments = arg, RedirectStandardError = true
             }
         };
         process.Start();
         await process.WaitForExitAsync();
-        
+
 #if DEBUG
-        string o = await process.StandardError.ReadToEndAsync();
+        var o = await process.StandardError.ReadToEndAsync();
         if (!string.IsNullOrEmpty(o))
             _logger.LogError("Forge processor error: " + o);
 #endif

@@ -1,30 +1,32 @@
-﻿
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace Tavstal.BeaconSDK.Models.MojangApi.Meta.Library;
 
 /// <summary>
-/// Represents the operating system specification for a rule.
+///     Represents the operating system specification for a rule.
 /// </summary>
 public class RuleOs
 {
     /// <summary>
-    /// Gets or sets the name of the operating system.
+    ///     Initializes a new instance of the <see cref="RuleOs" /> class.
     /// </summary>
-    [JsonPropertyName("name")]
-    public string Name { get; set; }
+    public RuleOs()
+    {
+        Name = string.Empty;
+    }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="RuleOs"/> class.
-    /// </summary>
-    public RuleOs() { }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="RuleOs"/> class with a specified operating system name.
+    ///     Initializes a new instance of the <see cref="RuleOs" /> class with a specified operating system name.
     /// </summary>
     /// <param name="name">The name of the operating system.</param>
     public RuleOs(string name)
     {
         Name = name;
     }
+
+    /// <summary>
+    ///     Gets or sets the name of the operating system.
+    /// </summary>
+    [JsonPropertyName("name")]
+    public string Name { get; set; }
 }

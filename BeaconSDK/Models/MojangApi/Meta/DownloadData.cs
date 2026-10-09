@@ -1,38 +1,23 @@
-﻿
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace Tavstal.BeaconSDK.Models.MojangApi.Meta;
 
 /// <summary>
-/// Represents the data for a downloadable resource, including its hash, URL, and size.
+///     Represents the data for a downloadable resource, including its hash, URL, and size.
 /// </summary>
 public class DownloadData
 {
     /// <summary>
-    /// Gets or sets the SHA-1 hash of the downloadable resource.
+    ///     Initializes a new instance of the <see cref="DownloadData" /> class.
     /// </summary>
-    [JsonPropertyName("sha1")]
-    public string Sha1 { get; set; }
+    public DownloadData()
+    {
+        Sha1 = string.Empty;
+        Url = string.Empty;
+    }
 
     /// <summary>
-    /// Gets or sets the URL of the downloadable resource.
-    /// </summary>
-    [JsonPropertyName("url")]
-    public string Url { get; set; }
-
-    /// <summary>
-    /// Gets or sets the size of the downloadable resource in bytes.
-    /// </summary>
-    [JsonPropertyName("size")]
-    public int Size { get; set; }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="DownloadData"/> class.
-    /// </summary>
-    public DownloadData() { }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="DownloadData"/> class with specified properties.
+    ///     Initializes a new instance of the <see cref="DownloadData" /> class with specified properties.
     /// </summary>
     /// <param name="sha1">The SHA-1 hash of the downloadable resource.</param>
     /// <param name="url">The URL of the downloadable resource.</param>
@@ -43,4 +28,22 @@ public class DownloadData
         Url = url;
         Size = size;
     }
+
+    /// <summary>
+    ///     Gets or sets the SHA-1 hash of the downloadable resource.
+    /// </summary>
+    [JsonPropertyName("sha1")]
+    public string Sha1 { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the URL of the downloadable resource.
+    /// </summary>
+    [JsonPropertyName("url")]
+    public string Url { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the size of the downloadable resource in bytes.
+    /// </summary>
+    [JsonPropertyName("size")]
+    public int Size { get; set; }
 }

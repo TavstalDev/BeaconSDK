@@ -1,87 +1,86 @@
-﻿
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace Tavstal.BeaconSDK.Models.MojangApi.Meta;
 
 /// <summary>
-/// Represents metadata for a specific version of Minecraft, including arguments, assets, libraries, and other details.
+///     Represents metadata for a specific version of Minecraft, including arguments, assets, libraries, and other details.
 /// </summary>
 public class VersionMeta
 {
     /// <summary>
-    /// Gets or sets the new format of game arguments.
+    ///     Gets or sets the new format of game arguments.
     /// </summary>
     [JsonPropertyName("arguments")]
     public ArgumentMeta? ArgumentsNew { get; set; }
 
     /// <summary>
-    /// Gets or sets the legacy format of game arguments as a single string.
+    ///     Gets or sets the legacy format of game arguments as a single string.
     /// </summary>
     [JsonPropertyName("minecraftArguments")]
     public string? ArgumentsLegacy { get; set; }
 
     /// <summary>
-    /// Gets or sets the metadata for the asset index.
+    ///     Gets or sets the metadata for the asset index.
     /// </summary>
     [JsonPropertyName("assetIndex")]
-    public AssetMeta Index { get; set; }
+    public AssetMeta Index { get; set; } = new();
 
     /// <summary>
-    /// Gets or sets the name of the assets version.
+    ///     Gets or sets the name of the assets version.
     /// </summary>
     [JsonPropertyName("assets")]
-    public string Assets { get; set; }
+    public string Assets { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the compliance level of the version.
+    ///     Gets or sets the compliance level of the version.
     /// </summary>
     [JsonPropertyName("complianceLevel")]
     public int ComplianceLevel { get; set; }
 
     /// <summary>
-    /// Gets or sets the metadata for downloads associated with this version.
+    ///     Gets or sets the metadata for downloads associated with this version.
     /// </summary>
     [JsonPropertyName("downloads")]
-    public DownloadsMeta Downloads { get; set; }
+    public DownloadsMeta Downloads { get; set; } = new();
 
     /// <summary>
-    /// Gets or sets the unique identifier for this version.
+    ///     Gets or sets the unique identifier for this version.
     /// </summary>
     [JsonPropertyName("id")]
-    public string Id { get; set; }
+    public string Id { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the metadata for the required Java version.
+    ///     Gets or sets the metadata for the required Java version.
     /// </summary>
     [JsonPropertyName("javaVersion")]
-    public JavaVersionMeta JavaVersionMeta { get; set; }
+    public JavaVersionMeta JavaVersionMeta { get; set; } = new();
 
     /// <summary>
-    /// Gets or sets the list of libraries required for this version.
+    ///     Gets or sets the list of libraries required for this version.
     /// </summary>
     [JsonPropertyName("libraries")]
-    public List<LibraryMeta> Libraries { get; set; }
+    public List<LibraryMeta> Libraries { get; set; } = [];
 
     /// <summary>
-    /// Gets or sets the metadata for logging configuration.
+    ///     Gets or sets the metadata for logging configuration.
     /// </summary>
     [JsonPropertyName("logging")]
-    public LoggingMeta LoggingMeta { get; set; }
+    public LoggingMeta LoggingMeta { get; set; } = new();
 
     /// <summary>
-    /// Gets or sets the main class to be executed for this version.
+    ///     Gets or sets the main class to be executed for this version.
     /// </summary>
     [JsonPropertyName("mainClass")]
-    public string MainClass { get; set; }
+    public string MainClass { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the type of this version (e.g., release, snapshot).
+    ///     Gets or sets the type of this version (e.g., release, snapshot).
     /// </summary>
     [JsonPropertyName("type")]
-    public string Type { get; set; }
-    
+    public string Type { get; set; } = string.Empty;
+
     /// <summary>
-    /// Retrieves the game arguments as a single string.
+    ///     Retrieves the game arguments as a single string.
     /// </summary>
     /// <returns>A string containing the game arguments.</returns>
     /// <exception cref="Exception">Thrown if no arguments are available.</exception>
@@ -93,9 +92,9 @@ public class VersionMeta
             return ArgumentsLegacy;
         throw new Exception("Failed to get the game arguments");
     }
-    
+
     /// <summary>
-    /// Retrieves the JVM arguments as a list of strings.
+    ///     Retrieves the JVM arguments as a list of strings.
     /// </summary>
     /// <returns>A list of strings containing the JVM arguments.</returns>
     /// <exception cref="Exception">Thrown if no arguments are available.</exception>
