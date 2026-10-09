@@ -1,4 +1,4 @@
-﻿namespace BeaconSDK.Tests;
+﻿namespace Tavstal.BeaconSDK.Tests;
 
 public class UnitTest1
 {
