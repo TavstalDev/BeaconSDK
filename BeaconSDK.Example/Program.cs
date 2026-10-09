@@ -1,9 +1,21 @@
-﻿namespace BeaconSDK.Example;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
-class Program
+namespace Tavstal.BeaconSDK.Example;
+
+public class Program
 {
-    static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
-        Console.WriteLine("Hello, World!");
+        var hostBuilder = Host.CreateDefaultBuilder(args);
+        hostBuilder.SetupLogger();
+        hostBuilder = hostBuilder.ConfigureServices(services =>
+        {
+            services.AddBeaconServices("keysDir", "exampleApp");
+            services.AddHostedService<ExampleWorker>();
+        });
+        var host = hostBuilder.Build();
+        host.FinishBeaconSetup();
+        await host.RunAsync();
     }
 }
