@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Security;
 using System.Security.Authentication;
+using System.Text;
 using Tavstal.BeaconSDK.Helpers.Platform;
 using Tavstal.BeaconSDK.Models;
 using Tavstal.BeaconSDK.Models.Logging;
@@ -8,15 +9,15 @@ using Tavstal.BeaconSDK.Services.Abstractions;
 
 namespace Tavstal.BeaconSDK.Services.Implementations;
 
-/// <inheritdoc/>
+/// <inheritdoc />
 public class HttpService : IHttpService
 {
-    private readonly ICustomLogger _logger;
-    private readonly HttpClient _httpClient;
     private const int MaxParallelDownloads = 4;
-    
+    private readonly HttpClient _httpClient;
+    private readonly ICustomLogger _logger;
+
     /// <summary>
-    /// Initializes a new instance of the <see cref="HttpService"/> class.
+    ///     Initializes a new instance of the <see cref="HttpService" /> class.
     /// </summary>
     /// <param name="logger">Logger instance used to record diagnostic and error messages for HTTP operations.</param>
     public HttpService(ICustomLogger<HttpService> logger)
@@ -25,7 +26,7 @@ public class HttpService : IHttpService
         _httpClient = CreateHttpClient();
     }
 
-    /// <inheritdoc/>
+    /// <inheritdoc />
     public HttpClient CreateHttpClient()
     {
         HttpClient client;
@@ -33,10 +34,7 @@ public class HttpService : IHttpService
         {
             var handler = new SocketsHttpHandler
             {
-                SslOptions = new SslClientAuthenticationOptions
-                {
-                    EnabledSslProtocols = SslProtocols.Tls12
-                },
+                SslOptions = new SslClientAuthenticationOptions { EnabledSslProtocols = SslProtocols.Tls12 },
                 AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
                 AllowAutoRedirect = true
             };
@@ -49,12 +47,13 @@ public class HttpService : IHttpService
         }
 
         client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
-        client.DefaultRequestHeaders.UserAgent.ParseAdd("KonkordLauncher/2.0.0 (+https://github.com/TavstalDev/KonkordLauncher)");
+        client.DefaultRequestHeaders.UserAgent.ParseAdd(
+            "KonkordLauncher/2.0.0 (+https://github.com/TavstalDev/KonkordLauncher)");
         client.Timeout = TimeSpan.FromSeconds(120);
         return client;
     }
 
-    /// <inheritdoc/>
+    /// <inheritdoc />
     public async Task<HttpResponseMessage?> GetAsync(string url, CancellationToken cancellationToken = default)
     {
         try
@@ -67,7 +66,7 @@ public class HttpService : IHttpService
         }
         catch (HttpRequestException ex)
         {
-            _logger.LogError($"HTTP request to {url} failed with { ex.StatusCode}: {ex.Message}");
+            _logger.LogError($"HTTP request to {url} failed with {ex.StatusCode}: {ex.Message}");
             return null;
         }
         catch (Exception ex)
@@ -77,7 +76,7 @@ public class HttpService : IHttpService
         }
     }
 
-    /// <inheritdoc/>
+    /// <inheritdoc />
     public async Task<string?> GetStringAsync(string url, CancellationToken cancellationToken = default)
     {
         try
@@ -90,7 +89,7 @@ public class HttpService : IHttpService
         }
         catch (HttpRequestException ex)
         {
-            _logger.LogError($"HTTP request to {url} failed with { ex.StatusCode}: {ex.Message}");
+            _logger.LogError($"HTTP request to {url} failed with {ex.StatusCode}: {ex.Message}");
             return null;
         }
         catch (Exception ex)
@@ -100,19 +99,20 @@ public class HttpService : IHttpService
         }
     }
 
-    /// <inheritdoc/>
-    public async Task<string?> GetStringAsync(string url, IProgress<double>? progress, CancellationToken cancellationToken = default)
+    /// <inheritdoc />
+    public async Task<string?> GetStringAsync(string url, IProgress<double>? progress,
+        CancellationToken cancellationToken = default)
     {
         try
         {
-            HttpResponseMessage response = await _httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            var response = await _httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
             response.EnsureSuccessStatusCode();
 
-            long? contentLength = response.Content.Headers.ContentLength;
+            var contentLength = response.Content.Headers.ContentLength;
 
-            await using Stream responseStream = await response.Content.ReadAsStreamAsync(cancellationToken);
+            await using var responseStream = await response.Content.ReadAsStreamAsync(cancellationToken);
             using var memoryStream = new MemoryStream();
-            byte[] buffer = new byte[4096];
+            var buffer = new byte[4096];
             int bytesRead;
             long totalBytesRead = 0;
 
@@ -123,12 +123,12 @@ public class HttpService : IHttpService
 
                 if (progress != null && contentLength.HasValue)
                 {
-                    double percentage = (double)totalBytesRead / contentLength.Value * 100;
+                    var percentage = (double)totalBytesRead / contentLength.Value * 100;
                     progress.Report(percentage);
                 }
             }
 
-            return System.Text.Encoding.UTF8.GetString(memoryStream.ToArray());
+            return Encoding.UTF8.GetString(memoryStream.ToArray());
         }
         catch (OperationCanceledException)
         {
@@ -136,7 +136,7 @@ public class HttpService : IHttpService
         }
         catch (HttpRequestException ex)
         {
-             _logger.LogError($"HTTP request to {url} failed with { ex.StatusCode}: {ex.Message}");
+            _logger.LogError($"HTTP request to {url} failed with {ex.StatusCode}: {ex.Message}");
             return null;
         }
         catch (Exception ex)
@@ -146,7 +146,7 @@ public class HttpService : IHttpService
         }
     }
 
-    /// <inheritdoc/>
+    /// <inheritdoc />
     public async Task<byte[]?> GetByteArrayAsync(string url, CancellationToken cancellationToken = default)
     {
         try
@@ -159,7 +159,7 @@ public class HttpService : IHttpService
         }
         catch (HttpRequestException ex)
         {
-             _logger.LogError($"HTTP request to {url} failed with { ex.StatusCode}: {ex.Message}");
+            _logger.LogError($"HTTP request to {url} failed with {ex.StatusCode}: {ex.Message}");
             return null;
         }
         catch (Exception ex)
@@ -169,7 +169,7 @@ public class HttpService : IHttpService
         }
     }
 
-    /// <inheritdoc/>
+    /// <inheritdoc />
     public async Task<Stream?> GetStreamAsync(string url, CancellationToken cancellationToken = default)
     {
         try
@@ -182,7 +182,7 @@ public class HttpService : IHttpService
         }
         catch (HttpRequestException ex)
         {
-             _logger.LogError($"HTTP request to {url} failed with { ex.StatusCode}: {ex.Message}");
+            _logger.LogError($"HTTP request to {url} failed with {ex.StatusCode}: {ex.Message}");
             return null;
         }
         catch (Exception ex)
@@ -192,20 +192,21 @@ public class HttpService : IHttpService
         }
     }
 
-    /// <inheritdoc/>
-    public async Task<string?> DownloadFileAsync(string url, string filePath, IProgress<double>? progress, CancellationToken cancellationToken = default)
+    /// <inheritdoc />
+    public async Task<string?> DownloadFileAsync(string url, string filePath, IProgress<double>? progress,
+        CancellationToken cancellationToken = default)
     {
         try
         {
-            HttpResponseMessage response = await _httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            var response = await _httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
             response.EnsureSuccessStatusCode();
 
-            long? contentLength = response.Content.Headers.ContentLength;
+            var contentLength = response.Content.Headers.ContentLength;
 
-            await using Stream responseStream = await response.Content.ReadAsStreamAsync(cancellationToken);
+            await using var responseStream = await response.Content.ReadAsStreamAsync(cancellationToken);
             await using var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.Read);
 
-            byte[] buffer = new byte[8192]; // Use a larger buffer for better performance
+            var buffer = new byte[8192]; // Use a larger buffer for better performance
             int bytesRead;
             long totalBytesRead = 0;
 
@@ -216,7 +217,7 @@ public class HttpService : IHttpService
 
                 if (progress != null && contentLength.HasValue)
                 {
-                    double percentage = (double)totalBytesRead / contentLength.Value * 100;
+                    var percentage = (double)totalBytesRead / contentLength.Value * 100;
                     progress.Report(percentage);
                 }
             }
@@ -229,7 +230,7 @@ public class HttpService : IHttpService
         }
         catch (HttpRequestException ex)
         {
-             _logger.LogError($"HTTP request to {url} failed with { ex.StatusCode}: {ex.Message}");
+            _logger.LogError($"HTTP request to {url} failed with {ex.StatusCode}: {ex.Message}");
             return null;
         }
         catch (Exception ex)
@@ -239,8 +240,9 @@ public class HttpService : IHttpService
         }
     }
 
-    /// <inheritdoc/>
-    public async Task ParallelDownloadFilesAsync(List<DownloadEntry> entries, CancellationToken cancellationToken = default)
+    /// <inheritdoc />
+    public async Task ParallelDownloadFilesAsync(List<DownloadEntry> entries,
+        CancellationToken cancellationToken = default)
     {
         var semaphore = new SemaphoreSlim(MaxParallelDownloads);
         var downloadTasks = new List<Task>();
@@ -265,8 +267,9 @@ public class HttpService : IHttpService
         await Task.WhenAll(downloadTasks);
     }
 
-    /// <inheritdoc/>
-    public async Task<HttpResponseMessage?> PostAsync(string url, HttpContent? content, CancellationToken cancellationToken = default)
+    /// <inheritdoc />
+    public async Task<HttpResponseMessage?> PostAsync(string url, HttpContent? content,
+        CancellationToken cancellationToken = default)
     {
         try
         {
@@ -278,7 +281,7 @@ public class HttpService : IHttpService
         }
         catch (HttpRequestException ex)
         {
-             _logger.LogError($"HTTP request to {url} failed with { ex.StatusCode}: {ex.Message}");
+            _logger.LogError($"HTTP request to {url} failed with {ex.StatusCode}: {ex.Message}");
             return null;
         }
         catch (Exception ex)

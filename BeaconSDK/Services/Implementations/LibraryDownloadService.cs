@@ -20,15 +20,15 @@ using CoreJsonContext = Tavstal.BeaconSDK.Models.Json.CoreJsonContext;
 
 namespace Tavstal.BeaconSDK.Services.Implementations;
 
-/// <inheritdoc/>
+/// <inheritdoc />
 public class LibraryDownloadService : ILibraryDownloadService
 {
-    private readonly ICustomLogger _logger;
-    private readonly IHttpService _httpService;
     private const int MaxParallelDownloads = 4;
+    private readonly IHttpService _httpService;
+    private readonly ICustomLogger _logger;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="LibraryDownloadService"/> class.
+    ///     Initializes a new instance of the <see cref="LibraryDownloadService" /> class.
     /// </summary>
     /// <param name="logger">Logger used to record diagnostics and errors during library download operations.</param>
     /// <param name="httpService">HTTP service used to download files and fetch remote content.</param>
@@ -38,7 +38,7 @@ public class LibraryDownloadService : ILibraryDownloadService
         _httpService = httpService;
     }
 
-    /// <inheritdoc/>
+    /// <inheritdoc />
     public async Task<VersionMeta?> DownloadVersionAsync(VersionDetails versionData, MinecraftVersion minecraftVersion,
         IProgressReporter? progressReporter = null, CancellationToken cancellationToken = default)
     {
@@ -47,7 +47,6 @@ public class LibraryDownloadService : ILibraryDownloadService
             versionData.VanillaJsonPath,
             minecraftVersion.Url,
             string.Empty,
-            "version_json",
             progressReporter,
             CoreJsonContext.Default.VersionMeta, cancellationToken);
 
@@ -58,47 +57,45 @@ public class LibraryDownloadService : ILibraryDownloadService
             versionData.VanillaJarPath,
             versionResult.Downloads.Client.Url,
             string.Empty, // allow modified jar usage
-            "version_jar",
-            progressReporter, cancellationToken);
+            progressReporter,
+            cancellationToken);
 
         // Create default JavaVersionMeta if null
         // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
         // ReSharper disable once ConvertIfStatementToNullCoalescingAssignment
         if (versionResult.JavaVersionMeta == null)
-            versionResult.JavaVersionMeta = new JavaVersionMeta
-            {
-                MajorVersion = 8
-            };
+            versionResult.JavaVersionMeta = new JavaVersionMeta { MajorVersion = 8 };
 
         return versionResult;
     }
 
-    /// <inheritdoc/>
+    /// <inheritdoc />
     public async Task DownloadAssetsAsync(VersionMeta versionMeta, string assetsDir, string gameDir,
         IProgressReporter? progressReporter = null, CancellationToken cancellationToken = default)
     {
         // AssetIndex
-        string assetIndexId = versionMeta.Index.Id;
-        string assetPath = Path.Combine(assetsDir, $"indexes/{assetIndexId}.json");
+        var assetIndexId = versionMeta.Index.Id;
+        var assetPath = Path.Combine(assetsDir, $"indexes/{assetIndexId}.json");
 
-        string? resultJson = await DownloadAndSaveFileAsync(
+        var resultJson = await DownloadAndSaveFileAsync(
             assetPath,
             versionMeta.Index.Url,
             versionMeta.Index.Sha1,
-            "asset_index_json",
             progressReporter,
             cancellationToken);
 
         if (resultJson == null) return;
 
-        string assetsType = versionMeta.Assets;
+        var assetsType = versionMeta.Assets;
 
         using var doc = JsonDocument.Parse(resultJson);
-        if (!doc.RootElement.TryGetProperty("objects", out JsonElement assetJToken) || assetJToken.ValueKind != JsonValueKind.Object)
-            throw new Exception("Asset JToken is null or invalid, something went wrong while reading the asset index JSON.");
+        if (!doc.RootElement.TryGetProperty("objects", out var assetJToken) ||
+            assetJToken.ValueKind != JsonValueKind.Object)
+            throw new Exception(
+                "Asset JToken is null or invalid, something went wrong while reading the asset index JSON.");
 
         // Assets
-        progressReporter?.UpdateStatusTranslated("instance.reading.assets");
+        progressReporter?.Report(EProgressKind.INSTANCE_READING_ASSETS, 0);
 
         var semaphore = new SemaphoreSlim(MaxParallelDownloads);
         long downloadedBytes = 0;
@@ -109,21 +106,21 @@ public class LibraryDownloadService : ILibraryDownloadService
             // Olds Assets
             case "pre-1.6":
             {
-                string resourcesDir = Path.Combine(gameDir, "resources");
+                var resourcesDir = Path.Combine(gameDir, "resources");
                 Directory.CreateDirectory(resourcesDir);
 
                 // For some reason pre-1.6 still wants to use icons from legacy folder
                 // So we fix this by copying the icon files to the legacy folder
-                string legacyDir = Path.Combine(assetsDir, "virtual", "legacy");
+                var legacyDir = Path.Combine(assetsDir, "virtual", "legacy");
                 Directory.CreateDirectory(legacyDir);
 
-                foreach (JsonProperty token in assetJToken.EnumerateObject())
+                foreach (var token in assetJToken.EnumerateObject())
                 {
-                    if (!token.Value.TryGetProperty("hash", out JsonElement hashElement)) continue;
+                    if (!token.Value.TryGetProperty("hash", out var hashElement)) continue;
                     var hash = hashElement.GetString();
                     if (string.IsNullOrEmpty(hash)) continue;
 
-                    string rawFilePath = token.Name;
+                    var rawFilePath = token.Name;
 
                     var fileName = Path.GetFileName(rawFilePath);
                     var fileDirectory = Path.GetDirectoryName(rawFilePath);
@@ -162,18 +159,14 @@ public class LibraryDownloadService : ILibraryDownloadService
                                     File.Copy(objectPath, legacyObjectPath);
                             }
 
-                            int size = 0;
-                            if (token.Value.TryGetProperty("size", out JsonElement sizeElement))
-                            {
+                            var size = 0;
+                            if (token.Value.TryGetProperty("size", out var sizeElement))
                                 sizeElement.TryGetInt32(out size);
-                            }
 
                             Interlocked.Add(ref downloadedBytes, size);
 
-                            double percent = downloadedBytes / (double)versionMeta.Index.TotalSize * 100d;
-                            progressReporter?.ReportProgress(percent);
-                            progressReporter?.UpdateStatusTranslated("instance.downloading.assets",
-                                percent.ToString("0.00"));
+                            var percent = downloadedBytes / (double)versionMeta.Index.TotalSize * 100d;
+                            progressReporter?.Report(EProgressKind.INSTANCE_DOWNLOADING_ASSETS, percent);
                         }
                         finally
                         {
@@ -188,16 +181,16 @@ public class LibraryDownloadService : ILibraryDownloadService
             // Legacy Assets
             case "legacy":
             {
-                string resourcesDir = Path.Combine(assetsDir, "virtual", "legacy");
+                var resourcesDir = Path.Combine(assetsDir, "virtual", "legacy");
                 Directory.CreateDirectory(resourcesDir);
 
-                foreach (JsonProperty token in assetJToken.EnumerateObject())
+                foreach (var token in assetJToken.EnumerateObject())
                 {
-                    if (!token.Value.TryGetProperty("hash", out JsonElement hashElement)) continue;
+                    if (!token.Value.TryGetProperty("hash", out var hashElement)) continue;
                     var hash = hashElement.GetString();
                     if (string.IsNullOrEmpty(hash)) continue;
 
-                    string rawFilePath = token.Name;
+                    var rawFilePath = token.Name;
 
                     var fileName = Path.GetFileName(rawFilePath);
                     var fileDirectory = Path.GetDirectoryName(rawFilePath);
@@ -222,18 +215,14 @@ public class LibraryDownloadService : ILibraryDownloadService
                                 objectPath,
                                 null, cancellationToken);
 
-                            int size = 0;
-                            if (token.Value.TryGetProperty("size", out JsonElement sizeElement))
-                            {
+                            var size = 0;
+                            if (token.Value.TryGetProperty("size", out var sizeElement))
                                 sizeElement.TryGetInt32(out size);
-                            }
 
                             Interlocked.Add(ref downloadedBytes, size);
 
-                            double percent = downloadedBytes / (double)versionMeta.Index.TotalSize * 100d;
-                            progressReporter?.ReportProgress(percent);
-                            progressReporter?.UpdateStatusTranslated("instance.downloading.assets",
-                                percent.ToString("0.00"));
+                            var percent = downloadedBytes / (double)versionMeta.Index.TotalSize * 100d;
+                            progressReporter?.Report(EProgressKind.INSTANCE_DOWNLOADING_ASSETS, percent);
                         }
                         finally
                         {
@@ -249,13 +238,13 @@ public class LibraryDownloadService : ILibraryDownloadService
             default:
             {
                 // Asset Dir
-                string assetObjectDir = Path.Combine(assetsDir, "objects");
+                var assetObjectDir = Path.Combine(assetsDir, "objects");
                 Directory.CreateDirectory(assetObjectDir);
 
                 // Modern structure in Minecraft asset index is also a dictionary of properties, same as pre-1.6/legacy
-                foreach (JsonProperty token in assetJToken.EnumerateObject())
+                foreach (var token in assetJToken.EnumerateObject())
                 {
-                    if (!token.Value.TryGetProperty("hash", out JsonElement hashElement)) continue;
+                    if (!token.Value.TryGetProperty("hash", out var hashElement)) continue;
                     var hash = hashElement.GetString();
                     if (string.IsNullOrEmpty(hash)) continue;
 
@@ -277,18 +266,14 @@ public class LibraryDownloadService : ILibraryDownloadService
                                 objectPath,
                                 null, cancellationToken);
 
-                            int size = 0;
-                            if (token.Value.TryGetProperty("size", out JsonElement sizeElement))
-                            {
+                            var size = 0;
+                            if (token.Value.TryGetProperty("size", out var sizeElement))
                                 sizeElement.TryGetInt32(out size);
-                            }
 
                             Interlocked.Add(ref downloadedBytes, size);
 
-                            double percent = downloadedBytes / (double)versionMeta.Index.TotalSize * 100d;
-                            progressReporter?.ReportProgress(percent);
-                            progressReporter?.UpdateStatusTranslated("instance.downloading.assets",
-                                percent.ToString("0.00"));
+                            var percent = downloadedBytes / (double)versionMeta.Index.TotalSize * 100d;
+                            progressReporter?.Report(EProgressKind.INSTANCE_DOWNLOADING_ASSETS, percent);
                         }
                         finally
                         {
@@ -305,27 +290,26 @@ public class LibraryDownloadService : ILibraryDownloadService
         await Task.WhenAll(tasks);
     }
 
-    /// <inheritdoc/>
+    /// <inheritdoc />
     public async Task<LaunchArg?> DownloadLoggingAsync(VersionMeta versionMeta, string versionDirectory, string gameDir,
         IProgressReporter? progressReporter = null, CancellationToken cancellationToken = default)
     {
         // ReSharper disable once ArrangeNullCheckingPattern
         if (versionMeta.LoggingMeta is not { }) return null;
 
-        string logFilePath = Path.Combine(versionDirectory, versionMeta.LoggingMeta.Client.File.Id);
+        var logFilePath = Path.Combine(versionDirectory, versionMeta.LoggingMeta.Client.File.Id);
 
-        string? logContent = await DownloadAndSaveFileAsync(
+        var logContent = await DownloadAndSaveFileAsync(
             logFilePath,
             versionMeta.LoggingMeta.Client.File.Url,
             string.Empty,
-            "logging",
             progressReporter,
             cancellationToken);
 
         if (logContent == null) return null;
 
         // FIX LOG LOCATION
-        string modifiedContent = logContent
+        var modifiedContent = logContent
             .Replace("fileName=\"logs", $"fileName=\"{gameDir}/logs")
             .Replace("filePattern=\"logs", $"filePattern=\"{gameDir}/logs");
 
@@ -334,32 +318,31 @@ public class LibraryDownloadService : ILibraryDownloadService
         return new LaunchArg(versionMeta.LoggingMeta.Client.Argument.Replace("${path}", logFilePath), 2);
     }
 
-    /// <inheritdoc/>
+    /// <inheritdoc />
     public async Task DownloadMappingsAsync(VersionMeta versionMeta, VersionDetails versionData,
         IProgressReporter? progressReporter = null, CancellationToken cancellationToken = default)
     {
         // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
         if (versionMeta.Downloads.ClientMappings == null) return;
 
-        string clientMappinsPath = Path.Combine(versionData.VanillaVersionDirectory, "client.txt");
+        var clientMappinsPath = Path.Combine(versionData.VanillaVersionDirectory, "client.txt");
 
         await DownloadAndSaveFileAsync(
             clientMappinsPath,
             versionMeta.Downloads.ClientMappings.Url,
             versionMeta.Downloads.ClientMappings.Sha1,
-            "client_mappings",
             progressReporter,
-             cancellationToken); // Deserialize to string
+            cancellationToken); // Deserialize to string
     }
 
-    /// <inheritdoc/>
+    /// <inheritdoc />
     public async Task<string?> ExtractLaunchWrapperAsync(string libsDir, CancellationToken cancellationToken = default)
     {
-        string targetDir = Path.Combine(libsDir, "io", "github", "tavstaldev", "launchWrapper");
+        var targetDir = Path.Combine(libsDir, "io", "github", "tavstaldev", "launchWrapper");
         Directory.CreateDirectory(targetDir);
 
         const string targetAssetName = "launchWrapper-1.0.jar";
-        string targetFile = Path.Combine(targetDir, targetAssetName);
+        var targetFile = Path.Combine(targetDir, targetAssetName);
         var assembly = Assembly.GetExecutingAssembly();
         var stream = assembly.GetManifestResourceStream("Tavstal.BeaconSDK.Assets.launchWrapper-1.0.jar");
         if (stream == null)
@@ -368,8 +351,8 @@ public class LibraryDownloadService : ILibraryDownloadService
 
         if (File.Exists(targetFile))
         {
-            string? existingHash = await FileSystemHelper.GetFileHashAsync(targetFile);
-            string? expectedHash = await FileSystemHelper.GetFileHashAsync(stream);
+            var existingHash = await FileSystemHelper.GetFileHashAsync(targetFile);
+            var expectedHash = await FileSystemHelper.GetFileHashAsync(stream);
             if (existingHash == expectedHash && expectedHash != null)
                 return targetFile;
             FileSystemHelper.DeleteFile(targetFile);
@@ -380,18 +363,17 @@ public class LibraryDownloadService : ILibraryDownloadService
         return targetFile;
     }
 
-    /// <inheritdoc/>
+    /// <inheritdoc />
     public async Task<List<string>> DownloadLibrariesAsync(EMinecraftKind kind, VersionDetails versionData,
         List<LibraryMeta> mcLibs, List<string> classPath,
         string cacheDir, string libsDir, IProgressReporter? progressReporter = null,
         CancellationToken cancellationToken = default)
     {
-        progressReporter?.ReportProgress(0);
-        progressReporter?.UpdateStatusTranslated("instance.reading.libraries");
+        progressReporter?.Report(EProgressKind.INSTANCE_READING_LIBRARIES, 0);
 
         var safeClassPath = new ConcurrentBag<string>(classPath);
-        string jsonKey = $"{versionData.MinecraftVersion}-{kind}-{versionData.CustomVersion}";
-        string librarySizeCacheFilePath = Path.Combine(cacheDir, "libsizes.json");
+        var jsonKey = $"{versionData.MinecraftVersion}-{kind}-{versionData.CustomVersion}";
+        var librarySizeCacheFilePath = Path.Combine(cacheDir, "libsizes.json");
         JsonObject cacheObject;
         if (!File.Exists(librarySizeCacheFilePath)) // Create empty cache file if it does not exist
         {
@@ -400,7 +382,7 @@ public class LibraryDownloadService : ILibraryDownloadService
         }
         else
         {
-            string json = await File.ReadAllTextAsync(librarySizeCacheFilePath, cancellationToken);
+            var json = await File.ReadAllTextAsync(librarySizeCacheFilePath, cancellationToken);
             cacheObject = JsonNode.Parse(json)?.AsObject()!;
         }
 
@@ -466,7 +448,7 @@ public class LibraryDownloadService : ILibraryDownloadService
                     {
                         var classifier = lib.Downloads.Classifiers.GetOsNative();
                         var libJarFilePath = Path.Combine(libsDir, classifier.Path);
-                        await DownloadNativeFileAsync(classifier.Url, libJarFilePath, lib.Name, versionData.NativesDir,
+                        await DownloadNativeFileAsync(classifier.Url, libJarFilePath, versionData.NativesDir,
                             progressReporter, cancellationToken);
                         Interlocked.Add(ref downloadedBytes, classifier.Size);
 
@@ -476,31 +458,30 @@ public class LibraryDownloadService : ILibraryDownloadService
                 }
                 finally
                 {
-                    progressReporter?.ReportProgress(downloadedBytes / (double)overallLibrarySize * 100d);
+                    progressReporter?.Report(downloadedBytes / (double)overallLibrarySize * 100d);
                     semaphore.Release();
-                    progressReporter?.CompleteTask();
+                    progressReporter?.ReportTaskCompleted();
                 }
             }, cancellationToken);
             tasks.Add(t);
         }
 
-        progressReporter?.SetTargetTasks(null);
-        progressReporter?.SetTargetTasks(tasks.Count);
+        progressReporter?.ReportExpectedTask(tasks.Count);
         await Task.WhenAll(tasks);
-        progressReporter?.SetTargetTasks(null);
+        progressReporter?.ReportExpectedTask(null);
         return safeClassPath.ToList();
     }
 
     /// <summary>
-    /// Downloads a library artifact to the local libraries directory if it is not already present.
+    ///     Downloads a library artifact to the local libraries directory if it is not already present.
     /// </summary>
     /// <param name="lib">The library metadata describing the artifact to download.</param>
     /// <param name="libsDir">The root libraries directory where the artifact should be stored.</param>
     /// <param name="progressReporter">Optional progress reporter used to report download status.</param>
     /// <param name="cancellationToken">Cancellation token observed during the download operation.</param>
     /// <returns>
-    /// A task that resolves to the local file path of the downloaded artifact, or an empty string
-    /// if the library does not contain an artifact.
+    ///     A task that resolves to the local file path of the downloaded artifact, or an empty string
+    ///     if the library does not contain an artifact.
     /// </returns>
     private async Task<string> DownloadLibraryArtifactAsync(LibraryMeta lib, string libsDir,
         IProgressReporter? progressReporter,
@@ -509,42 +490,40 @@ public class LibraryDownloadService : ILibraryDownloadService
         if (lib.Downloads.Artifact == null)
             return string.Empty;
 
-        string localPath = lib.Downloads.Artifact.Path;
-        string libDirPath = Path.Combine(libsDir, Path.GetDirectoryName(localPath)!);
+        var localPath = lib.Downloads.Artifact.Path;
+        var libDirPath = Path.Combine(libsDir, Path.GetDirectoryName(localPath)!);
         Directory.CreateDirectory(libDirPath);
 
-        string libFilePath = Path.Combine(libsDir, localPath);
+        var libFilePath = Path.Combine(libsDir, localPath);
         if (!File.Exists(libFilePath) && !string.IsNullOrEmpty(lib.Downloads.Artifact.Url))
         {
-            Progress<double> progress = new Progress<double>();
+            var progress = new Progress<double>();
             progress.ProgressChanged += (_, e) =>
             {
-                progressReporter?.ReportProgress(e);
-                progressReporter?.UpdateStatusTranslated("instance.downloading.libraries", lib.Name,
-                    e.ToString("0.00"));
+                progressReporter?.Report(EProgressKind.INSTANCE_DOWNLOADING_LIBRARIES, e);
             };
 
             await _httpService.DownloadFileAsync(lib.Downloads.Artifact.Url, libFilePath, progress, cancellationToken);
         }
+
         return libFilePath;
     }
 
     /// <summary>
-    /// Downloads a native library file and extracts its native contents into the specified native directory.
+    ///     Downloads a native library file and extracts its native contents into the specified native directory.
     /// </summary>
     /// <param name="url">The URL of the native archive to download.</param>
     /// <param name="filePath">The local path where the downloaded native archive should be stored.</param>
-    /// <param name="libName">The library name used for progress reporting.</param>
     /// <param name="nativeDir">The directory where extracted native files should be placed.</param>
     /// <param name="progressReporter">Optional progress reporter used to report download status.</param>
     /// <param name="cancellationToken">Cancellation token observed during the download operation.</param>
     /// <returns>A task that completes when the native file has been downloaded and extracted.</returns>
-    private async Task DownloadNativeFileAsync(string url, string filePath, string libName, string nativeDir,
+    private async Task DownloadNativeFileAsync(string url, string filePath, string nativeDir,
         IProgressReporter? progressReporter, CancellationToken cancellationToken = default)
     {
         try
         {
-            string libDir = Path.GetDirectoryName(filePath)!;
+            var libDir = Path.GetDirectoryName(filePath)!;
             Directory.CreateDirectory(libDir);
 
             if (File.Exists(filePath))
@@ -553,11 +532,10 @@ public class LibraryDownloadService : ILibraryDownloadService
                 return;
             }
 
-            Progress<double> progress = new Progress<double>();
+            var progress = new Progress<double>();
             progress.ProgressChanged += (_, e) =>
             {
-                progressReporter?.ReportProgress(e);
-                progressReporter?.UpdateStatusTranslated("instance.downloading.natives", libName, e.ToString("0.00"));
+                progressReporter?.Report(EProgressKind.INSTANCE_DOWNLOADING_NATIVES, e);
             };
 
             await _httpService.DownloadFileAsync(url, filePath, progress, cancellationToken);
@@ -572,47 +550,51 @@ public class LibraryDownloadService : ILibraryDownloadService
     }
 
     /// <summary>
-    /// Downloads a file from a URL, deserializes its content, and saves it locally if it doesn't already exist.
+    ///     Downloads a file from a URL, deserializes its content, and saves it locally if it doesn't already exist.
     /// </summary>
     /// <typeparam name="T">The type to which the file content will be deserialized.</typeparam>
     /// <param name="filePath">The local file path where the file will be saved.</param>
     /// <param name="url">The URL from which the file will be downloaded.</param>
-    /// <param name="sha1">The expected SHA1 hash of the file for integrity verification. If null or empty, the hash check is skipped.</param>
-    /// <param name="statusKey">A key used for progress reporting and status messages.</param>
+    /// <param name="sha1">
+    ///     The expected SHA1 hash of the file for integrity verification. If null or empty, the hash check is
+    ///     skipped.
+    /// </param>
     /// <param name="progressReporter">An optional progress reporter for tracking download progress.</param>
     /// <param name="jsonTypeInfo">A JSON type information provider for customizing JSON serialization behavior.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    /// <returns>The deserialized object of type <typeparamref name="T"/> or null if the operation fails.</returns>
-    private async Task<T?> DownloadAndSaveFileAsync<T>(string filePath, string url, string sha1, string statusKey,
-        IProgressReporter? progressReporter, JsonTypeInfo<T> jsonTypeInfo, CancellationToken cancellationToken = default)
+    /// <returns>The deserialized object of type <typeparamref name="T" /> or null if the operation fails.</returns>
+    private async Task<T?> DownloadAndSaveFileAsync<T>(string filePath, string url, string sha1,
+        IProgressReporter? progressReporter, JsonTypeInfo<T> jsonTypeInfo,
+        CancellationToken cancellationToken = default)
     {
         try
         {
             if (File.Exists(filePath) && (string.IsNullOrEmpty(sha1) || FileSystemHelper.CheckSHA1(filePath, sha1)))
             {
-                progressReporter?.UpdateStatusTranslated($"instance.reading.{statusKey}", Path.GetFileName(filePath));
-                string jsonResult = await File.ReadAllTextAsync(filePath, cancellationToken);
+                progressReporter?.Report(0, Path.GetFileName(filePath), false);
+                var jsonResult = await File.ReadAllTextAsync(filePath, cancellationToken);
                 return JsonSerializer.Deserialize(jsonResult, jsonTypeInfo);
             }
 
-            progressReporter?.ReportProgress(0);
-            Progress<double> progress = new Progress<double>();
+            var progress = new Progress<double>();
             progress.ProgressChanged += (_, e) =>
             {
-                progressReporter?.ReportProgress(e);
-                progressReporter?.UpdateStatusTranslated($"instance.downloading.{statusKey}",
-                    Path.GetFileName(filePath),
-                    e.ToString("0.00"));
+                progressReporter?.Report(e, Path.GetFileName(filePath));
             };
 
-            string? result = await _httpService.GetStringAsync(url, progress, cancellationToken);
+            var result = await _httpService.GetStringAsync(url, progress, cancellationToken);
             if (result == null)
                 return default;
 
-            T? deserializedResult = JsonSerializer.Deserialize(result, jsonTypeInfo);
+            var deserializedResult = JsonSerializer.Deserialize(result, jsonTypeInfo);
             if (deserializedResult != null)
+            {
+                var fileDir = Path.GetDirectoryName(filePath);
+                if (!string.IsNullOrWhiteSpace(fileDir))
+                    Directory.CreateDirectory(fileDir);
                 await File.WriteAllTextAsync(filePath, result, cancellationToken);
-            
+            }
+
             return deserializedResult;
         }
         catch (OperationCanceledException)
@@ -622,42 +604,43 @@ public class LibraryDownloadService : ILibraryDownloadService
             throw;
         }
     }
-    
+
     /// <summary>
-    /// Downloads a file from the specified URL and saves it to the given file path.
-    /// If the file already exists at the specified path, it reads the content directly from the file.
+    ///     Downloads a file from the specified URL and saves it to the given file path.
+    ///     If the file already exists at the specified path, it reads the content directly from the file.
     /// </summary>
     /// <param name="filePath">The path where the file will be saved.</param>
     /// <param name="url">The URL of the file to download.</param>
-    /// <param name="sha1">The expected SHA1 hash of the file for integrity verification. If null or empty, the hash check is skipped.</param>
-    /// <param name="statusKey">A key used for status updates.</param>
+    /// <param name="sha1">
+    ///     The expected SHA1 hash of the file for integrity verification. If null or empty, the hash check is
+    ///     skipped.
+    /// </param>
     /// <param name="progressReporter">An optional progress reporter for reporting download progress.</param>
     /// <param name="cancellationToken">A token to allow cancellation of the operation.</param>
     /// <returns>The content of the downloaded file, or null if the download fails.</returns>
-    private async Task<string?> DownloadAndSaveFileAsync(string filePath, string url, string sha1, string statusKey,
+    private async Task<string?> DownloadAndSaveFileAsync(string filePath, string url, string sha1,
         IProgressReporter? progressReporter, CancellationToken cancellationToken = default)
     {
         try
         {
             if (File.Exists(filePath) && (string.IsNullOrEmpty(sha1) || FileSystemHelper.CheckSHA1(filePath, sha1)))
             {
-                progressReporter?.UpdateStatusTranslated($"instance.reading.{statusKey}", Path.GetFileName(filePath));
+                progressReporter?.Report(0, Path.GetFileName(filePath), false);
                 return await File.ReadAllTextAsync(filePath, cancellationToken);
             }
 
-            progressReporter?.ReportProgress(0);
-            Progress<double> progress = new Progress<double>();
+            var progress = new Progress<double>();
             progress.ProgressChanged += (_, e) =>
             {
-                progressReporter?.ReportProgress(e);
-                progressReporter?.UpdateStatusTranslated($"instance.downloading.{statusKey}",
-                    Path.GetFileName(filePath),
-                    e.ToString("0.00"));
+                progressReporter?.Report(e, Path.GetFileName(filePath));
             };
 
-            string? result = await _httpService.GetStringAsync(url, progress, cancellationToken);
+            var result = await _httpService.GetStringAsync(url, progress, cancellationToken);
             if (result == null)
                 return null;
+            var fileDir = Path.GetDirectoryName(filePath);
+            if (!string.IsNullOrWhiteSpace(fileDir))
+                Directory.CreateDirectory(fileDir);
             await File.WriteAllTextAsync(filePath, result, cancellationToken);
             return result;
         }
@@ -670,36 +653,37 @@ public class LibraryDownloadService : ILibraryDownloadService
     }
 
     /// <summary>
-    /// Downloads a binary file from a URL and saves it locally if it doesn't already exist.
+    ///     Downloads a binary file from a URL and saves it locally if it doesn't already exist.
     /// </summary>
     /// <param name="filePath">The local file path where the file will be saved.</param>
     /// <param name="url">The URL from which the file will be downloaded.</param>
-    /// <param name="sha1">The expected SHA1 hash of the file for integrity verification. If null or empty, the hash check is skipped.</param>
-    /// <param name="statusKey">A key used for progress reporting and status messages.</param>
+    /// <param name="sha1">
+    ///     The expected SHA1 hash of the file for integrity verification. If null or empty, the hash check is
+    ///     skipped.
+    /// </param>
     /// <param name="progressReporter">An optional progress reporter for tracking download progress.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     /// <returns>A byte array containing the file content or null if the operation fails.</returns>
-    private async Task DownloadAndSaveBinaryFileAsync(string filePath, string url, string sha1, string statusKey,
+    private async Task DownloadAndSaveBinaryFileAsync(string filePath, string url, string sha1,
         IProgressReporter? progressReporter, CancellationToken cancellationToken = default)
     {
         try
         {
             if (File.Exists(filePath) && (string.IsNullOrEmpty(sha1) || FileSystemHelper.CheckSHA1(filePath, sha1)))
             {
-                progressReporter?.UpdateStatusTranslated($"instance.reading.{statusKey}", Path.GetFileName(filePath));
+                progressReporter?.Report(0, Path.GetFileName(filePath), false);
                 return;
             }
 
-            progressReporter?.ReportProgress(0);
-            Progress<double> progress = new Progress<double>();
+            var progress = new Progress<double>();
             progress.ProgressChanged += (_, e) =>
             {
-                progressReporter?.ReportProgress(e);
-                progressReporter?.UpdateStatusTranslated($"instance.downloading.{statusKey}",
-                    Path.GetFileName(filePath),
-                    e.ToString("0.00"));
+                progressReporter?.Report(e, Path.GetFileName(filePath));
             };
 
+            var fileDir = Path.GetDirectoryName(filePath);
+            if (!string.IsNullOrWhiteSpace(fileDir))
+                Directory.CreateDirectory(fileDir);
             await _httpService.DownloadFileAsync(url, filePath, progress, cancellationToken);
         }
         catch (OperationCanceledException)
@@ -709,20 +693,20 @@ public class LibraryDownloadService : ILibraryDownloadService
             throw;
         }
     }
-    
+
     /// <summary>
-    /// Extracts native library files from a compressed archive and moves them to the specified directory.
+    ///     Extracts native library files from a compressed archive and moves them to the specified directory.
     /// </summary>
     /// <param name="libFilePath">The file path of the compressed native library archive.</param>
     /// <param name="nativeDir">The directory where the extracted native files will be stored.</param>
     private void ExtractNativeFiles(string libFilePath, string nativeDir)
     {
-        string tempDir = Path.Combine(nativeDir, Path.GetRandomFileName());
+        var tempDir = Path.Combine(nativeDir, Path.GetRandomFileName());
         try
         {
             ZipFile.ExtractToDirectory(libFilePath, tempDir, true);
 
-            string searchPattern = "*.so";
+            var searchPattern = "*.so";
             if (OSHelper.GetOperatingSystem() == EOperatingSystem.WINDOWS)
                 searchPattern = "*.dll";
 
@@ -732,7 +716,7 @@ public class LibraryDownloadService : ILibraryDownloadService
                     (!Environment.Is64BitOperatingSystem && !file.Contains("32")))
                     continue;
 
-                string destFile = Path.Combine(nativeDir, Path.GetFileName(file));
+                var destFile = Path.Combine(nativeDir, Path.GetFileName(file));
                 if (!File.Exists(destFile))
                     File.Move(file, destFile, true);
             }

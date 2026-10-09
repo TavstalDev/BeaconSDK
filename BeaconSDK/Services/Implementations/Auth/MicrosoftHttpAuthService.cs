@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text;
 using Tavstal.BeaconSDK.Enums;
 using Tavstal.BeaconSDK.Models;
 using Tavstal.BeaconSDK.Models.Logging;
@@ -6,26 +7,27 @@ using Tavstal.BeaconSDK.Services.Abstractions.Auth;
 
 namespace Tavstal.BeaconSDK.Services.Implementations.Auth;
 
-/// <inheritdoc/>
+/// <inheritdoc />
 public class MicrosoftHttpAuthService : IMicrosoftHttpAuthService
 {
-    private readonly ICustomLogger _logger;
-    private readonly IMicrosoftAuthService _microsoftAuthService;
-    private bool _isListening;
-    private HttpListener? _httpListener;
     /// <summary>
-    /// The loopback URL the service listens on to receive the Microsoft authentication redirect.
+    ///     The loopback URL the service listens on to receive the Microsoft authentication redirect.
     /// </summary>
     public const string ListeningUrl = "http://localhost:43319/";
+
+    private readonly ICustomLogger _logger;
+    private readonly IMicrosoftAuthService _microsoftAuthService;
+    private HttpListener? _httpListener;
+    private bool _isListening;
     private IProgressReporter? _progressReporter;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="MicrosoftHttpAuthService"/> class and subscribes
-    /// to authentication status changes so the local listener can be stopped after successful sign-in.
+    ///     Initializes a new instance of the <see cref="MicrosoftHttpAuthService" /> class and subscribes
+    ///     to authentication status changes so the local listener can be stopped after successful sign-in.
     /// </summary>
     /// <param name="logger">Logger used for diagnostic and error output.</param>
     /// <param name="microsoftAuthService">
-    /// The Microsoft authentication service that raises authentication status change notifications.
+    ///     The Microsoft authentication service that raises authentication status change notifications.
     /// </param>
     public MicrosoftHttpAuthService(ICustomLogger<MicrosoftHttpAuthService> logger,
         IMicrosoftAuthService microsoftAuthService)
@@ -35,18 +37,7 @@ public class MicrosoftHttpAuthService : IMicrosoftHttpAuthService
         _microsoftAuthService.OnAuthStatusChanged += OnAuthStatusChanged;
     }
 
-    /// <summary>
-    /// Handles authentication status updates from the Microsoft authentication service.
-    /// Stops the local HTTP listener once authentication succeeds.
-    /// </summary>
-    /// <param name="status">The current authentication status.</param>
-    private void OnAuthStatusChanged(EAuthStatus status)
-    {
-        if (status == EAuthStatus.SUCCESS)
-            Task.Run(async () => await StopListeningAsync());
-    }
-
-    /// <inheritdoc/>
+    /// <inheritdoc />
     public async Task StartListeningAsync(IProgressReporter? progressReporter = null,
         CancellationToken cancellationToken = default)
     {
@@ -63,26 +54,26 @@ public class MicrosoftHttpAuthService : IMicrosoftHttpAuthService
 
         try
         {
-            progressReporter?.UpdateStatusTranslated("auth.listener.starting");
+            _progressReporter?.Report(EProgressKind.AUTH_LISTENER_STARTING, 0);
             _httpListener.Start();
             _isListening = true;
         }
         catch (HttpListenerException ex)
         {
-            progressReporter?.UpdateStatusTranslated("auth.listener.failed");
-            _logger.LogError(ex, $"Failed to start HTTP listener:");
+            _progressReporter?.Report(EProgressKind.AUTH_LISTENER_FAILED, 0);
+            _logger.LogError(ex, "Failed to start HTTP listener:");
             _isListening = false;
             return;
         }
 
         while (_isListening)
         {
-            HttpListenerContext context = await _httpListener.GetContextAsync(); // get te context 
+            var context = await _httpListener.GetContextAsync(); // get te context 
             await HandleHttpRequestAsync(context, cancellationToken);
         }
     }
 
-    /// <inheritdoc/>
+    /// <inheritdoc />
     public Task StopListeningAsync(bool cancelled = true, CancellationToken cancellationToken = default)
     {
         if (_httpListener == null)
@@ -92,15 +83,26 @@ public class MicrosoftHttpAuthService : IMicrosoftHttpAuthService
             return Task.CompletedTask;
 
         if (cancelled)
-            _progressReporter?.UpdateStatusTranslated("auth.listener.cancelled");
+            _progressReporter?.Report(EProgressKind.AUTH_LISTENER_CANCELLED, 0);
         _isListening = false;
         _httpListener.Stop();
         return Task.CompletedTask;
     }
 
     /// <summary>
-    /// Handles an incoming HTTP request from the local authentication listener.
-    /// Routes the request to the appropriate handler based on the URL path.
+    ///     Handles authentication status updates from the Microsoft authentication service.
+    ///     Stops the local HTTP listener once authentication succeeds.
+    /// </summary>
+    /// <param name="status">The current authentication status.</param>
+    private void OnAuthStatusChanged(EAuthStatus status)
+    {
+        if (status == EAuthStatus.SUCCESS)
+            Task.Run(async () => await StopListeningAsync());
+    }
+
+    /// <summary>
+    ///     Handles an incoming HTTP request from the local authentication listener.
+    ///     Routes the request to the appropriate handler based on the URL path.
     /// </summary>
     /// <param name="context">The HTTP context containing the request and response objects.</param>
     /// <param name="cancellationToken">Token to cancel the operation if needed.</param>
@@ -122,7 +124,7 @@ public class MicrosoftHttpAuthService : IMicrosoftHttpAuthService
         if (context.Request.RawUrl.StartsWith("/microsoft/authcallback"))
         {
             await CloseBrowserAsync(context, cancellationToken);
-            _progressReporter?.UpdateStatusTranslated("auth.listener.callback");
+            _progressReporter?.Report(EProgressKind.AUTH_LISTENER_CALLBACK, 0);
             await _microsoftAuthService.HandleHttpRequestAsync(context.Request, _progressReporter, cancellationToken);
             return;
         }
@@ -138,7 +140,7 @@ public class MicrosoftHttpAuthService : IMicrosoftHttpAuthService
     }
 
     /// <summary>
-    /// Sends an HTML response to the client that closes the browser window.
+    ///     Sends an HTML response to the client that closes the browser window.
     /// </summary>
     /// <param name="context">The HTTP context containing the response object to write to.</param>
     /// <param name="cancellationToken">Token to cancel the write operation if needed.</param>
@@ -158,9 +160,9 @@ public class MicrosoftHttpAuthService : IMicrosoftHttpAuthService
                     window.open('', '_self').close();
                 </script>
                 </html>";
-        byte[] buffer = System.Text.Encoding.UTF8.GetBytes(responseString);
+        var buffer = Encoding.UTF8.GetBytes(responseString);
 
-        HttpListenerResponse response = context.Response;
+        var response = context.Response;
         response.ContentType = "text/html";
         response.ContentLength64 = buffer.Length;
         await response.OutputStream.WriteAsync(buffer, 0, buffer.Length, cancellationToken);

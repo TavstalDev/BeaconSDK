@@ -41,33 +41,33 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <None Include="README.md" Pack="true" PackagePath="\" />
+        <None Include="README.md" Pack="true" PackagePath="\"/>
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Hardware.Info" Version="110.0.0.1" />
-        <PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="10.0.12" />
-        <PackageReference Include="NbtLib" Version="1.0.1" />
-        <PackageReference Include="SharpZipLib" Version="1.4.2" />
-        <PackageReference Include="SkiaSharp" Version="4.152.1" />
-        <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.12" />
-        <PackageReference Include="MinecraftSkinRender" Version="1.2.0" />
-        <PackageReference Include="MinecraftSkinRender.Image" Version="1.2.0" />
+        <PackageReference Include="Hardware.Info" Version="110.0.0.1"/>
+        <PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="10.0.12"/>
+        <PackageReference Include="NbtLib" Version="1.0.1"/>
+        <PackageReference Include="SharpZipLib" Version="1.4.2"/>
+        <PackageReference Include="SkiaSharp" Version="4.152.1"/>
+        <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.12"/>
+        <PackageReference Include="MinecraftSkinRender" Version="1.2.0"/>
+        <PackageReference Include="MinecraftSkinRender.Image" Version="1.2.0"/>
     </ItemGroup>
 
     <ItemGroup>
-        <EmbeddedResource Include="Assets\Fmllib\argo-2.25.jar" />
-        <EmbeddedResource Include="Assets\Fmllib\argo-small-3.2.jar" />
-        <EmbeddedResource Include="Assets\Fmllib\asm-all-4.0.jar" />
-        <EmbeddedResource Include="Assets\Fmllib\asm-all-4.1.jar" />
-        <EmbeddedResource Include="Assets\Fmllib\bcprov-jdk15on-147.jar" />
-        <EmbeddedResource Include="Assets\Fmllib\bcprov-jdk15on-148.jar" />
-        <EmbeddedResource Include="Assets\Fmllib\deobfuscation_data_1.5.1.zip" />
-        <EmbeddedResource Include="Assets\Fmllib\deobfuscation_data_1.5.2.zip" />
-        <EmbeddedResource Include="Assets\Fmllib\deobfuscation_data_1.5.zip" />
-        <EmbeddedResource Include="Assets\Fmllib\guava-12.0.1.jar" />
-        <EmbeddedResource Include="Assets\Fmllib\guava-14.0-rc3.jar" />
-        <EmbeddedResource Include="Assets\Fmllib\scala-library.jar" />
-        <EmbeddedResource Include="Assets\launchWrapper-1.0.jar" />
+        <EmbeddedResource Include="Assets\Fmllib\argo-2.25.jar"/>
+        <EmbeddedResource Include="Assets\Fmllib\argo-small-3.2.jar"/>
+        <EmbeddedResource Include="Assets\Fmllib\asm-all-4.0.jar"/>
+        <EmbeddedResource Include="Assets\Fmllib\asm-all-4.1.jar"/>
+        <EmbeddedResource Include="Assets\Fmllib\bcprov-jdk15on-147.jar"/>
+        <EmbeddedResource Include="Assets\Fmllib\bcprov-jdk15on-148.jar"/>
+        <EmbeddedResource Include="Assets\Fmllib\deobfuscation_data_1.5.1.zip"/>
+        <EmbeddedResource Include="Assets\Fmllib\deobfuscation_data_1.5.2.zip"/>
+        <EmbeddedResource Include="Assets\Fmllib\deobfuscation_data_1.5.zip"/>
+        <EmbeddedResource Include="Assets\Fmllib\guava-12.0.1.jar"/>
+        <EmbeddedResource Include="Assets\Fmllib\guava-14.0-rc3.jar"/>
+        <EmbeddedResource Include="Assets\Fmllib\scala-library.jar"/>
+        <EmbeddedResource Include="Assets\launchWrapper-1.0.jar"/>
     </ItemGroup>
 </Project>

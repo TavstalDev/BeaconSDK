@@ -12,31 +12,31 @@ using Tavstal.BeaconSDK.Services.Abstractions;
 
 namespace Tavstal.BeaconSDK.Services.Implementations;
 
-/// <inheritdoc/>
+/// <inheritdoc />
 public class InstanceLaunchService : IInstanceLaunchService
 {
     private readonly ICustomLogger _logger;
     private readonly Dictionary<string, Process> _runningProcesses = new();
-    
+
     /// <summary>
-    /// Initializes a new instance of the <see cref="InstanceLaunchService"/> class.
+    ///     Initializes a new instance of the <see cref="InstanceLaunchService" /> class.
     /// </summary>
     /// <param name="logger">The logger used to record launch lifecycle events, process output, and error diagnostics.</param>
     public InstanceLaunchService(ICustomLogger<InstanceLaunchService> logger)
     {
         _logger = logger;
     }
-    
-    /// <inheritdoc/>
-    public async Task<Process?> LaunchAsync(MinecraftInstance instance, 
+
+    /// <inheritdoc />
+    public async Task<Process?> LaunchAsync(MinecraftInstance instance,
         IProgressReporter? progress = null,
         CancellationToken cancellationToken = default)
     {
         var arguments = instance.ArgumentBuilder!.Build();
-        string gameArguments = arguments.gameArgs;
-        string jvmArguments = arguments.jvmArgs;
+        var gameArguments = arguments.gameArgs;
+        var jvmArguments = arguments.jvmArgs;
         var stopper = new Stopwatch();
-        
+
         // Execute pre-launch command if specified
         if (!string.IsNullOrEmpty(instance.GameDetails.PreLaunchCommand))
         {
@@ -50,24 +50,28 @@ public class InstanceLaunchService : IInstanceLaunchService
                 _logger.LogInformation($"Pre-launch command executed in {stopper.ElapsedMilliseconds}ms.");
             }
         }
-            
+
         // Below 1.7 there is no dedicated logs directory
         // so this fixes this issue
         string? customLogPath = null;
         if (!GameHelper.isNewer(instance.GameDetails.MinecraftVersion, "1.7"))
         {
-            string logsDir = Path.Combine(instance.VersionData.GameDir, "logs");
+            var logsDir = Path.Combine(instance.VersionData.GameDir, "logs");
             Directory.CreateDirectory(logsDir);
             customLogPath = Path.Combine(logsDir, "latest.log");
         }
 
         // Launch the Minecraft game process with the constructed arguments
 
-        List<string>? sensitiveDataToReplace = instance.Client is { IsOffline: false, AccessToken: not null } ? [instance.Client.AccessToken] : null;
-        
-        string finalJavaPath = string.IsNullOrEmpty(instance.GameDetails.JavaPath) ? "java" : instance.GameDetails.JavaPath;
+        List<string>? sensitiveDataToReplace = instance.Client is { IsOffline: false, AccessToken: not null }
+            ? [instance.Client.AccessToken]
+            : null;
+
+        var finalJavaPath = string.IsNullOrEmpty(instance.GameDetails.JavaPath)
+            ? "java"
+            : instance.GameDetails.JavaPath;
         string args;
-        bool useWrapper = false;
+        var useWrapper = false;
         switch (instance.GameDetails.Kind)
         {
             case EMinecraftKind.NEOFORGE:
@@ -88,9 +92,9 @@ public class InstanceLaunchService : IInstanceLaunchService
         }
 
         ProcessStartInfo psi;
-        if (instance.GameDetails.WrapperCommands is { Count: > 0})
+        if (instance.GameDetails.WrapperCommands is { Count: > 0 })
         {
-            string fileName = instance.GameDetails.WrapperCommands[0];
+            var fileName = instance.GameDetails.WrapperCommands[0];
             psi = new ProcessStartInfo
             {
                 FileName = fileName,
@@ -99,7 +103,7 @@ public class InstanceLaunchService : IInstanceLaunchService
                 RedirectStandardError = true,
                 UseShellExecute = false
             };
-            bool commandInjected = false;
+            var commandInjected = false;
             foreach (var command in instance.GameDetails.WrapperCommands.Skip(1))
             {
                 if (command.Contains("%command%"))
@@ -110,7 +114,7 @@ public class InstanceLaunchService : IInstanceLaunchService
                     commandInjected = true;
                     continue;
                 }
-                
+
                 psi.ArgumentList.Add(command);
             }
 
@@ -133,38 +137,36 @@ public class InstanceLaunchService : IInstanceLaunchService
                 UseShellExecute = false
             };
         }
-        
+
         // Add environment variables if provided
         foreach (var kvp in instance.GameDetails.EnvironmentVariables)
             psi.EnvironmentVariables[kvp.Key] = kvp.Value;
-        
+
         // Log the process start details
         _logger.LogDebug("Starting Java process with arguments:");
         _logger.LogDebug("Java: " + finalJavaPath);
         _logger.LogDebug("FileName: " + psi.FileName);
-        string argumentsToPrint = string.Join(" ", psi.ArgumentList.Count == 0 ? psi.Arguments : psi.ArgumentList);
+        var argumentsToPrint = string.Join(" ", psi.ArgumentList.Count == 0 ? psi.Arguments : psi.ArgumentList);
         if (sensitiveDataToReplace != null)
-        {
             foreach (var sen in sensitiveDataToReplace)
                 argumentsToPrint = argumentsToPrint.Replace(sen, "*****");
-        }
         _logger.LogDebug("Arguments: " + argumentsToPrint);
 
         // Handle existing logs file
-        bool shouldHandleLogs = !string.IsNullOrEmpty(customLogPath);
+        var shouldHandleLogs = !string.IsNullOrEmpty(customLogPath);
         if (shouldHandleLogs)
         {
-            string logsDir = Path.GetDirectoryName(customLogPath)!;
+            var logsDir = Path.GetDirectoryName(customLogPath)!;
             if (File.Exists(customLogPath))
             {
                 var lastWritten = File.GetLastWriteTime(customLogPath);
-                string newPath = Path.Combine(logsDir, string.Format(PathHelper.LogsFileFormat, lastWritten));
-                string archivePath = newPath + ".gz";
+                var newPath = Path.Combine(logsDir, $"{lastWritten:yyyy-MM-dd_HH-mm-ss}.log");
+                var archivePath = newPath + ".gz";
                 File.Move(customLogPath, newPath, true);
                 FileSystemHelper.CompressFile(newPath, archivePath);
             }
         }
-        
+
         var process = Process.Start(psi);
         if (process != null)
         {
@@ -194,16 +196,19 @@ public class InstanceLaunchService : IInstanceLaunchService
                         _logger.LogInformation($"[JVM Process Exit] {process.ExitCode} - Clean exit");
                         break;
                     case 1:
-                        _logger.LogError($"[JVM Process Exit] {process.ExitCode} - JVM error (bad arguments, missing class, crash)");
+                        _logger.LogError(
+                            $"[JVM Process Exit] {process.ExitCode} - JVM error (bad arguments, missing class, crash)");
                         break;
                     case -1:
                         _logger.LogWarning($"[JVM Process Exit] {process.ExitCode} - Forced exit / OutOfMemoryError");
                         break;
                     case 130:
-                        _logger.LogWarning($"[JVM Process Exit] {process.ExitCode} - Terminated by user (SIGINT/Ctrl+C)");
+                        _logger.LogWarning(
+                            $"[JVM Process Exit] {process.ExitCode} - Terminated by user (SIGINT/Ctrl+C)");
                         break;
                     case 137:
-                        _logger.LogError($"[JVM Process Exit] {process.ExitCode} - Killed by OS (OOM killer or SIGKILL)");
+                        _logger.LogError(
+                            $"[JVM Process Exit] {process.ExitCode} - Killed by OS (OOM killer or SIGKILL)");
                         break;
                     case 139:
                         _logger.LogError($"[JVM Process Exit] {process.ExitCode} - Segmentation fault (native crash)");
@@ -215,32 +220,32 @@ public class InstanceLaunchService : IInstanceLaunchService
                             _logger.LogWarning($"[JVM Process Exit] {process.ExitCode} - Unknown exit");
                         break;
                 }
-                
+
                 if (!string.IsNullOrEmpty(instance.GameDetails.PostExitCommand))
                     StartCommand(instance.GameDetails.PostExitCommand);
             };
             if (shouldHandleLogs)
             {
                 var jvmLogger = new CustomLogger("Game", LogLevel.Trace, false, customLogPath);
-                bool replaceSD = sensitiveDataToReplace != null;
+                var replaceSD = sensitiveDataToReplace != null;
                 process.OutputDataReceived += (_, e) =>
                 {
                     if (string.IsNullOrEmpty(e.Data))
                         return;
-                    string line = e.Data;
+                    var line = e.Data;
                     if (replaceSD)
-                        foreach (string s in sensitiveDataToReplace!)
+                        foreach (var s in sensitiveDataToReplace!)
                             line = line.Replace(s, "*****");
-                    
+
                     jvmLogger.LogInformation(line);
                 };
                 process.ErrorDataReceived += (_, e) =>
                 {
                     if (string.IsNullOrEmpty(e.Data))
                         return;
-                    string line = e.Data;
+                    var line = e.Data;
                     if (replaceSD)
-                        foreach (string s in sensitiveDataToReplace!)
+                        foreach (var s in sensitiveDataToReplace!)
                             line = line.Replace(s, "*****");
                     jvmLogger.LogError(line);
                 };
@@ -249,7 +254,7 @@ public class InstanceLaunchService : IInstanceLaunchService
             if (useWrapper)
             {
                 var writer = process.StandardInput;
-                string[] gameArgs = gameArguments.Split(' ');
+                var gameArgs = gameArguments.Split(' ');
                 await writer.WriteLineAsync(gameArgs[0]); // Write the main class
                 await writer.WriteLineAsync(
                     Convert.ToBase64String(
@@ -259,12 +264,12 @@ public class InstanceLaunchService : IInstanceLaunchService
                 writer.Close();
             }
         }
-        
+
         _runningProcesses.Add(instance.Id, process!);
         return process;
     }
 
-    /// <inheritdoc/>
+    /// <inheritdoc />
     public async Task StopAsync(string instanceId, CancellationToken cancellationToken = default)
     {
         if (!_runningProcesses.TryGetValue(instanceId, out var process))
@@ -279,42 +284,42 @@ public class InstanceLaunchService : IInstanceLaunchService
             _runningProcesses.Remove(instanceId);
             return;
         }
-        
+
         process.Close();
         await process.WaitForExitAsync(cancellationToken);
         _logger.LogDebug($"Instance {instanceId} stopped.");
         _runningProcesses.Remove(instanceId);
     }
 
-    /// <inheritdoc/>
-    public bool IsRunning(string instanceId) => _runningProcesses.TryGetValue(instanceId, out var process) && !process.HasExited;
-    
+    /// <inheritdoc />
+    public bool IsRunning(string instanceId)
+    {
+        return _runningProcesses.TryGetValue(instanceId, out var process) && !process.HasExited;
+    }
+
     /// <summary>
-    /// Starts a custom shell command as a child process using an OS-specific shell.
+    ///     Starts a custom shell command as a child process using an OS-specific shell.
     /// </summary>
     /// <param name="command">
-    /// The command line to execute. This value is passed to the selected shell (`cmd`, `zsh`, or `sh`)
-    /// using that shell's "execute command" argument.
+    ///     The command line to execute. This value is passed to the selected shell (`cmd`, `zsh`, or `sh`)
+    ///     using that shell's "execute command" argument.
     /// </param>
     /// <param name="environmentVariables">Optional environment variables to inject into the child process before startup.</param>
     /// <returns>
-    /// A <see cref="Process"/> instance for the started command if process creation succeeds; otherwise, <see langword="null"/>.
+    ///     A <see cref="Process" /> instance for the started command if process creation succeeds; otherwise,
+    ///     <see langword="null" />.
     /// </returns>
     private Process? StartCommand(string command, Dictionary<string, string>? environmentVariables = null)
     {
         // Configure the process start information
         var psi = new ProcessStartInfo
         {
-            UseShellExecute = false,
-            RedirectStandardError = true,
-            RedirectStandardOutput = true,
+            UseShellExecute = false, RedirectStandardError = true, RedirectStandardOutput = true
         };
         // Add environment variables if provided
         if (environmentVariables != null)
-        {
             foreach (var kvp in environmentVariables)
                 psi.EnvironmentVariables[kvp.Key] = kvp.Value;
-        }
 
         switch (OSHelper.GetOperatingSystem())
         {
@@ -338,7 +343,7 @@ public class InstanceLaunchService : IInstanceLaunchService
                 break;
             }
         }
-        
+
         var process = Process.Start(psi);
         if (process != null)
         {
@@ -362,20 +367,25 @@ public class InstanceLaunchService : IInstanceLaunchService
         // Start the process and return the Process object
         return process;
     }
-    
+
     /// <summary>
-    /// Splits a command-line argument string into individual arguments while respecting quoted strings and escape sequences.
+    ///     Splits a command-line argument string into individual arguments while respecting quoted strings and escape
+    ///     sequences.
     /// </summary>
-    /// /// <param name="args">The raw argument string to split, typically containing space-separated values with optional quotes and escapes.</param>
+    /// ///
+    /// <param name="args">
+    ///     The raw argument string to split, typically containing space-separated values with optional quotes
+    ///     and escapes.
+    /// </param>
     /// <returns>An enumerable collection of parsed argument strings, with quotes removed and escape sequences resolved.</returns>
     private static IEnumerable<string> SplitArguments(string args)
     {
         var arguments = new List<string>();
         var currentArg = new StringBuilder();
-        bool inQuotes = false;
-        bool escapeNext = false;
+        var inQuotes = false;
+        var escapeNext = false;
 
-        foreach (char c in args)
+        foreach (var c in args)
         {
             if (escapeNext)
             {
@@ -403,6 +413,7 @@ public class InstanceLaunchService : IInstanceLaunchService
                     arguments.Add(currentArg.ToString());
                     currentArg.Clear();
                 }
+
                 continue;
             }
 

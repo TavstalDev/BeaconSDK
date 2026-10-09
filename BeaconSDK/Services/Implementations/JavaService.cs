@@ -7,20 +7,18 @@ using Tavstal.BeaconSDK.Enums;
 using Tavstal.BeaconSDK.Helpers.IO;
 using Tavstal.BeaconSDK.Helpers.Platform;
 using Tavstal.BeaconSDK.Helpers.Serialization;
+using Tavstal.BeaconSDK.Models.Java;
 using Tavstal.BeaconSDK.Models.Logging;
 using Tavstal.BeaconSDK.Services.Abstractions;
-using Tavstal.KonkordLauncher.Common.Models.Java;
 
 namespace Tavstal.BeaconSDK.Services.Implementations;
 
-/// <inheritdoc/>
+/// <inheritdoc />
 public class JavaService : IJavaService
 {
-    private readonly ICustomLogger _logger;
     private readonly IHttpService _httpService;
-    private List<JavaVersion> _cachedJavaVersions = [];
-    private JavaMirrorConfig? _mirrorConfig;
-    private DateTime _cacheExpiration = DateTime.MinValue;
+    private readonly ICustomLogger _logger;
+
     private readonly Dictionary<EOperatingSystem, string[]> _lookupDirectories = new()
     {
         [EOperatingSystem.WINDOWS] =
@@ -43,9 +41,13 @@ public class JavaService : IJavaService
             "/System/Library/Java/JavaVirtualMachines"
         ]
     };
-    
+
+    private DateTime _cacheExpiration = DateTime.MinValue;
+    private List<JavaVersion> _cachedJavaVersions = [];
+    private JavaMirrorConfig? _mirrorConfig;
+
     /// <summary>
-    /// Initializes a new instance of the <see cref="JavaService"/> class.
+    ///     Initializes a new instance of the <see cref="JavaService" /> class.
     /// </summary>
     /// <param name="logger">Logger used to record diagnostic messages, warnings, and errors related to Java operations.</param>
     /// <param name="httpService">HTTP service used to download Java distributions and related files.</param>
@@ -54,29 +56,32 @@ public class JavaService : IJavaService
         _logger = logger;
         _httpService = httpService;
     }
-    
-    /// <inheritdoc/>
-    public async Task<string?> DownloadJavaVersionAsync(int majorVersion, string targetPath, Progress<double>? progress = null,
+
+    /// <inheritdoc />
+    public async Task<string?> DownloadJavaVersionAsync(int majorVersion, string targetPath, string mirrorsPath,
+        Progress<double>? progress = null,
         CancellationToken cancellationToken = default)
     {
         try
         {
             if (_mirrorConfig == null)
             {
-                if (!File.Exists(PathHelper.JavaMirrorsPath))
+                if (!File.Exists(mirrorsPath))
                 {
                     _mirrorConfig = new JavaMirrorConfig();
-                    await JsonHelper.WriteJsonFileAsync(PathHelper.JavaMirrorsPath, _mirrorConfig, BeaconJsonContext.Default.JavaMirrorConfig, cancellationToken);
+                    await JsonHelper.WriteJsonFileAsync(mirrorsPath, _mirrorConfig,
+                        BeaconJsonContext.Default.JavaMirrorConfig, cancellationToken);
                 }
                 else
                 {
-                    _mirrorConfig = await JsonHelper.ReadJsonFileAsync<JavaMirrorConfig>(PathHelper.JavaMirrorsPath, BeaconJsonContext.Default.JavaMirrorConfig, cancellationToken) ??
+                    _mirrorConfig = await JsonHelper.ReadJsonFileAsync<JavaMirrorConfig>(mirrorsPath,
+                                        BeaconJsonContext.Default.JavaMirrorConfig, cancellationToken) ??
                                     new JavaMirrorConfig();
                 }
             }
 
-            EOperatingSystem operatingSystem = OSHelper.GetOperatingSystem();
-            bool isArmBased = OSHelper.IsArmBased();
+            var operatingSystem = OSHelper.GetOperatingSystem();
+            var isArmBased = OSHelper.IsArmBased();
             var osMirror = operatingSystem switch
             {
                 EOperatingSystem.WINDOWS => _mirrorConfig.Windows,
@@ -101,7 +106,7 @@ public class JavaService : IJavaService
             if (javaMirror == null)
                 return null;
 
-            string url = isArmBased ? javaMirror.Arm : javaMirror.X86_64;
+            var url = isArmBased ? javaMirror.Arm : javaMirror.X86_64;
             if (string.IsNullOrEmpty(url))
             {
                 _logger.LogWarning(
@@ -109,12 +114,12 @@ public class JavaService : IJavaService
                 return null;
             }
 
-            string tempDir = Path.Combine(PathHelper.TempDir, "java");
+            var tempDir = Path.Combine(FileSystemHelper.TempDir, "java");
             try
             {
                 Directory.CreateDirectory(tempDir);
-                string extension = url.EndsWith(".zip") ? "zip" : "tar.gz";
-                string zipFilePath = Path.Combine(tempDir, $"java_{majorVersion}.{extension}");
+                var extension = url.EndsWith(".zip") ? "zip" : "tar.gz";
+                var zipFilePath = Path.Combine(tempDir, $"java_{majorVersion}.{extension}");
                 await _httpService.DownloadFileAsync(url, zipFilePath, progress, cancellationToken);
 
                 if (!File.Exists(zipFilePath))
@@ -122,16 +127,18 @@ public class JavaService : IJavaService
                     _logger.LogError($"Java download failed: {url}");
                     return null;
                 }
-                
+
                 if (extension == "tar.gz")
                 {
                     await using Stream inStream = File.OpenRead(zipFilePath);
                     await using Stream gzipStream = new GZipInputStream(inStream);
-                    using TarArchive tarArchive = TarArchive.CreateInputTarArchive(gzipStream, Encoding.UTF8);
+                    using var tarArchive = TarArchive.CreateInputTarArchive(gzipStream, Encoding.UTF8);
                     tarArchive.ExtractContents(targetPath);
                 }
                 else
+                {
                     await ZipFile.ExtractToDirectoryAsync(zipFilePath, targetPath, cancellationToken);
+                }
 
                 string javaExecutablePath;
                 if (OSHelper.GetOperatingSystem() != EOperatingSystem.WINDOWS)
@@ -142,7 +149,8 @@ public class JavaService : IJavaService
                         _logger.LogWarning($"Failed to get java executable from: {javaExecutablePath}");
                         return null;
                     }
-                    if (!await FileSystemHelper.MakeExecutableAsync(javaExecutablePath))
+
+                    if (!FileSystemHelper.MakeExecutable(javaExecutablePath))
                         _logger.LogError($"Failed to make java executable at: {javaExecutablePath}");
                 }
                 else
@@ -170,7 +178,7 @@ public class JavaService : IJavaService
         }
     }
 
-    /// <inheritdoc/>
+    /// <inheritdoc />
     public Task<string?> GetJavaVersionAsync(int majorVersion, CancellationToken cancellationToken = default)
     {
         try
@@ -185,20 +193,17 @@ public class JavaService : IJavaService
         }
     }
 
-    /// <inheritdoc/>
+    /// <inheritdoc />
     public Task<bool> IsJavaInstalledAsync(CancellationToken cancellationToken = default)
     {
         try
         {
-            ProcessStartInfo psi = new ProcessStartInfo
+            var psi = new ProcessStartInfo
             {
-                FileName = "java",
-                Arguments = " --version",
-                RedirectStandardError = true,
-                UseShellExecute = false
+                FileName = "java", Arguments = " --version", RedirectStandardError = true, UseShellExecute = false
             };
 
-            using Process? pr = Process.Start(psi);
+            using var pr = Process.Start(psi);
             if (pr == null)
             {
                 _logger.LogError("Failed to start Java process. Is Java installed?");
@@ -209,17 +214,18 @@ public class JavaService : IJavaService
         }
         catch (Exception ex)
         {
-            _logger.LogCritical(ex, $"Failed to validate Java:");
+            _logger.LogCritical(ex, "Failed to validate Java:");
             return Task.FromResult(false);
         }
     }
 
-    /// <inheritdoc/>
-    public async Task<JavaVersion?> GetJavaVersionDetailsAsync(string path, CancellationToken cancellationToken = default)
+    /// <inheritdoc />
+    public async Task<JavaVersion?> GetJavaVersionDetailsAsync(string path,
+        CancellationToken cancellationToken = default)
     {
         try
         {
-            ProcessStartInfo psi = new ProcessStartInfo
+            var psi = new ProcessStartInfo
             {
                 FileName = path,
                 Arguments = "-XshowSettings:properties -version",
@@ -228,16 +234,16 @@ public class JavaService : IJavaService
                 CreateNoWindow = true
             };
 
-            using Process? process = Process.Start(psi);
+            using var process = Process.Start(psi);
             if (process == null)
                 return null;
 
-            string output = await process.StandardError.ReadToEndAsync(cancellationToken);
+            var output = await process.StandardError.ReadToEndAsync(cancellationToken);
             await process.WaitForExitAsync(cancellationToken);
 
-            string majorVersion = string.Empty;
-            string javaVersion = string.Empty;
-            string architecture = string.Empty;
+            var majorVersion = string.Empty;
+            var javaVersion = string.Empty;
+            var architecture = string.Empty;
 
             foreach (var line in output.Split('\n'))
             {
@@ -253,7 +259,7 @@ public class JavaService : IJavaService
 
             if (majorVersion.StartsWith("1."))
             {
-                string[] parts = majorVersion.Split('.');
+                var parts = majorVersion.Split('.');
                 if (parts.Length > 1)
                 {
                     majorVersion = parts[1];
@@ -267,21 +273,19 @@ public class JavaService : IJavaService
 
             return new JavaVersion
             {
-                Major = int.Parse(majorVersion),
-                Version = javaVersion,
-                Architecture = architecture,
-                Path = path
+                Major = int.Parse(majorVersion), Version = javaVersion, Architecture = architecture, Path = path
             };
         }
         catch (Exception ex)
         {
-            _logger.LogCritical(ex, $"Failed to get Java version details:");
+            _logger.LogCritical(ex, "Failed to get Java version details:");
             return null;
         }
     }
 
-    /// <inheritdoc/>
-    public async Task<List<JavaVersion>> LocateJavaInstallationsAsync(string? instanceJavaDir = null, bool forceRefresh = false, CancellationToken cancellationToken = default)
+    /// <inheritdoc />
+    public async Task<List<JavaVersion>> LocateJavaInstallationsAsync(string? instanceJavaDir = null,
+        bool forceRefresh = false, CancellationToken cancellationToken = default)
     {
         if (forceRefresh)
         {
@@ -291,9 +295,9 @@ public class JavaService : IJavaService
 
         if (_cachedJavaVersions.Count > 0 && _cacheExpiration > DateTime.Now)
             return _cachedJavaVersions;
-        
+
         List<JavaVersion> javaVersions = [];
-        List<string> javaPaths = GetJavaPaths(OSHelper.GetOperatingSystem(), instanceJavaDir);
+        var javaPaths = GetJavaPaths(OSHelper.GetOperatingSystem(), instanceJavaDir);
 
         foreach (var path in javaPaths)
         {
@@ -309,13 +313,16 @@ public class JavaService : IJavaService
 
         return javaVersions;
     }
-    
+
     /// <summary>
-    /// Builds a list of candidate Java executable paths by scanning the configured lookup directories
-    /// for the specified operating system.
+    ///     Builds a list of candidate Java executable paths by scanning the configured lookup directories
+    ///     for the specified operating system.
     /// </summary>
     /// <param name="operatingSystem">The operating system whose Java installation directories should be searched.</param>
-    /// <param name="instanceJavaDir"> Optional instance-specific Java directory to search before the default lookup directories.</param>
+    /// <param name="instanceJavaDir">
+    ///     Optional instance-specific Java directory to search before the default lookup
+    ///     directories.
+    /// </param>
     /// <returns>A list of full file paths to discovered Java executables. The list is empty if no installations are found.</returns>
     private List<string> GetJavaPaths(EOperatingSystem operatingSystem, string? instanceJavaDir = null)
     {
@@ -333,7 +340,7 @@ public class JavaService : IJavaService
             var subDirs = Directory.GetDirectories(dirPath);
             foreach (var subDir in subDirs)
             {
-                string javaPath = Path.Combine(subDir, "bin", GetJavaExecutableName(operatingSystem));
+                var javaPath = Path.Combine(subDir, "bin", GetJavaExecutableName(operatingSystem));
                 if (!File.Exists(javaPath))
                     continue;
 
@@ -345,7 +352,7 @@ public class JavaService : IJavaService
     }
 
     /// <summary>
-    /// Gets the executable filename used to start Java for the specified operating system.
+    ///     Gets the executable filename used to start Java for the specified operating system.
     /// </summary>
     /// <param name="operatingSystem">The operating system the executable name should match.</param>
     /// <returns><c>javaw.exe</c> on Windows; <c>java</c> on Linux, macOS, and unknown systems.</returns>

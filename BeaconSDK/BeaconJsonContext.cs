@@ -1,14 +1,14 @@
 using System.Text.Json.Serialization;
 using Tavstal.BeaconSDK.Enums;
 using Tavstal.BeaconSDK.Models.Accounts;
+using Tavstal.BeaconSDK.Models.Java;
 using Tavstal.BeaconSDK.Models.MojangApi.User;
-using Tavstal.KonkordLauncher.Common.Models.Java;
 
 namespace Tavstal.BeaconSDK;
 
 /// <summary>
-/// Source-generated <see cref="JsonSerializerContext"/> containing the serialization metadata
-/// for the SDK's accounts, account skins, Mojang profiles, skins, capes and Java mirror configuration.
+///     Source-generated <see cref="JsonSerializerContext" /> containing the serialization metadata
+///     for the SDK's accounts, account skins, Mojang profiles, skins, capes and Java mirror configuration.
 /// </summary>
 [JsonSerializable(typeof(Account))]
 [JsonSerializable(typeof(List<Account>))]
