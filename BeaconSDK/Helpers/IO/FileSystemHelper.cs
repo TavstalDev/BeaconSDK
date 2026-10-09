@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text;
@@ -10,23 +11,98 @@ using Tavstal.BeaconSDK.Models.Logging;
 namespace Tavstal.BeaconSDK.Helpers.IO;
 
 /// <summary>
-/// Provides helper methods for file system operations such as deleting, moving directories, and verifying file hashes.
+///     Provides helper methods for file system operations such as deleting, moving directories, and verifying file hashes.
 /// </summary>
 public static class FileSystemHelper
 {
     private static readonly ICustomLogger _logger = new CustomLogger(nameof(FileSystemHelper), LogLevel.Error);
 
-    #region Core Operations
-    
     /// <summary>
-    /// Deletes the file at the provided path if it exists, is not locked, and passes safety checks.
+    ///     Path of the temporal directory that is used by the sdk.
+    /// </summary>
+    public static readonly string TempDir = Path.Combine(Path.GetTempPath(), "beaconSdk");
+
+    /// <summary>
+    ///     Opens a folder in the system's default file explorer.
+    /// </summary>
+    /// <param name="path">The path to the folder to open.</param>
+    public static void OpenFolderInFileExplorer(string path)
+    {
+        // Ensure the path exists
+        if (!Directory.Exists(path))
+        {
+            _logger.LogError($"Error: Folder not found at '{path}'");
+            return;
+        }
+
+        switch (OSHelper.GetOperatingSystem())
+        {
+            case EOperatingSystem.WINDOWS:
+            {
+                var startInfo = new ProcessStartInfo { FileName = "explorer.exe", UseShellExecute = false };
+                startInfo.ArgumentList.Add(path);
+                Process.Start(startInfo);
+                break;
+            }
+            case EOperatingSystem.MACOS:
+            {
+                var startInfo = new ProcessStartInfo { FileName = "open", UseShellExecute = false };
+                startInfo.ArgumentList.Add(path);
+                Process.Start(startInfo);
+                break;
+            }
+            case EOperatingSystem.LINUX:
+            {
+                var startInfo = new ProcessStartInfo { FileName = "xdg-open", UseShellExecute = false };
+                startInfo.ArgumentList.Add(path);
+                Process.Start(startInfo);
+                break;
+            }
+            case EOperatingSystem.UNKNOWN:
+            {
+                _logger.LogError("Error: Unsupported operating system for opening folder in file explorer.");
+                break;
+            }
+        }
+    }
+
+    /// <summary>
+    ///     Converts a byte count into a human-readable string using binary (1024) units.
+    /// </summary>
+    /// <param name="size">Size in bytes.</param>
+    /// <returns>
+    ///     A formatted string like "123 B", "456 KB", "789 MB" etc.
+    /// </returns>
+    public static string GetFormattedSize(long size)
+    {
+        if (size < 1024)
+            return $"{size} B";
+
+        string[] units = ["KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
+        var bytes = size / 1024;
+
+        for (var i = 0; i < units.Length; i++)
+        {
+            if (i == units.Length - 1 || bytes < 1024)
+                return $"{bytes} {units[i]}";
+
+            bytes /= 1024;
+        }
+
+        return $"{bytes} RB";
+    }
+
+    #region Core Operations
+
+    /// <summary>
+    ///     Deletes the file at the provided path if it exists, is not locked, and passes safety checks.
     /// </summary>
     /// <param name="path">Full path to the file to delete.</param>
     public static bool DeleteFile(string path)
     {
         if (string.IsNullOrEmpty(path) || string.IsNullOrWhiteSpace(path))
             return false;
-        
+
         if (!File.Exists(path))
             return true; // Act like the file was deleted
 
@@ -35,7 +111,7 @@ public static class FileSystemHelper
             _logger.LogError($"Failed to clear read-only attribute from file '{path}' before deletion.");
             return false;
         }
-        
+
         if (IsFileLocked(path))
         {
             _logger.LogError($"Refusing to delete file '{path}' because it is currently locked by another process.");
@@ -59,9 +135,9 @@ public static class FileSystemHelper
             return false;
         }
     }
-    
+
     /// <summary>
-    /// Deletes a directory and all its contents after verifying the directory is safe to delete.
+    ///     Deletes a directory and all its contents after verifying the directory is safe to delete.
     /// </summary>
     /// <param name="path">The path of the directory to delete.</param>
     public static bool DeleteDirectory(string path)
@@ -70,7 +146,7 @@ public static class FileSystemHelper
         {
             if (string.IsNullOrEmpty(path) || string.IsNullOrWhiteSpace(path))
                 return false;
-            
+
             if (!Directory.Exists(path))
                 return true;
 
@@ -80,21 +156,22 @@ public static class FileSystemHelper
                 return false;
             }
 
-            string homeDir = OSHelper.GetHomeDirectory();
+            var homeDir = OSHelper.GetHomeDirectory();
             if (string.Equals(path, homeDir, StringComparison.OrdinalIgnoreCase))
             {
                 _logger.LogError($"Refusing to delete directory '{path}' because it is the user's home directory.");
                 return false;
             }
 
-            string programsDir = OSHelper.GetProgramsDirectory();
+            var programsDir = OSHelper.GetProgramsDirectory();
             if (string.Equals(path, programsDir, StringComparison.OrdinalIgnoreCase))
             {
-                _logger.LogError($"Refusing to delete directory '{path}' because it is the system's programs directory.");
+                _logger.LogError(
+                    $"Refusing to delete directory '{path}' because it is the system's programs directory.");
                 return false;
             }
 
-            string desktopDir = OSHelper.GetDesktopDirectory();
+            var desktopDir = OSHelper.GetDesktopDirectory();
             if (string.Equals(path, desktopDir, StringComparison.OrdinalIgnoreCase))
             {
                 _logger.LogError($"Refusing to delete directory '{path}' because it is the user's desktop directory.");
@@ -104,24 +181,22 @@ public static class FileSystemHelper
             var dirInfo = new DirectoryInfo(path);
             // Delete files
             var files = dirInfo.EnumerateFiles("*", SearchOption.AllDirectories);
-            foreach (FileInfo file in files)
-            {
+            foreach (var file in files)
                 if (!DeleteFile(file.FullName))
                 {
-                    _logger.LogError($"Failed to delete file '{file.FullName}' while deleting directory '{path}'. Aborting directory deletion.");
+                    _logger.LogError(
+                        $"Failed to delete file '{file.FullName}' while deleting directory '{path}'. Aborting directory deletion.");
                     return false;
                 }
-            }
 
             // Delete sub dirs
             var dirs = Directory.EnumerateDirectories(path, "*", SearchOption.AllDirectories)
                 .OrderByDescending(d => d.Length)
                 .ToList();
-            foreach (string dir in dirs)
-            {
+            foreach (var dir in dirs)
                 try
                 {
-                    var subDir =  new DirectoryInfo(dir);
+                    var subDir = new DirectoryInfo(dir);
                     var attrs = subDir.Attributes;
                     if (attrs.HasFlag(FileAttributes.ReadOnly))
                         dirInfo.Attributes = attrs & ~FileAttributes.ReadOnly;
@@ -132,20 +207,19 @@ public static class FileSystemHelper
                     _logger.LogError(ex, $"Unexpected error while trying to delete subdirectory '{dir}':");
                     return false;
                 }
-            }
 
             Directory.Delete(path);
             return true;
         }
         catch (Exception ex)
         {
-            _logger.LogCritical(ex,$"Unexpected error while trying to delete directory '{path}':");
+            _logger.LogCritical(ex, $"Unexpected error while trying to delete directory '{path}':");
             return false;
         }
     }
-    
+
     /// <summary>
-    /// Moves a directory and its contents to a new location.
+    ///     Moves a directory and its contents to a new location.
     /// </summary>
     /// <param name="sourceDir">The source directory path.</param>
     /// <param name="destinationDir">The destination directory path.</param>
@@ -164,24 +238,24 @@ public static class FileSystemHelper
             throw new DirectoryNotFoundException($"Source directory not found: {dir.FullName}");
 
         // Cache directories before we start copying
-        DirectoryInfo[] dirs = dir.GetDirectories();
+        var dirs = dir.GetDirectories();
 
         // Create the destination directory
         Directory.CreateDirectory(destinationDir);
 
         // Get the files in the source directory and copy to the destination directory
-        foreach (FileInfo file in dir.GetFiles())
+        foreach (var file in dir.GetFiles())
         {
-            string targetFilePath = Path.Combine(destinationDir, file.Name);
+            var targetFilePath = Path.Combine(destinationDir, file.Name);
             if (overwrite || (!overwrite && !File.Exists(targetFilePath)))
                 file.CopyTo(targetFilePath, true);
         }
 
         // If recursive and copying subdirectories, recursively call this method
         if (recursive)
-            foreach (DirectoryInfo subDir in dirs)
+            foreach (var subDir in dirs)
             {
-                string newDestinationDir = Path.Combine(destinationDir, subDir.Name);
+                var newDestinationDir = Path.Combine(destinationDir, subDir.Name);
                 MoveDirectory(subDir.FullName, newDestinationDir, true, false);
             }
 
@@ -190,25 +264,26 @@ public static class FileSystemHelper
     }
 
     /// <summary>
-    /// Compresses a file to the specified destination using GZip compression.
-    /// Optionally deletes the source file after successful compression.
+    ///     Compresses a file to the specified destination using GZip compression.
+    ///     Optionally deletes the source file after successful compression.
     /// </summary>
     /// <param name="source">Full path to the source file to compress.</param>
     /// <param name="destination">Full path to the destination compressed file to create.</param>
     /// <param name="deleteSource">If true, the source file will be deleted after compression completes (default: true).</param>
     /// <returns>
-    /// <c>true</c> when compression succeeded; <c>false</c> if the source file is locked and compression was not attempted.
+    ///     <c>true</c> when compression succeeded; <c>false</c> if the source file is locked and compression was not
+    ///     attempted.
     /// </returns>
     public static bool CompressFile(string source, string destination, bool deleteSource = true)
     {
         if (IsFileLocked(source))
             return false;
-        
+
         try
         {
-            using FileStream sourceStream = new FileStream(source, FileMode.Open, FileAccess.Read);
-            using FileStream targetStream = File.Create(destination);
-            using GZipStream compressionStream = new GZipStream(targetStream, CompressionLevel.Optimal);
+            using var sourceStream = new FileStream(source, FileMode.Open, FileAccess.Read);
+            using var targetStream = File.Create(destination);
+            using var compressionStream = new GZipStream(targetStream, CompressionLevel.Optimal);
 
             sourceStream.CopyTo(compressionStream);
             return true;
@@ -219,51 +294,33 @@ public static class FileSystemHelper
                 DeleteFile(source);
         }
     }
+
     #endregion
-    
+
     #region File Permissions and Attributes
-    
+
     /// <summary>
-    /// Makes a file executable by modifying its permissions using the `chmod` command.
+    ///     Makes a file executable by modifying its permissions using the `chmod` command.
     /// </summary>
     /// <param name="path">The path of the file to make executable.</param>
     /// <returns>
-    /// A task that represents the asynchronous operation. The task result contains a boolean value:
-    /// true if the operation succeeded, false otherwise.
+    ///     A task that represents the asynchronous operation. The task result contains a boolean value:
+    ///     true if the operation succeeded, false otherwise.
     /// </returns>
-    public static async Task<bool> MakeExecutableAsync(string path)
+    [SuppressMessage("Interoperability", "CA1416:Validate platform compatibility")]
+    public static bool MakeExecutable(string path)
     {
         try
         {
-            if (string.IsNullOrEmpty(path))
-                return false;
-            
-            if (!File.Exists(path))
-                return false;
-            
-            var process = new Process
-            {
-                StartInfo = new ProcessStartInfo
-                {
-                    FileName = "chmod",
-                    Arguments = $"+x \"{path}\"",
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    CreateNoWindow = true
-                }
-            };
+            if (OSHelper.GetOperatingSystem() == EOperatingSystem.UNKNOWN)
+                return true;
 
-            process.Start();
-            await process.WaitForExitAsync();
+            var currentMode = File.GetUnixFileMode(path);
+            var executeFlags = UnixFileMode.UserExecute
+                               | UnixFileMode.GroupExecute
+                               | UnixFileMode.OtherExecute;
 
-            if (process.ExitCode != 0)
-            {
-                string error = await process.StandardError.ReadToEndAsync();
-                _logger.LogCritical($"Error while making '{path}' executable:");
-                _logger.LogError(error);
-                return false;
-            }
+            File.SetUnixFileMode(path, currentMode | executeFlags);
             return true;
         }
         catch (Exception ex)
@@ -274,8 +331,9 @@ public static class FileSystemHelper
     }
 
     /// <summary>
-    /// Sets the file at <paramref name="pathToFile"/> to read-only by adding the <see cref="FileAttributes.ReadOnly"/> flag.
-    /// If the file does not exist or is already read-only the method returns immediately.
+    ///     Sets the file at <paramref name="pathToFile" /> to read-only by adding the <see cref="FileAttributes.ReadOnly" />
+    ///     flag.
+    ///     If the file does not exist or is already read-only the method returns immediately.
     /// </summary>
     /// <param name="pathToFile">Full path to the file to mark as read-only.</param>
     public static bool MakeFileReadonly(string pathToFile)
@@ -284,11 +342,11 @@ public static class FileSystemHelper
         {
             if (!File.Exists(pathToFile))
                 return false;
-            
+
             var attributes = File.GetAttributes(pathToFile);
             if (attributes.HasFlag(FileAttributes.ReadOnly))
                 return true;
-            
+
             attributes |= FileAttributes.ReadOnly;
             File.SetAttributes(pathToFile, attributes);
             return true;
@@ -299,10 +357,10 @@ public static class FileSystemHelper
             return false;
         }
     }
-    
+
     /// <summary>
-    /// Clears the read-only flag from the file at <paramref name="pathToFile"/>, making it writable.
-    /// If the file does not exist or is not read-only the method returns immediately.
+    ///     Clears the read-only flag from the file at <paramref name="pathToFile" />, making it writable.
+    ///     If the file does not exist or is not read-only the method returns immediately.
     /// </summary>
     /// <param name="pathToFile">Full path to the file to make writable.</param>
     public static bool MakeFileWritable(string pathToFile)
@@ -311,11 +369,11 @@ public static class FileSystemHelper
         {
             if (!File.Exists(pathToFile))
                 return false;
-            
+
             var attributes = File.GetAttributes(pathToFile);
             if (!attributes.HasFlag(FileAttributes.ReadOnly))
                 return true;
-            
+
             attributes &= ~FileAttributes.ReadOnly;
             File.SetAttributes(pathToFile, attributes);
             return true;
@@ -326,11 +384,11 @@ public static class FileSystemHelper
             return false;
         }
     }
-    
+
     /// <summary>
-    /// Tests whether the application can write to the given directory by creating a small test file.
-    /// Preserves the original behavior: creates the directory if needed, creates "test.txt", verifies its existence,
-    /// deletes it if created, and returns true on success; logs and returns false on any exception.
+    ///     Tests whether the application can write to the given directory by creating a small test file.
+    ///     Preserves the original behavior: creates the directory if needed, creates "test.txt", verifies its existence,
+    ///     deletes it if created, and returns true on success; logs and returns false on any exception.
     /// </summary>
     /// <param name="targetDir">Directory to test write permissions for.</param>
     /// <returns>True if a test file could be created and detected; otherwise false.</returns>
@@ -339,12 +397,12 @@ public static class FileSystemHelper
         try
         {
             Directory.CreateDirectory(targetDir);
-            
-            string testFile = Path.Combine(targetDir, "test.txt");
+
+            var testFile = Path.Combine(targetDir, "test.txt");
             DeleteFile(testFile);
-            
+
             File.WriteAllText(testFile, "test");
-            bool success = File.Exists(testFile);
+            var success = File.Exists(testFile);
             if (success)
                 DeleteFile(testFile);
             return success;
@@ -355,27 +413,30 @@ public static class FileSystemHelper
             return false;
         }
     }
-    
+
     /// <summary>
-    /// Asynchronously tests whether the application has write permission to the given directory by attempting
-    /// to create a small test file ("test.txt") inside it.
+    ///     Asynchronously tests whether the application has write permission to the given directory by attempting
+    ///     to create a small test file ("test.txt") inside it.
     /// </summary>
-    /// <param name="targetDir">The directory to test write permissions for. The directory will be created if it does not exist.</param>
+    /// <param name="targetDir">
+    ///     The directory to test write permissions for. The directory will be created if it does not
+    ///     exist.
+    /// </param>
     /// <returns>
-    /// A task that represents the asynchronous operation. The task result is <c>true</c> if the test file could be created
-    /// and detected; otherwise <c>false</c>. Any exception is logged and results in <c>false</c>.
+    ///     A task that represents the asynchronous operation. The task result is <c>true</c> if the test file could be created
+    ///     and detected; otherwise <c>false</c>. Any exception is logged and results in <c>false</c>.
     /// </returns>
     public static async Task<bool> HasWritePermissionAsync(string targetDir)
     {
         try
         {
             Directory.CreateDirectory(targetDir);
-            
-            string testFile = Path.Combine(targetDir, "test.txt");
+
+            var testFile = Path.Combine(targetDir, "test.txt");
             DeleteFile(testFile);
-            
+
             await File.WriteAllTextAsync(testFile, "test");
-            bool success = File.Exists(testFile);
+            var success = File.Exists(testFile);
             if (success)
                 File.Delete(testFile);
             return success;
@@ -386,10 +447,10 @@ public static class FileSystemHelper
             return false;
         }
     }
-    
+
     /// <summary>
-    /// Checks whether the drive containing <paramref name="targetDir"/> has at least <paramref name="bytes"/>
-    /// bytes of available free space.
+    ///     Checks whether the drive containing <paramref name="targetDir" /> has at least <paramref name="bytes" />
+    ///     bytes of available free space.
     /// </summary>
     /// <param name="targetDir">The directory to check the drive of. The method will determine the root drive from this path.</param>
     /// <param name="bytes">The minimum number of free bytes required.</param>
@@ -406,12 +467,13 @@ public static class FileSystemHelper
             return false;
         }
     }
-    
+
     #endregion
 
     #region Hashing
+
     /// <summary>
-    /// Verifies the SHA1 hash of a file against a given hash value.
+    ///     Verifies the SHA1 hash of a file against a given hash value.
     /// </summary>
     /// <param name="path">The path of the file to check.</param>
     /// <param name="compareHash">The SHA1 hash to compare against. If null or empty, the method returns true.</param>
@@ -424,8 +486,8 @@ public static class FileSystemHelper
         try
         {
             string fileHash;
-            using (FileStream file = File.OpenRead(path))
-            using (SHA1 hasher = SHA1.Create())
+            using (var file = File.OpenRead(path))
+            using (var hasher = SHA1.Create())
             {
                 var binaryHash = hasher.ComputeHash(file);
                 fileHash = Convert.ToHexStringLower(binaryHash);
@@ -440,16 +502,16 @@ public static class FileSystemHelper
             return false;
         }
     }
-    
+
     /// <summary>
-    /// Verifies the SHA256 hash of a file against a given hash value.
+    ///     Verifies the SHA256 hash of a file against a given hash value.
     /// </summary>
     /// <param name="path">The path of the file to check.</param>
     /// <param name="compareHash">
-    /// The SHA256 hash to compare against. If null or empty, the method returns true.
+    ///     The SHA256 hash to compare against. If null or empty, the method returns true.
     /// </param>
     /// <returns>
-    /// True if the file's hash matches the given hash; otherwise, false.
+    ///     True if the file's hash matches the given hash; otherwise, false.
     /// </returns>
     public static bool CheckSHA256(string path, string? compareHash)
     {
@@ -459,8 +521,8 @@ public static class FileSystemHelper
         try
         {
             string fileHash;
-            using (FileStream file = File.OpenRead(path))
-            using (SHA256 hasher = SHA256.Create())
+            using (var file = File.OpenRead(path))
+            using (var hasher = SHA256.Create())
             {
                 var binaryHash = hasher.ComputeHash(file);
                 fileHash = Convert.ToHexStringLower(binaryHash);
@@ -477,27 +539,27 @@ public static class FileSystemHelper
     }
 
     /// <summary>
-    /// Verifies a file's hash using a digest string in the format "type:hash".
-    /// Supported digest types are "sha1" and "sha256" (case-insensitive).
+    ///     Verifies a file's hash using a digest string in the format "type:hash".
+    ///     Supported digest types are "sha1" and "sha256" (case-insensitive).
     /// </summary>
     /// <param name="path">Filesystem path to the file to verify.</param>
     /// <param name="digest">
-    /// The digest string in the form "type:hash", for example "sha1:abcdef..." or "sha256:0123...".
-    /// The method splits on the first ':' and treats the left part as the digest type and the right part as the hex hash.
+    ///     The digest string in the form "type:hash", for example "sha1:abcdef..." or "sha256:0123...".
+    ///     The method splits on the first ':' and treats the left part as the digest type and the right part as the hex hash.
     /// </param>
     /// <returns>
-    /// <c>true</c> when the digest format is valid and the file's computed hash matches the provided hash;
-    /// <c>false</c> when the digest format is invalid, the digest type is unsupported, or the hash comparison fails.
+    ///     <c>true</c> when the digest format is valid and the file's computed hash matches the provided hash;
+    ///     <c>false</c> when the digest format is invalid, the digest type is unsupported, or the hash comparison fails.
     /// </returns>
     public static bool CheckByDigest(string path, string digest)
     {
-        string[] parts = digest.Split(':', 2);
+        var parts = digest.Split(':', 2);
         if (parts.Length < 2)
         {
             _logger.LogError($"Invalid digest format: '{digest}'. Expected format is 'type:hash'.");
             return false;
         }
-        
+
         switch (parts[0].ToLower())
         {
             case "sha1":
@@ -511,14 +573,14 @@ public static class FileSystemHelper
     }
 
     /// <summary>
-    /// Asynchronously computes the SHA-1 hash of the file at the given path and returns it as a lowercase hex string.
+    ///     Asynchronously computes the SHA-1 hash of the file at the given path and returns it as a lowercase hex string.
     /// </summary>
     /// <param name="path">Path to the file to hash.</param>
     public static async Task<string?> GetFileHashAsync(string path)
     {
         try
         {
-            await using FileStream stream = File.OpenRead(path);
+            await using var stream = File.OpenRead(path);
             return await GetFileHashAsync(stream);
         }
         catch (Exception ex)
@@ -528,21 +590,21 @@ public static class FileSystemHelper
             return null;
         }
     }
-    
+
     /// <summary>
-    /// Computes the SHA-1 hash of the provided stream and returns it as a lowercase hexadecimal string.
+    ///     Computes the SHA-1 hash of the provided stream and returns it as a lowercase hexadecimal string.
     /// </summary>
     /// <param name="stream">
-    /// The input stream to hash. The method reads from the current stream position to the end.
-    /// The caller is responsible for the stream's lifetime (this method does not dispose the provided stream).
+    ///     The input stream to hash. The method reads from the current stream position to the end.
+    ///     The caller is responsible for the stream's lifetime (this method does not dispose the provided stream).
     /// </param>
     public static async Task<string?> GetFileHashAsync(Stream stream)
     {
         try
         {
             using var sha = SHA1.Create();
-            byte[] hashBytes = await sha.ComputeHashAsync(stream);
-            string fileHash = Convert.ToHexStringLower(hashBytes);
+            var hashBytes = await sha.ComputeHashAsync(stream);
+            var fileHash = Convert.ToHexStringLower(hashBytes);
             stream.Position = 0;
             return fileHash;
         }
@@ -553,9 +615,10 @@ public static class FileSystemHelper
             return null;
         }
     }
-    
+
     /// <summary>
-    /// Computes the SHA-1 hash of the provided string using UTF-8 encoding and returns it as a lowercase hexadecimal string.
+    ///     Computes the SHA-1 hash of the provided string using UTF-8 encoding and returns it as a lowercase hexadecimal
+    ///     string.
     /// </summary>
     /// <param name="content">The input string to hash (encoded as UTF-8).</param>
     public static string? GetContentHash(string content)
@@ -563,10 +626,10 @@ public static class FileSystemHelper
         try
         {
             using var sha = SHA1.Create();
-            byte[] contentBytes = Encoding.UTF8.GetBytes(content);
+            var contentBytes = Encoding.UTF8.GetBytes(content);
             using var stream = new MemoryStream(contentBytes);
-            byte[] hashBytes = sha.ComputeHash(stream);
-            string contentHash = Convert.ToHexStringLower(hashBytes);
+            var hashBytes = sha.ComputeHash(stream);
+            var contentHash = Convert.ToHexStringLower(hashBytes);
             return contentHash;
         }
         catch (Exception ex)
@@ -576,25 +639,28 @@ public static class FileSystemHelper
             return null;
         }
     }
+
     #endregion
-    
+
     #region Safety
+
     /// <summary>
-    /// Checks whether the specified file is locked by attempting to open it with exclusive access.
+    ///     Checks whether the specified file is locked by attempting to open it with exclusive access.
     /// </summary>
     /// <param name="filePath">Full path to the file to test.</param>
     /// <returns>
-    /// <c>true</c> if the file could not be opened due to an <see cref="IOException"/> (commonly indicates the file is locked);
-    /// <c>false</c> if the file was successfully opened with exclusive access.
+    ///     <c>true</c> if the file could not be opened due to an <see cref="IOException" /> (commonly indicates the file is
+    ///     locked);
+    ///     <c>false</c> if the file was successfully opened with exclusive access.
     /// </returns>
     public static bool IsFileLocked(string filePath)
     {
         if (!File.Exists(filePath))
             return false;
-        
+
         try
         {
-            using FileStream stream = File.Open(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+            using var stream = File.Open(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
             return false;
         }
         catch (UnauthorizedAccessException)
@@ -606,107 +672,27 @@ public static class FileSystemHelper
             return true;
         }
     }
-    
+
     /// <summary>
-    /// Determines whether the specified path is considered safe for deletion.
+    ///     Determines whether the specified path is considered safe for deletion.
     /// </summary>
     /// <param name="path">The path to evaluate.</param>
     /// <returns>
-    /// <c>true</c> when the path appears valid and not obviously unsafe to delete (e.g. not null/empty,
-    /// not a drive root and of reasonable length); otherwise <c>false</c>.
+    ///     <c>true</c> when the path appears valid and not obviously unsafe to delete (e.g. not null/empty,
+    ///     not a drive root and of reasonable length); otherwise <c>false</c>.
     /// </returns>
     public static bool IsSafeToDelete(string path)
     {
-        if (string.IsNullOrWhiteSpace(path)) 
+        if (string.IsNullOrWhiteSpace(path))
             return false;
         var full = Path.GetFullPath(path);
         var root = Path.GetPathRoot(full);
-        if (string.Equals(full, root, StringComparison.OrdinalIgnoreCase)) 
+        if (string.Equals(full, root, StringComparison.OrdinalIgnoreCase))
             return false;
-        if (full.Length < 10) 
+        if (full.Length < 10)
             return false;
         return true;
     }
-    #endregion
-    
-    /// <summary>
-    /// Opens a folder in the system's default file explorer.
-    /// </summary>
-    /// <param name="path">The path to the folder to open.</param>
-    public static void OpenFolderInFileExplorer(string path)
-    {
-        // Ensure the path exists
-        if (!Directory.Exists(path))
-        {
-            _logger.LogError($"Error: Folder not found at '{path}'");
-            return;
-        }
 
-        switch (OSHelper.GetOperatingSystem())
-        {
-            case EOperatingSystem.WINDOWS:
-            {
-                var startInfo = new ProcessStartInfo
-                {
-                    FileName = "explorer.exe",
-                    UseShellExecute = false
-                };
-                startInfo.ArgumentList.Add(path);
-                Process.Start(startInfo);
-                break;
-            }
-            case EOperatingSystem.MACOS:
-            {
-                var startInfo = new ProcessStartInfo
-                {
-                    FileName = "open",
-                    UseShellExecute = false
-                };
-                startInfo.ArgumentList.Add(path);
-                Process.Start(startInfo);
-                break;
-            }
-            case EOperatingSystem.LINUX:
-            {
-                var startInfo = new ProcessStartInfo
-                {
-                    FileName = "xdg-open",
-                    UseShellExecute = false
-                };
-                startInfo.ArgumentList.Add(path);
-                Process.Start(startInfo);
-                break;
-            }
-            case EOperatingSystem.UNKNOWN:
-            {
-                _logger.LogError("Error: Unsupported operating system for opening folder in file explorer.");
-                break;
-            }
-        }
-    }
-    
-    /// <summary>
-    /// Converts a byte count into a human-readable string using binary (1024) units.
-    /// </summary>
-    /// <param name="size">Size in bytes.</param>
-    /// <returns>
-    /// A formatted string like "123 B", "456 KB", "789 MB" etc.
-    /// </returns>
-    public static string GetFormattedSize(long size)
-    {
-        if (size < 1024)
-            return $"{size} B";
-        
-        string[] units = ["KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
-        long bytes = size / 1024;
-        
-        for (int i = 0; i < units.Length; i++)
-        {
-            if (i == units.Length - 1 || bytes < 1024)
-                return $"{bytes} {units[i]}";
-            
-            bytes /= 1024;
-        }
-        return $"{bytes} RB";
-    }
+    #endregion
 }
