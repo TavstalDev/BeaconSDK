@@ -3,7 +3,7 @@ using Microsoft.Extensions.Hosting;
 
 namespace Tavstal.BeaconSDK.Example;
 
-public class Program
+public static class Program
 {
     public static async Task Main(string[] args)
     {
