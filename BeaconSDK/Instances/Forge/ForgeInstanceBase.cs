@@ -2,14 +2,15 @@
 using System.Text.Json;
 using Tavstal.BeaconSDK.Helpers.Domain;
 using Tavstal.BeaconSDK.Helpers.IO;
-using Tavstal.BeaconSDK.Instances;
+using Tavstal.BeaconSDK.Models;
 using Tavstal.BeaconSDK.Models.Installer;
 using Tavstal.BeaconSDK.Models.Instance;
 using Tavstal.BeaconSDK.Models.Logging;
+using Tavstal.BeaconSDK.Models.ModLoaders.Forge;
 using Tavstal.BeaconSDK.Models.ModLoaders.Forge.Modern;
 using Tavstal.BeaconSDK.Models.MojangApi;
 
-namespace Tavstal.BeaconSDK.Models.ModLoaders.Forge;
+namespace Tavstal.BeaconSDK.Instances.Forge;
 
 /// <summary>
 ///     Represents the base class for a Forge instance, inheriting from MinecraftInstance.

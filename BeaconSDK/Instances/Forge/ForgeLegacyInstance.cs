@@ -5,7 +5,6 @@ using Tavstal.BeaconSDK.Models.Endpoints.Modding;
 using Tavstal.BeaconSDK.Models.Installer;
 using Tavstal.BeaconSDK.Models.Instance;
 using Tavstal.BeaconSDK.Models.Logging;
-using Tavstal.BeaconSDK.Models.ModLoaders.Forge;
 using Tavstal.BeaconSDK.Models.ModLoaders.Forge.Legacy;
 using Tavstal.BeaconSDK.Models.MojangApi;
 using Tavstal.BeaconSDK.Models.MojangApi.Meta;

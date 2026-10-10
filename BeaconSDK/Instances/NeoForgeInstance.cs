@@ -1,11 +1,11 @@
 using System.IO.Compression;
 using Tavstal.BeaconSDK.Helpers.Serialization;
+using Tavstal.BeaconSDK.Instances.Forge;
 using Tavstal.BeaconSDK.Models;
 using Tavstal.BeaconSDK.Models.Endpoints.Modding;
 using Tavstal.BeaconSDK.Models.Installer;
 using Tavstal.BeaconSDK.Models.Instance;
 using Tavstal.BeaconSDK.Models.Logging;
-using Tavstal.BeaconSDK.Models.ModLoaders.Forge;
 using Tavstal.BeaconSDK.Models.ModLoaders.Forge.Modern;
 using Tavstal.BeaconSDK.Models.MojangApi;
 using Tavstal.BeaconSDK.Models.MojangApi.Meta;
