@@ -15,10 +15,6 @@ namespace Tavstal.BeaconSDK.Models.Accounts;
 [Serializable]
 public class Account
 {
-    private string _accessTokenCache = string.Empty;
-
-    private string _refreshTokenCache = string.Empty;
-
     /// <summary>
     ///     Initializes a new instance of the <see cref="Account" /> class.
     /// </summary>
@@ -27,8 +23,8 @@ public class Account
         Id = string.Empty;
         Uuid = string.Empty;
         DisplayName = string.Empty;
-        EncryptedAccessToken = string.Empty;
-        EncryptedRefreshToken = string.Empty;
+        EncryptedAccessToken = [];
+        EncryptedRefreshToken = [];
     }
 
     /// <summary>
@@ -62,7 +58,7 @@ public class Account
     [JsonPropertyName("accessToken")]
     [EditorBrowsable(EditorBrowsableState.Never)]
     [Obsolete("Use GetAccessToken() instead.")]
-    public string EncryptedAccessToken { get; set; }
+    public byte[] EncryptedAccessToken { get; set; }
 
     /// <summary>
     ///     Gets or sets the encrypted refresh token.
@@ -71,7 +67,7 @@ public class Account
     [JsonPropertyName("refreshToken")]
     [EditorBrowsable(EditorBrowsableState.Never)]
     [Obsolete("Use GetRefreshToken() instead.")]
-    public string EncryptedRefreshToken { get; set; }
+    public byte[] EncryptedRefreshToken { get; set; }
 
     /// <summary>
     ///     Gets or sets the expiration date of the access token.
@@ -101,25 +97,19 @@ public class Account
     /// </summary>
     /// <param name="encryptionService">The encryption service used to decrypt the stored token.</param>
     /// <returns>The decrypted access token.</returns>
-    public string GetAccessToken(IEncryptionService encryptionService)
+    public byte[] GetAccessToken(IEncryptionService encryptionService)
     {
-        if (!string.IsNullOrEmpty(_accessTokenCache))
-            return _accessTokenCache;
-        if (encryptionService.DataProtector != null)
-            return EncryptedAccessToken;
-        _accessTokenCache = encryptionService.Decrypt(EncryptedAccessToken);
-        return _accessTokenCache;
+        return encryptionService.Decrypt(EncryptedAccessToken);
     }
 
     /// <summary>
     ///     Sets the access token and encrypts it for storage.
     /// </summary>
-    /// <param name="accessToken">The access token to set.</param>
+    /// <param name="plainAccessToken">The access token to set.</param>
     /// <param name="encryptionService">The encryption service used to encrypt the token for storage.</param>
-    public void SetAccessToken(string accessToken, IEncryptionService encryptionService)
+    public void SetAccessToken(byte[] plainAccessToken, IEncryptionService encryptionService)
     {
-        _accessTokenCache = accessToken;
-        EncryptedAccessToken = encryptionService.Reprotect(accessToken);
+        EncryptedAccessToken = encryptionService.Reprotect(plainAccessToken);
     }
 
     /// <summary>
@@ -127,24 +117,18 @@ public class Account
     /// </summary>
     /// <param name="encryptionService">The encryption service used to decrypt the stored token.</param>
     /// <returns>The decrypted refresh token.</returns>
-    public string GetRefreshToken(IEncryptionService encryptionService)
+    public byte[] GetRefreshToken(IEncryptionService encryptionService)
     {
-        if (!string.IsNullOrEmpty(_refreshTokenCache))
-            return _refreshTokenCache;
-        if (encryptionService.DataProtector != null)
-            return EncryptedRefreshToken;
-        _refreshTokenCache = encryptionService.Decrypt(EncryptedRefreshToken);
-        return _refreshTokenCache;
+        return encryptionService.Decrypt(EncryptedRefreshToken);
     }
 
     /// <summary>
     ///     Sets the refresh token and encrypts it for storage.
     /// </summary>
-    /// <param name="refreshToken">The refresh token to set.</param>
+    /// <param name="plainRefreshToken">The refresh token to set.</param>
     /// <param name="encryptionService">The encryption service used to encrypt the token for storage.</param>
-    public void SetRefreshToken(string refreshToken, IEncryptionService encryptionService)
+    public void SetRefreshToken(byte[] plainRefreshToken, IEncryptionService encryptionService)
     {
-        _refreshTokenCache = refreshToken;
-        EncryptedRefreshToken = encryptionService.Reprotect(refreshToken);
+        EncryptedRefreshToken = encryptionService.Reprotect(plainRefreshToken);
     }
 }
