@@ -11,9 +11,7 @@ public class LibraryDownloads
     /// <summary>
     ///     Initializes a new instance of the <see cref="LibraryDownloads" /> class.
     /// </summary>
-    public LibraryDownloads()
-    {
-    }
+    public LibraryDownloads() { }
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="LibraryDownloads" /> class with specified artifact and classifiers.

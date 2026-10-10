@@ -10,10 +10,7 @@ public class RuleOs
     /// <summary>
     ///     Initializes a new instance of the <see cref="RuleOs" /> class.
     /// </summary>
-    public RuleOs()
-    {
-        Name = string.Empty;
-    }
+    public RuleOs() { }
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="RuleOs" /> class with a specified operating system name.
@@ -28,5 +25,5 @@ public class RuleOs
     ///     Gets or sets the name of the operating system.
     /// </summary>
     [JsonPropertyName("name")]
-    public string Name { get; set; }
+    public string? Name { get; set; }
 }

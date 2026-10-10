@@ -41,7 +41,7 @@ public class VersionMeta
     ///     Gets or sets the metadata for downloads associated with this version.
     /// </summary>
     [JsonPropertyName("downloads")]
-    public DownloadsMeta Downloads { get; set; } = new();
+    public DownloadsMeta? Downloads { get; set; }
 
     /// <summary>
     ///     Gets or sets the unique identifier for this version.
@@ -53,7 +53,7 @@ public class VersionMeta
     ///     Gets or sets the metadata for the required Java version.
     /// </summary>
     [JsonPropertyName("javaVersion")]
-    public JavaVersionMeta JavaVersionMeta { get; set; } = new();
+    public JavaVersionMeta? JavaVersionMeta { get; set; }
 
     /// <summary>
     ///     Gets or sets the list of libraries required for this version.
@@ -65,7 +65,7 @@ public class VersionMeta
     ///     Gets or sets the metadata for logging configuration.
     /// </summary>
     [JsonPropertyName("logging")]
-    public LoggingMeta LoggingMeta { get; set; } = new();
+    public LoggingMeta? LoggingMeta { get; set; }
 
     /// <summary>
     ///     Gets or sets the main class to be executed for this version.

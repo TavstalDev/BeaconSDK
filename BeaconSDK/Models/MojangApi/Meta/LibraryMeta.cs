@@ -17,7 +17,6 @@ public class LibraryMeta
     {
         Name = string.Empty;
         Downloads = new LibraryDownloads();
-        Rules = [];
     }
 
     /// <summary>
@@ -49,7 +48,7 @@ public class LibraryMeta
     ///     Gets or sets the rules that determine whether the library is allowed or disallowed.
     /// </summary>
     [JsonPropertyName("rules")]
-    public List<Rule> Rules { get; set; }
+    public List<Rule>? Rules { get; set; }
 
     /// <summary>
     ///     Gets or sets the native configurations for the library, if applicable.

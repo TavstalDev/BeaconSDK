@@ -13,7 +13,6 @@ public class Rule
     public Rule()
     {
         Action = string.Empty;
-        Os = new RuleOs();
     }
 
     /// <summary>
@@ -37,5 +36,5 @@ public class Rule
     ///     Gets or sets the operating system specification for the rule, if applicable.
     /// </summary>
     [JsonPropertyName("os")]
-    public RuleOs Os { get; set; }
+    public RuleOs? Os { get; set; }
 }

@@ -16,11 +16,7 @@ public class ArgumentMeta
     /// <summary>
     ///     Initializes a new instance of the <see cref="ArgumentMeta" /> class.
     /// </summary>
-    public ArgumentMeta()
-    {
-        Game = [];
-        Jvm = [];
-    }
+    public ArgumentMeta() { }
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="ArgumentMeta" /> class with specified game and JVM arguments.
@@ -37,13 +33,13 @@ public class ArgumentMeta
     ///     Gets or sets the list of game arguments.
     /// </summary>
     [JsonPropertyName("game")]
-    public List<object> Game { get; set; }
+    public List<object>? Game { get; set; }
 
     /// <summary>
     ///     Gets or sets the list of JVM arguments.
     /// </summary>
     [JsonPropertyName("jvm")]
-    public List<object> Jvm { get; set; }
+    public List<object>? Jvm { get; set; }
 
     /// <summary>
     ///     Retrieves the game arguments as a list of strings.
@@ -220,7 +216,7 @@ public class ArgumentMeta
             var operatingSystem = OSHelper.GetOperatingSystem();
             foreach (var rule in rules)
             {
-                if (string.IsNullOrEmpty(rule.Os.Name))
+                if (string.IsNullOrEmpty(rule.Os?.Name))
                 {
                     localResult = rule.Action == "allow";
                     continue;

@@ -13,9 +13,7 @@ public class DownloadsMeta
     public DownloadsMeta()
     {
         Client = new DownloadData();
-        ClientMappings = new DownloadData();
         Server = new DownloadData();
-        ServerMappings = new DownloadData();
     }
 
     /// <summary>
@@ -44,7 +42,7 @@ public class DownloadsMeta
     ///     Gets or sets the download data for the Minecraft client mappings.
     /// </summary>
     [JsonPropertyName("client_mappings")]
-    public DownloadData ClientMappings { get; set; }
+    public DownloadData? ClientMappings { get; set; }
 
     /// <summary>
     ///     Gets or sets the download data for the Minecraft server.
@@ -56,5 +54,5 @@ public class DownloadsMeta
     ///     Gets or sets the download data for the Minecraft server mappings.
     /// </summary>
     [JsonPropertyName("server_mappings")]
-    public DownloadData ServerMappings { get; set; }
+    public DownloadData? ServerMappings { get; set; }
 }
