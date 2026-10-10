@@ -12,7 +12,7 @@ public interface IHttpService
     ///     Creates and configures an <see cref="HttpClient" /> with platform-specific settings and default headers.
     /// </summary>
     /// <returns>A configured <see cref="HttpClient" /> instance.</returns>
-    HttpClient CreateHttpClient();
+    HttpClient CreateHttpClient(string agent = "BeaconSDK/1.0.0 (+https://github.com/TavstalDev/BeaconSDK)");
 
     /// <summary>
     ///     Performs a GET request and returns the full response message.
@@ -74,6 +74,7 @@ public interface IHttpService
     /// </summary>
     /// <param name="url">The URL of the file to download.</param>
     /// <param name="filePath">The local file path where the downloaded content will be saved.</param>
+    /// <param name="sha1">The optional expected SHA-1 hash of the file, used for integrity verification.</param>
     /// <param name="progress">
     ///     Optional progress reporter that receives percentage complete (0-100) as data is downloaded.
     /// </param>
@@ -81,7 +82,7 @@ public interface IHttpService
     /// <returns>
     ///     A task that resolves to the file path if the download succeeds; otherwise, <see langword="null" />.
     /// </returns>
-    Task<string?> DownloadFileAsync(string url, string filePath, IProgress<double>? progress,
+    Task<string?> DownloadFileAsync(string url, string filePath, string? sha1, IProgress<double>? progress,
         CancellationToken cancellationToken = default);
 
     /// <summary>

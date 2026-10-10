@@ -2,10 +2,11 @@ using System.Net;
 using System.Net.Security;
 using System.Security.Authentication;
 using System.Text;
-using Tavstal.BeaconSDK.Helpers.Platform;
+using Tavstal.BeaconSDK.Helpers.IO;
 using Tavstal.BeaconSDK.Models;
 using Tavstal.BeaconSDK.Models.Logging;
 using Tavstal.BeaconSDK.Services.Abstractions;
+// ReSharper disable UnusedMethodReturnValue.Global
 
 namespace Tavstal.BeaconSDK.Services.Implementations;
 
@@ -14,41 +15,32 @@ public class HttpService : IHttpService
 {
     private const int MaxParallelDownloads = 4;
     private readonly HttpClient _httpClient;
-    private readonly ICustomLogger _logger;
+    private readonly IBeaconLogger _logger;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="HttpService" /> class.
     /// </summary>
     /// <param name="logger">Logger instance used to record diagnostic and error messages for HTTP operations.</param>
-    public HttpService(ICustomLogger<HttpService> logger)
+    public HttpService(IBeaconLogger<HttpService> logger)
     {
         _logger = logger;
         _httpClient = CreateHttpClient();
     }
 
     /// <inheritdoc />
-    public HttpClient CreateHttpClient()
+    public HttpClient CreateHttpClient(string agent = "BeaconSDK/1.0.0 (+https://github.com/TavstalDev/BeaconSDK)")
     {
-        HttpClient client;
-        if (OSHelper.IsWindows11())
+        var handler = new SocketsHttpHandler
         {
-            var handler = new SocketsHttpHandler
-            {
-                SslOptions = new SslClientAuthenticationOptions { EnabledSslProtocols = SslProtocols.Tls12 },
-                AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
-                AllowAutoRedirect = true
-            };
-            handler.EnableMultipleHttp2Connections = false;
-            client = new HttpClient(handler);
-        }
-        else
-        {
-            client = new HttpClient();
-        }
+            SslOptions = new SslClientAuthenticationOptions { EnabledSslProtocols = SslProtocols.Tls12 },
+            AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
+            AllowAutoRedirect = true
+        };
+        handler.EnableMultipleHttp2Connections = false;
+        var client = new HttpClient(handler);
 
         client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
-        client.DefaultRequestHeaders.UserAgent.ParseAdd(
-            "KonkordLauncher/2.0.0 (+https://github.com/TavstalDev/KonkordLauncher)");
+        client.DefaultRequestHeaders.UserAgent.ParseAdd(agent);
         client.Timeout = TimeSpan.FromSeconds(120);
         return client;
     }
@@ -112,7 +104,7 @@ public class HttpService : IHttpService
 
             await using var responseStream = await response.Content.ReadAsStreamAsync(cancellationToken);
             using var memoryStream = new MemoryStream();
-            var buffer = new byte[4096];
+            var buffer = new byte[8192];
             int bytesRead;
             long totalBytesRead = 0;
 
@@ -193,20 +185,44 @@ public class HttpService : IHttpService
     }
 
     /// <inheritdoc />
-    public async Task<string?> DownloadFileAsync(string url, string filePath, IProgress<double>? progress,
+    public async Task<string?> DownloadFileAsync(string url, string filePath, string? sha1, IProgress<double>? progress,
         CancellationToken cancellationToken = default)
     {
+        string tempFilePath = filePath + ".tmp";
         try
         {
+            if (File.Exists(filePath))
+            {
+                bool shouldReturn = true;
+                if (!string.IsNullOrEmpty(sha1))
+                {
+                    string? hash = await FileSystemHelper.GetFileHashAsync(filePath);
+                    if (!string.Equals(sha1, hash, StringComparison.InvariantCultureIgnoreCase) &&
+                        !string.IsNullOrEmpty(hash))
+                    {
+                        shouldReturn =  false;
+                        FileSystemHelper.DeleteFile(filePath);
+                    }
+                }
+                if (shouldReturn)
+                    return filePath;
+            }
+
             var response = await _httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
             response.EnsureSuccessStatusCode();
 
             var contentLength = response.Content.Headers.ContentLength;
 
             await using var responseStream = await response.Content.ReadAsStreamAsync(cancellationToken);
-            await using var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.Read);
 
-            var buffer = new byte[8192]; // Use a larger buffer for better performance
+            var directory = Path.GetDirectoryName(filePath);
+            if (!string.IsNullOrEmpty(directory))
+                Directory.CreateDirectory(directory);
+
+            await using var fileStream =
+                new FileStream(tempFilePath, FileMode.Create, FileAccess.Write, FileShare.Read, 8192);
+
+            var buffer = new byte[8192];
             int bytesRead;
             long totalBytesRead = 0;
 
@@ -222,19 +238,39 @@ public class HttpService : IHttpService
                 }
             }
 
+            fileStream.Close();
+            if (!string.IsNullOrEmpty(sha1))
+            {
+                string? hash = await FileSystemHelper.GetFileHashAsync(tempFilePath);
+                if (!string.Equals(sha1, hash, StringComparison.InvariantCultureIgnoreCase) &&
+                    !string.IsNullOrEmpty(hash))
+                {
+                    _logger.LogWarning($"{url}: Had mismatching sha1 checksum, skipping download...");
+                    return null;
+                }
+            }
+
+            File.Move(tempFilePath, filePath, true);
+
             return filePath; // Return the path to the downloaded file
         }
         catch (OperationCanceledException)
         {
+            if (File.Exists(tempFilePath))
+                FileSystemHelper.DeleteFile(tempFilePath);
             throw;
         }
         catch (HttpRequestException ex)
         {
+            if (File.Exists(tempFilePath))
+                FileSystemHelper.DeleteFile(tempFilePath);
             _logger.LogError($"HTTP request to {url} failed with {ex.StatusCode}: {ex.Message}");
             return null;
         }
         catch (Exception ex)
         {
+            if (File.Exists(tempFilePath))
+                FileSystemHelper.DeleteFile(tempFilePath);
             _logger.LogCritical(ex, $"Failed to download file from {url}:");
             return null;
         }
@@ -254,7 +290,7 @@ public class HttpService : IHttpService
             {
                 try
                 {
-                    await DownloadFileAsync(entry.Url, entry.Path, entry.Progress, cancellationToken);
+                    await DownloadFileAsync(entry.Url, entry.Path, entry.Sha1, entry.Progress, cancellationToken);
                 }
                 finally
                 {
