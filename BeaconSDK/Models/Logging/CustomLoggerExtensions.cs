@@ -1,5 +1,4 @@
 using System.Text;
-using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 
 namespace Tavstal.BeaconSDK.Models.Logging;
@@ -9,8 +8,6 @@ namespace Tavstal.BeaconSDK.Models.Logging;
 /// </summary>
 public static class CustomLoggerExtensions
 {
-    private static readonly Regex FormatPlaceholderRegex = new(@"\{(?!\d{1,2}\})", RegexOptions.Compiled);
-
     /// <summary>
     ///     Formats a <see cref="LogEntry" /> and an optional <see cref="Exception" /> into a single string
     ///     suitable for output to the configured log sinks.
@@ -40,7 +37,7 @@ public static class CustomLoggerExtensions
     /// <returns>The escaped string with format placeholders replaced.</returns>
     private static string EscapeFormatString(string input)
     {
-        return FormatPlaceholderRegex.Replace(input, "{{").Replace("}", "}}");
+        return input.Replace( "{", "{{").Replace("}", "}}");
     }
 
     /// <param name="logger">The <see cref="ICustomLogger" /> to write to.</param>
