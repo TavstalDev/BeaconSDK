@@ -196,7 +196,7 @@ public class ArgumentBuilder
         if (UseClasspathFile)
         {
             if (string.IsNullOrEmpty(ClasspathFilePath))
-                ClasspathFilePath = Path.Combine(Path.GetTempPath(), "konkordlauncher_classpath.txt");
+                ClasspathFilePath = Path.Combine(Path.GetTempPath(), "classpath.txt");
             File.WriteAllText(ClasspathFilePath, classpath);
             _placeholders.Add("${classpath}", $"@\"{ClasspathFilePath}\"");
         }
