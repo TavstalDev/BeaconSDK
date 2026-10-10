@@ -328,7 +328,7 @@ public class LibraryDownloadService : ILibraryDownloadService
         IProgressReporter? progressReporter = null, CancellationToken cancellationToken = default)
     {
         // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
-        if (versionMeta.Downloads.ClientMappings == null) return;
+        if (versionMeta.Downloads?.ClientMappings == null) return;
 
         var clientMappinsPath = Path.Combine(versionData.VanillaVersionDirectory, "client.txt");
 
@@ -503,7 +503,7 @@ public class LibraryDownloadService : ILibraryDownloadService
         Directory.CreateDirectory(libDirPath);
 
         var libFilePath = Path.Combine(libsDir, localPath);
-        if (!File.Exists(libFilePath) && !string.IsNullOrEmpty(lib.Downloads.Artifact.Url))
+        if (!string.IsNullOrEmpty(lib.Downloads.Artifact.Url))
         {
             var progress = new Progress<double>();
             progress.ProgressChanged += (_, e) =>
