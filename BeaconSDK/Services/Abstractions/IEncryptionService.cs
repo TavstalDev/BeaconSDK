@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.DataProtection;
+using System.Security.Cryptography;
 
 namespace Tavstal.BeaconSDK.Services.Abstractions;
 
@@ -8,40 +8,29 @@ namespace Tavstal.BeaconSDK.Services.Abstractions;
 public interface IEncryptionService
 {
     /// <summary>
-    ///     A data protector instance used for encrypting and decrypting data.
+    ///     Encrypts the given bytes using the encryption scheme available in the current environment.
     /// </summary>
-    public IDataProtector? DataProtector { get; protected set; }
+    /// <param name="plainBytes">The bytes to encrypt.</param>
+    /// <returns>The encrypted bytes, prefixed with a marker identifying the encryption scheme used.</returns>
+    public byte[] Encrypt(byte[] plainBytes);
 
     /// <summary>
-    ///     Encrypts the given text based on the current operating system.
+    ///     Decrypts the given bytes based on the encryption scheme identified by their prefix.
     /// </summary>
-    /// <param name="text">The text to encrypt.</param>
-    /// <returns>The encrypted text.</returns>
-    public string Encrypt(string text);
-
-    /// <summary>
-    ///     Decrypts the given text based on the current operating system.
-    /// </summary>
-    /// <param name="text">The text to decrypt.</param>
+    /// <param name="cipherBytes">The bytes to decrypt.</param>
     /// <param name="ignoreUnknown">Whether to return the input unchanged when its format is not recognized.</param>
-    /// <returns>The decrypted text.</returns>
-    public string Decrypt(string text, bool ignoreUnknown = false);
+    /// <returns>The decrypted bytes.</returns>
+    /// <exception cref="CryptographicException">
+    ///     Thrown when the prefix is unrecognized and <paramref name="ignoreUnknown" /> is <see langword="false" />, or when
+    ///     the data required to decrypt is not available (e.g. data protection is not configured).
+    /// </exception>
+    public byte[] Decrypt(byte[] cipherBytes, bool ignoreUnknown = false);
 
     /// <summary>
-    ///     Reprotects an encrypted string by decrypting it and re-encrypting it using the current data protection provider.
+    ///     Reprotects encrypted bytes by decrypting them and re-encrypting them with the encryption scheme available in the
+    ///     current environment.
     /// </summary>
-    /// <param name="encrypted">The encrypted string to be reprotected.</param>
-    /// <returns>
-    ///     The reprotected string if the data protection provider is set; otherwise, the original encrypted string.
-    /// </returns>
-    /// <remarks>
-    ///     This method handles different encryption formats based on their prefixes:
-    ///     - If the prefix is "dpv1:", the string is decrypted and re-encrypted using the current data protection provider.
-    ///     - If the prefix is "winv1:", "linuxv1:", or "macv1:", the string is decrypted using the respective
-    ///     platform-specific method
-    ///     and then re-encrypted using the current data protection provider.
-    ///     - If the format is unknown, the string is re-encrypted as-is.
-    ///     If the data protection provider is not set, the method returns the original encrypted string.
-    /// </remarks>
-    public string Reprotect(string encrypted);
+    /// <param name="cipherBytes">The encrypted bytes to reprotect.</param>
+    /// <returns>The reprotected bytes, or the original input if reprotection fails.</returns>
+    public byte[] Reprotect(byte[] cipherBytes);
 }

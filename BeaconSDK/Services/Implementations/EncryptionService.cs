@@ -1,284 +1,272 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
-using System.Text;
 using Microsoft.AspNetCore.DataProtection;
 using Tavstal.BeaconSDK.Enums;
 using Tavstal.BeaconSDK.Helpers.Platform;
+using Tavstal.BeaconSDK.Models.Logging;
 using Tavstal.BeaconSDK.Services.Abstractions;
 
 namespace Tavstal.BeaconSDK.Services.Implementations;
 
 /// <inheritdoc />
+/// <remarks>
+/// <para>
+/// <b>SECURITY WARNING:</b> If an <see cref="IDataProtectionProvider" /> instance is not provided during initialization,
+/// this service falls back to platform-specific encryption: DPAPI scoped to the current user on Windows, and AES with a
+/// static embedded key on Linux and macOS.
+/// </para>
+/// <para>
+/// This fallback mechanism is intended strictly for unconfigured or lower-tier environments. For production workloads,
+/// ensure <see cref="IDataProtectionProvider" /> is registered via Dependency Injection to guarantee key derivation and
+/// rotation.
+/// </para>
+/// </remarks>
 public class EncryptionService : IEncryptionService
 {
-    private const string DP_PREFIX = "dpv1:";
-    private const string WIN_PREFIX = "winv1:";
-    private const string LINUX_PREFIX = "linuxv1:";
-    private const string MAC_PREFIX = "macv1:";
-    private const string linuxKey = "898c3f038bfc090b62a32156aba62acda193e90e26baf0ab";
-    private const string macKey = "a83231f9eadeac1e8a3b875d86da77a43e911180d9e88968";
-    private readonly byte[] s_entropy = [.. "8AE1C425-241D-46A9-A8F8-6E8A68D2586C"u8];
+    private const int PREFIX_LENGTH = 6;
+    // As of v1 all prefix lengths should be 6 characters including the ':'.
+    private readonly byte[] PREFIX_V1_DP = [.. "dpsv1:"u8];
+    private readonly byte[] PREFIX_V1_WIN = [.. "winv1:"u8];
+    private readonly byte[] PREFIX_V1_LINUX = [.. "linv1:"u8];
+    private readonly byte[] PREFIX_V1_MAC = [.. "macv1:"u8];
+    private readonly byte[] E_KEY_LINUX = [.. "5aEcj3cLUm5qYeCpptEaQoFCUTgZyEZw"u8];
+    private readonly byte[] E_KEY_MAC = [.. "MqcM2kVeroKpvh9z79t3KjtiTzCUKSRs"u8];
+    private readonly byte[] S_ENTROPY = [.. "8AE1C425-241D-46A9-A8F8-6E8A68D2586C"u8];
+    private readonly ICustomLogger<EncryptionService> _logger;
+    private readonly IDataProtector? _dataProtector;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="EncryptionService" /> class.
     /// </summary>
-    /// <param name="dataProtector">
+    /// <param name="logger">Logger used to record diagnostic messages, warnings, and errors.</param>
+    /// <param name="provider">
     ///     The data protection protector used to encrypt and decrypt values. When <see langword="null" />,
     ///     platform-specific encryption is used instead.
     /// </param>
-    public EncryptionService(IDataProtector? dataProtector)
+    public EncryptionService(ICustomLogger<EncryptionService> logger, IDataProtectionProvider? provider = null)
     {
-        DataProtector = dataProtector;
-    }
-
-    /// <inheritdoc />
-    public IDataProtector? DataProtector { get; set; }
-
-    /// <inheritdoc />
-    public string Encrypt(string text)
-    {
-        if (DataProtector != null)
-            return DP_PREFIX + DataProtector.Protect(text);
-
-        switch (OSHelper.GetOperatingSystem())
+        _logger = logger;
+        if (provider == null)
         {
-            case EOperatingSystem.WINDOWS:
-                return WIN_PREFIX + EncryptWin(text);
-            case EOperatingSystem.LINUX:
-                return LINUX_PREFIX + EncryptLinux(text);
-            case EOperatingSystem.MACOS:
-                return MAC_PREFIX + EncryptMac(text);
-            default:
-                throw new Exception("Unknown operating system");
+            logger.LogWarning(
+                "DataProtector is not configured. Using weak fallback encryption with a static key. " +
+                "Configure DataProtection for production security."
+            );
+            return;
         }
+        _dataProtector = provider.CreateProtector("BeaconSDK.Encryption.v1");
     }
 
     /// <inheritdoc />
-    public string Decrypt(string text, bool ignoreUnknown = false)
+    public byte[] Encrypt(byte[] plainBytes)
     {
-        if (string.IsNullOrEmpty(text))
-            return text;
+        if (_dataProtector != null)
+            return ApplyPrefix(PREFIX_V1_DP, _dataProtector.Protect(plainBytes));
 
-        if (text.StartsWith(DP_PREFIX))
+        return OSHelper.GetOperatingSystem() switch
         {
-            if (DataProtector == null)
-                throw new CryptographicException("Data protector is not set for DP encrypted text");
-            return DataProtector.Unprotect(text[DP_PREFIX.Length..]);
-        }
-
-        if (text.StartsWith(WIN_PREFIX))
-            return DecryptWin(text[WIN_PREFIX.Length..]);
-
-        if (text.StartsWith(LINUX_PREFIX))
-            return DecryptLinux(text[LINUX_PREFIX.Length..]);
-
-        if (text.StartsWith(MAC_PREFIX))
-            return DecryptMac(text[MAC_PREFIX.Length..]);
-
-        if (ignoreUnknown)
-            return text;
-        throw new CryptographicException("Unknown encryption format");
+            EOperatingSystem.WINDOWS => ApplyPrefix(PREFIX_V1_WIN, EncryptWin(plainBytes)),
+            EOperatingSystem.LINUX => ApplyPrefix(PREFIX_V1_LINUX, EncryptLinux(plainBytes)),
+            EOperatingSystem.MACOS => ApplyPrefix(PREFIX_V1_MAC, EncryptMac(plainBytes)),
+            _ => throw new Exception("Unsupported operating system.")
+        };
     }
 
     /// <inheritdoc />
-    public string Reprotect(string encrypted)
+    public byte[] Decrypt(byte[] cipherBytes, bool ignoreUnknown = false)
     {
-        if (string.IsNullOrEmpty(encrypted))
-            return encrypted;
+        // If cypherBytes is equals or less than the smallest known prefix it is considered unencrypted.
+        if (cipherBytes.Length <= PREFIX_LENGTH)
+            return cipherBytes;
 
+        byte[] prefixBytes = GetPrefix(cipherBytes);
+        int encryptedDataLength = cipherBytes.Length - prefixBytes.Length;
+        if (encryptedDataLength <= 0)
+            return cipherBytes;
+
+        byte[] encryptedBytes = new byte[encryptedDataLength];
+        Buffer.BlockCopy(cipherBytes, prefixBytes.Length, encryptedBytes, 0, encryptedBytes.Length);
         try
         {
-            if (DataProtector != null)
+            // DPv1
+            if (prefixBytes.SequenceEqual(PREFIX_V1_DP))
             {
-                // if prefix is DP, decrypt & re-protect with current provider
-                if (encrypted.StartsWith(DP_PREFIX))
-                    return DP_PREFIX + DataProtector.Protect(DataProtector.Unprotect(encrypted[DP_PREFIX.Length..]));
-                if (encrypted.StartsWith(WIN_PREFIX))
-                {
-                    // else if prefix is WIN, decrypt using Windows, then protect with DP
-                    var plain = DecryptWin(encrypted[WIN_PREFIX.Length..]);
-                    return DP_PREFIX + DataProtector.Protect(plain);
-                }
-
-                if (encrypted.StartsWith(LINUX_PREFIX))
-                {
-                    // else if prefix is LINUX, decrypt using Linux, then protect with DP
-                    var plain = DecryptLinux(encrypted[LINUX_PREFIX.Length..]);
-                    return DP_PREFIX + DataProtector.Protect(plain);
-                }
-
-                if (encrypted.StartsWith(MAC_PREFIX))
-                {
-                    // else if prefix is MAC, decrypt using Mac, then protect with DP
-                    var plain = DecryptMac(encrypted[MAC_PREFIX.Length..]);
-                    return DP_PREFIX + DataProtector.Protect(plain);
-                }
-
-                // Not known format, protect as-is
-                return DP_PREFIX + DataProtector.Protect(encrypted);
+                if (_dataProtector == null)
+                    throw new CryptographicException("DataProtector is not configured, the cipherBytes cannot be decrypted.");
+                return _dataProtector.Unprotect(encryptedBytes);
             }
 
-            return encrypted; // fallback: keep as-is
+            // Win v1
+            if (prefixBytes.SequenceEqual(PREFIX_V1_WIN))
+                return DecryptWin(encryptedBytes);
+
+            // Linux v1
+            if (prefixBytes.SequenceEqual(PREFIX_V1_LINUX))
+                return DecryptLinux(encryptedBytes);
+
+            // Mac v1
+            if (prefixBytes.SequenceEqual(PREFIX_V1_MAC))
+                return DecryptMac(encryptedBytes);
+
+            // The prefix is unknown or not encrypted at all
+            if (ignoreUnknown)
+                return cipherBytes;
+            throw new CryptographicException("The provided bytes has no known encryption format.");
         }
-        catch
+        finally
         {
-            return encrypted; // fail-safe
+            Array.Clear(prefixBytes);
+            Array.Clear(encryptedBytes);
         }
     }
 
+    /// <inheritdoc />
+    public byte[] Reprotect(byte[] cipherBytes)
+    {
+        byte[] unencryptedBytes = [];
+        try
+        {
+            unencryptedBytes = Decrypt(cipherBytes);
+            return Encrypt(unencryptedBytes);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error occured while reprotecting data.");
+            return cipherBytes;
+        }
+        finally
+        {
+            Array.Clear(unencryptedBytes);
+        }
+    }
+
+    private byte[] ApplyPrefix(byte[] prefixBytes, byte[] data)
+    {
+        byte[] newPrefixedBytes = new byte[prefixBytes.Length + data.Length];
+        Buffer.BlockCopy(prefixBytes, 0, newPrefixedBytes, 0, prefixBytes.Length);
+        Buffer.BlockCopy(data, 0, newPrefixedBytes, prefixBytes.Length, data.Length);
+        return  newPrefixedBytes;
+    }
+
+    private byte[] GetPrefix(byte[] cipherBytes)
+    {
+        // As of v1 all prefixes has 6 bytes including the ':'.
+        byte[] prefixBytes = new byte[PREFIX_LENGTH];
+        Buffer.BlockCopy(cipherBytes, 0, prefixBytes, 0, PREFIX_LENGTH);
+        return prefixBytes;
+    }
+
     /// <summary>
-    ///     Encrypts text using Windows-specific encryption.
+    ///     Encrypts bytes using Windows DPAPI, scoped to the current user.
     /// </summary>
-    /// <param name="text">The text to encrypt.</param>
-    /// <returns>The encrypted text.</returns>
+    /// <param name="plainBytes">The bytes to encrypt.</param>
+    /// <returns>The encrypted bytes.</returns>
     [SuppressMessage("Interoperability", "CA1416:Validate platform compatibility")]
-    private string EncryptWin(string text)
+    private byte[] EncryptWin(byte[] plainBytes)
     {
-        var plainBytes = Encoding.UTF8.GetBytes(text);
-        var encryptedBytes = ProtectedData.Protect(plainBytes, s_entropy, DataProtectionScope.CurrentUser);
-        return Convert.ToBase64String(encryptedBytes);
+        var encryptedBytes = ProtectedData.Protect(plainBytes, S_ENTROPY, DataProtectionScope.CurrentUser);
+        return encryptedBytes;
     }
 
     /// <summary>
-    ///     Decrypts text using Windows-specific decryption.
+    ///     Decrypts bytes using Windows DPAPI, scoped to the current user.
     /// </summary>
-    /// <param name="text">The text to decrypt.</param>
-    /// <returns>The decrypted text.</returns>
+    /// <param name="cipherBytes">The bytes to decrypt.</param>
+    /// <returns>The decrypted bytes.</returns>
     [SuppressMessage("Interoperability", "CA1416:Validate platform compatibility")]
-    private string DecryptWin(string text)
+    private byte[] DecryptWin(byte[] cipherBytes)
     {
-        var cipherBytes = Convert.FromBase64String(text);
-        var decryptedBytes = ProtectedData.Unprotect(cipherBytes, s_entropy, DataProtectionScope.CurrentUser);
-        return Encoding.UTF8.GetString(decryptedBytes);
+        var decryptedBytes = ProtectedData.Unprotect(cipherBytes, S_ENTROPY, DataProtectionScope.CurrentUser);
+        return decryptedBytes;
     }
 
     /// <summary>
-    ///     Encrypts text using Linux-specific encryption.
+    ///     Encrypts bytes using AES with the Linux fallback key.
     /// </summary>
-    /// <param name="text">The text to encrypt.</param>
-    /// <returns>The encrypted text.</returns>
-    private string EncryptLinux(string text)
+    /// <param name="plainBytes">The bytes to encrypt.</param>
+    /// <returns>The encrypted bytes, or the input unchanged when it is empty.</returns>
+    private byte[] EncryptLinux(byte[] plainBytes)
     {
-        if (string.IsNullOrEmpty(text))
-            return text;
-
-        // This is a fallback method for encryption
-        // in case of IDataProtector is not set.
-        // It is recommended to set IDataProtector for better security.
-        // However, if not set, this method will be used.
-        // This is not the most secure method, especially with a static key,
-        // but it is better than nothing.
-        // I could generate a custom key on each machine, but since I would need to store it
-        // somewhere unencrypted, it would defeat the purpose of encryption.
-        return Encrypt(linuxKey, text);
+        if (plainBytes.Length == 0)
+            return plainBytes;
+        return Encrypt(E_KEY_LINUX, plainBytes);
     }
 
     /// <summary>
-    ///     Decrypts text using Linux-specific decryption.
+    ///     Decrypts bytes using AES with the Linux fallback key.
     /// </summary>
-    /// <param name="text">The text to decrypt.</param>
-    /// <returns>The decrypted text.</returns>
-    private string DecryptLinux(string text)
+    /// <param name="cipherBytes">The bytes to decrypt.</param>
+    /// <returns>The decrypted bytes, or the input unchanged when it is empty.</returns>
+    private byte[] DecryptLinux(byte[] cipherBytes)
     {
-        if (string.IsNullOrEmpty(text))
-            return text;
-
-        // This is a fallback method for encryption
-        // in case of IDataProtector is not set.
-        // It is recommended to set IDataProtector for better security.
-        // However, if not set, this method will be used.
-        // This is not the most secure method, especially with a static key,
-        // but it is better than nothing.
-        // I could generate a custom key on each machine, but since I would need to store it
-        // somewhere unencrypted, it would defeat the purpose of encryption.
-        return Decrypt(linuxKey, text);
+        if (cipherBytes.Length == 0)
+            return cipherBytes;
+        return Decrypt(E_KEY_LINUX, cipherBytes);
     }
 
     /// <summary>
-    ///     Encrypts text using macOS-specific encryption.
+    ///     Encrypts bytes using AES with the macOS fallback key.
     /// </summary>
-    /// <param name="text">The text to encrypt.</param>
-    /// <returns>The encrypted text.</returns>
-    private string EncryptMac(string text)
+    /// <param name="plainBytes">The bytes to encrypt.</param>
+    /// <returns>The encrypted bytes, or the input unchanged when it is empty.</returns>
+    private byte[] EncryptMac(byte[] plainBytes)
     {
-        if (string.IsNullOrEmpty(text))
-            return text;
-
-        // This is a fallback method for encryption
-        // in case of IDataProtector is not set.
-        // It is recommended to set IDataProtector for better security.
-        // However, if not set, this method will be used.
-        // This is not the most secure method, especially with a static key,
-        // but it is better than nothing.
-        // I could generate a custom key on each machine, but since I would need to store it
-        // somewhere unencrypted, it would defeat the purpose of encryption.
-        return Encrypt(macKey, text);
+        if (plainBytes.Length == 0)
+            return plainBytes;
+        return Encrypt(E_KEY_MAC, plainBytes);
     }
 
     /// <summary>
-    ///     Decrypts text using macOS-specific decryption.
+    ///     Decrypts bytes using AES with the macOS fallback key.
     /// </summary>
-    /// <param name="text">The text to decrypt.</param>
-    /// <returns>The decrypted text.</returns>
-    private string DecryptMac(string text)
+    /// <param name="cipherBytes">The bytes to decrypt.</param>
+    /// <returns>The decrypted bytes, or the input unchanged when it is empty.</returns>
+    private byte[] DecryptMac(byte[] cipherBytes)
     {
-        if (string.IsNullOrEmpty(text))
-            return text;
-
-        // This is a fallback method for encryption
-        // in case of IDataProtector is not set.
-        // It is recommended to set IDataProtector for better security.
-        // However, if not set, this method will be used.
-        // This is not the most secure method, especially with a static key,
-        // but it is better than nothing.
-        // I could generate a custom key on each machine, but since I would need to store it
-        // somewhere unencrypted, it would defeat the purpose of encryption.
-        return Decrypt(macKey, text);
+        if (cipherBytes.Length == 0)
+            return cipherBytes;
+        return Decrypt(E_KEY_MAC, cipherBytes);
     }
 
     /// <summary>
-    ///     Encrypts text using AES encryption with the specified key.
+    ///     Encrypts bytes using AES-CBC with the specified key and a randomly generated IV.
     /// </summary>
-    /// <param name="key">The encryption key.</param>
-    /// <param name="plainText">The text to encrypt.</param>
-    /// <returns>The encrypted text.</returns>
-    private string Encrypt(string key, string plainText)
+    /// <param name="key">The AES encryption key.</param>
+    /// <param name="plainBytes">The bytes to encrypt.</param>
+    /// <returns>The IV prepended to the ciphertext.</returns>
+    private byte[] Encrypt(byte[] key, byte[] plainBytes)
     {
         using var aes = Aes.Create();
-        aes.Key = Encoding.UTF8.GetBytes(key);
+        aes.Key = key;
         aes.GenerateIV();
 
         using var encryptor = aes.CreateEncryptor();
-
-        var plainBytes = Encoding.UTF8.GetBytes(plainText);
         var cipherText = encryptor.TransformFinalBlock(plainBytes, 0, plainBytes.Length);
 
         var combined = new byte[aes.IV.Length + cipherText.Length];
         Buffer.BlockCopy(aes.IV, 0, combined, 0, aes.IV.Length);
         Buffer.BlockCopy(cipherText, 0, combined, aes.IV.Length, cipherText.Length);
-
-        return Convert.ToBase64String(combined);
+        return combined;
     }
 
     /// <summary>
-    ///     Decrypts text using AES decryption with the specified key.
+    ///     Decrypts bytes using AES-CBC with the specified key, reading the IV from the start of the input.
     /// </summary>
-    /// <param name="key">The decryption key.</param>
-    /// <param name="base64String">The text to decrypt.</param>
-    /// <returns>The decrypted text.</returns>
-    private string Decrypt(string key, string base64String)
+    /// <param name="key">The AES decryption key.</param>
+    /// <param name="cipherBytes">The bytes to decrypt, with the IV prepended to the ciphertext.</param>
+    /// <returns>The decrypted bytes.</returns>
+    private byte[] Decrypt(byte[] key, byte[] cipherBytes)
     {
-        var buffer = Convert.FromBase64String(base64String);
         var iv = new byte[16];
-        var cipherText = new byte[buffer.Length - 16];
-        Buffer.BlockCopy(buffer, 0, iv, 0, iv.Length);
-        Buffer.BlockCopy(buffer, iv.Length, cipherText, 0, cipherText.Length);
+        var cipherText = new byte[cipherBytes.Length - 16];
+        Buffer.BlockCopy(cipherBytes, 0, iv, 0, iv.Length);
+        Buffer.BlockCopy(cipherBytes, iv.Length, cipherText, 0, cipherText.Length);
 
         using var aes = Aes.Create();
-        aes.Key = Encoding.UTF8.GetBytes(key);
+        aes.Key = key;
         aes.IV = iv;
         using var decryptor = aes.CreateDecryptor();
         var plainBytes = decryptor.TransformFinalBlock(cipherText, 0, cipherText.Length);
-        return Encoding.UTF8.GetString(plainBytes);
+        return plainBytes;
     }
 }
