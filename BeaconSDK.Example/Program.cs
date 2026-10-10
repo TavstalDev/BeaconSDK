@@ -15,7 +15,6 @@ public class Program
             services.AddHostedService<ExampleWorker>();
         });
         var host = hostBuilder.Build();
-        host.FinishBeaconSetup();
         await host.RunAsync();
     }
 }

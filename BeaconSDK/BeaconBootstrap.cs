@@ -53,11 +53,12 @@ public static class BeaconBootstrap
         services.AddDataProtection()
             .PersistKeysToFileSystem(new DirectoryInfo(keysDir))
             .SetApplicationName(appName);
+        services.AddDataProtection();
         services.AddSingleton<IEncryptionService, EncryptionService>();
 
         // Minecraft services
         services.AddSingleton<IManifestService, ManifestService>();
-        services.AddScoped<ILibraryDownloadService, LibraryDownloadService>();
+        services.AddSingleton<ILibraryDownloadService, LibraryDownloadService>();
         services.AddSingleton<IInstanceInstallService, InstanceInstallService>();
         services.AddSingleton<IInstanceLaunchService, InstanceLaunchService>();
 
@@ -70,16 +71,5 @@ public static class BeaconBootstrap
         services.AddSingleton<IJavaService, JavaService>();
 
         return services;
-    }
-
-    /// <summary>
-    ///     Completes the SDK setup by awaiting the initialization of every registered
-    ///     <see cref="IAsyncInitializable" /> service. The call blocks until all of them have finished.
-    /// </summary>
-    /// <param name="host">The built host whose service provider should be initialized.</param>
-    public static void FinishBeaconSetup(this IHost host)
-    {
-        var asyncInitServices = host.Services.GetServices<IAsyncInitializable>().ToArray();
-        Task.WhenAll(asyncInitServices.Select(x => x.InitializeAsync())).GetAwaiter().GetResult();
     }
 }
