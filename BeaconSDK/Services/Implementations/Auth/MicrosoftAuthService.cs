@@ -142,7 +142,7 @@ public class MicrosoftAuthService : IMicrosoftAuthService
             };
             var requestContent = new FormUrlEncodedContent(requestParams);
 
-            var client = _httpService.CreateHttpClient();
+            using var client = _httpService.CreateHttpClient();
             var response = await client.PostAsync(requestUrl, requestContent, cancellationToken);
 
             if (!response.IsSuccessStatusCode)
@@ -200,7 +200,7 @@ public class MicrosoftAuthService : IMicrosoftAuthService
 
             var formContent = new FormUrlEncodedContent(parameters);
 
-            var client = _httpService.CreateHttpClient();
+            using var client = _httpService.CreateHttpClient();
             var result = await client.PostAsync(MicrosoftEndpoints.MicrosoftDeviceUrl, formContent, cancellationToken);
 
             var rawJson = await result.Content.ReadAsStringAsync(cancellationToken);
@@ -230,7 +230,7 @@ public class MicrosoftAuthService : IMicrosoftAuthService
 
             var formContent = new FormUrlEncodedContent(parameters);
 
-            var client = _httpService.CreateHttpClient();
+            using var client = _httpService.CreateHttpClient();
             var response = await client.PostAsync(MicrosoftEndpoints.MicrosoftDeviceTokenUrl, formContent,
                 cancellationToken);
 
@@ -279,7 +279,7 @@ public class MicrosoftAuthService : IMicrosoftAuthService
                 "application/json"
             );
 
-            var client = _httpService.CreateHttpClient();
+            using var client = _httpService.CreateHttpClient();
             var result = await client.PostAsync(MicrosoftEndpoints.XboxAuthUrl, reqContent, cancellationToken);
 
             var resultObj = JsonElement.Parse(await result.Content.ReadAsStringAsync(cancellationToken));
@@ -322,7 +322,7 @@ public class MicrosoftAuthService : IMicrosoftAuthService
                 "application/json"
             );
 
-            var client = _httpService.CreateHttpClient();
+            using var client = _httpService.CreateHttpClient();
             var result = await client.PostAsync(MicrosoftEndpoints.XboxXstsUrl, reqContent, cancellationToken);
 
             var rawJson = await result.Content.ReadAsStringAsync(cancellationToken);
@@ -397,7 +397,7 @@ public class MicrosoftAuthService : IMicrosoftAuthService
                 "application/json"
             );
 
-            var client = _httpService.CreateHttpClient();
+            using var client = _httpService.CreateHttpClient();
             var result = await client.PostAsync(MicrosoftEndpoints.MinecraftAuthUrl, reqContent, cancellationToken);
 
             var resultObj = JsonElement.Parse(await result.Content.ReadAsStringAsync(cancellationToken));
@@ -436,7 +436,7 @@ public class MicrosoftAuthService : IMicrosoftAuthService
         {
             _progressReporter?.Report(EProgressKind.AUTH_MINECRAFT_OWNERSHIP, 0);
 
-            var client = _httpService.CreateHttpClient();
+            using var client = _httpService.CreateHttpClient();
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", mcToken);
             var result = await client.GetAsync(MicrosoftEndpoints.MinecraftOwnershipUrl, cancellationToken);
 
@@ -474,7 +474,7 @@ public class MicrosoftAuthService : IMicrosoftAuthService
         {
             _progressReporter?.Report(EProgressKind.AUTH_MINECRAFT_PROFILE, 0);
 
-            var client = _httpService.CreateHttpClient();
+            using var client = _httpService.CreateHttpClient();
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", mcToken);
             var result = await client.GetAsync(MicrosoftEndpoints.MinecraftProfileUrl, cancellationToken);
 
@@ -508,8 +508,12 @@ public class MicrosoftAuthService : IMicrosoftAuthService
                 Skins = skins,
                 MojangProfile = _mojangProfile
             };
-            _account.SetAccessToken(mcToken, _encryptionService);
-            _account.SetRefreshToken(refreshToken, _encryptionService);
+            byte[] accessTokenBytes = Encoding.UTF8.GetBytes(mcToken);
+            byte[] refreshTokenBytes = Encoding.UTF8.GetBytes(refreshToken);
+            _account.SetAccessToken(accessTokenBytes, _encryptionService);
+            _account.SetRefreshToken(refreshTokenBytes, _encryptionService);
+            Array.Clear(accessTokenBytes);
+            Array.Clear(refreshTokenBytes);
 
             _authStatus = EAuthStatus.SUCCESS;
             OnAuthStatusChanged?.Invoke(_authStatus);
@@ -530,7 +534,7 @@ public class MicrosoftAuthService : IMicrosoftAuthService
         {
             _progressReporter?.Report(EProgressKind.AUTH_MINECRAFT_PROFILE, 0);
 
-            var client = _httpService.CreateHttpClient();
+            using var client = _httpService.CreateHttpClient();
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", mcToken);
             var result = await client.GetAsync(MicrosoftEndpoints.MinecraftProfileUrl, cancellationToken);
 
@@ -565,7 +569,7 @@ public class MicrosoftAuthService : IMicrosoftAuthService
             };
             var requestContent = new FormUrlEncodedContent(requestParams);
 
-            var client = _httpService.CreateHttpClient();
+            using var client = _httpService.CreateHttpClient();
             var response = await client.PostAsync(requestUrl, requestContent, cancellationToken);
 
             if (!response.IsSuccessStatusCode)

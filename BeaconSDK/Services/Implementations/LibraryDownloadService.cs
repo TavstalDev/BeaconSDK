@@ -344,7 +344,7 @@ public class LibraryDownloadService : ILibraryDownloadService
         const string targetAssetName = "launchWrapper-1.0.jar";
         var targetFile = Path.Combine(targetDir, targetAssetName);
         var assembly = Assembly.GetExecutingAssembly();
-        var stream = assembly.GetManifestResourceStream("Tavstal.BeaconSDK.Assets.launchWrapper-1.0.jar");
+        await using var stream = assembly.GetManifestResourceStream("Tavstal.BeaconSDK.Assets.launchWrapper-1.0.jar");
         if (stream == null)
             throw new Exception(
                 "Failed to find embedded resource: Tavstal.BeaconSDK.Assets.launchWrapper-1.0.jar");
@@ -706,10 +706,8 @@ public class LibraryDownloadService : ILibraryDownloadService
         {
             ZipFile.ExtractToDirectory(libFilePath, tempDir, true);
 
-            var searchPattern = "*.so";
-            if (OSHelper.GetOperatingSystem() == EOperatingSystem.WINDOWS)
-                searchPattern = "*.dll";
-
+            string extension = OSHelper.GetPlatformLibraryExtension();
+            var searchPattern = $"*.{extension}";
             foreach (var file in Directory.GetFiles(tempDir, searchPattern, SearchOption.AllDirectories))
             {
                 if ((Environment.Is64BitOperatingSystem && file.Contains("32")) ||

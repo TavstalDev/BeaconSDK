@@ -48,7 +48,7 @@ public class MojangSkinService : IMojangSkinService
                 "application/json"
             );
 
-            var client = _httpService.CreateHttpClient();
+            using var client = _httpService.CreateHttpClient();
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", mcToken);
             var result = await client.PostAsync(endpoint, reqContent, cancellationToken);
             if (!result.IsSuccessStatusCode)
@@ -83,7 +83,7 @@ public class MojangSkinService : IMojangSkinService
             fileContent.Headers.ContentType = new MediaTypeHeaderValue("image/png");
             form.Add(fileContent, "file", Path.GetFileName(skinPath));
 
-            var client = _httpService.CreateHttpClient();
+            using var client = _httpService.CreateHttpClient();
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", mcToken);
             var result = await client.PostAsync(endpoint, form, cancellationToken);
             if (!result.IsSuccessStatusCode)
@@ -110,7 +110,7 @@ public class MojangSkinService : IMojangSkinService
         try
         {
             var endpoint = $"{MicrosoftEndpoints.PlayerConfigUrl}/skins/active?uuid={playerId}";
-            var client = _httpService.CreateHttpClient();
+            using var client = _httpService.CreateHttpClient();
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", mcToken);
             var result = await client.DeleteAsync(endpoint, cancellationToken);
             if (!result.IsSuccessStatusCode)
@@ -144,7 +144,7 @@ public class MojangSkinService : IMojangSkinService
                 Encoding.UTF8,
                 "application/json"
             );
-            var client = _httpService.CreateHttpClient();
+            using var client = _httpService.CreateHttpClient();
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", mcToken);
             var result = await client.PutAsync(endpoint, reqContent, cancellationToken);
             if (!result.IsSuccessStatusCode)
@@ -170,7 +170,7 @@ public class MojangSkinService : IMojangSkinService
         try
         {
             const string endpoint = $"{MicrosoftEndpoints.PlayerConfigUrl}/capes/active";
-            var client = _httpService.CreateHttpClient();
+            using var client = _httpService.CreateHttpClient();
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", mcToken);
             var result = await client.DeleteAsync(endpoint, cancellationToken);
             if (!result.IsSuccessStatusCode)

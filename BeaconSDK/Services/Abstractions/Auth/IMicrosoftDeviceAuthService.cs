@@ -13,12 +13,12 @@ public interface IMicrosoftDeviceAuthService
     ///     This code uniquely identifies this authentication session.
     /// </param>
     /// <param name="interval">
-    ///     The interval in seconds between polling requests. Typically, 5-10 seconds.
+    ///     The interval timespan between polling requests. Typically, 5-10 seconds.
     ///     Microsoft may provide a recommended polling interval in the device code response.
     /// </param>
     /// <param name="cancellationToken">Token to cancel the polling operation if needed.</param>
     /// <returns>A task representing the asynchronous polling operation.</returns>
-    Task StartListeningAsync(string deviceCode, int interval, CancellationToken cancellationToken = default);
+    Task StartListeningAsync(string deviceCode, TimeSpan interval, CancellationToken cancellationToken = default);
 
     /// <summary>
     ///     Stops the device code polling loop.
