@@ -25,14 +25,14 @@ public class LibraryDownloadService : ILibraryDownloadService
 {
     private const int MaxParallelDownloads = 4;
     private readonly IHttpService _httpService;
-    private readonly ICustomLogger _logger;
+    private readonly IBeaconLogger _logger;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="LibraryDownloadService" /> class.
     /// </summary>
     /// <param name="logger">Logger used to record diagnostics and errors during library download operations.</param>
     /// <param name="httpService">HTTP service used to download files and fetch remote content.</param>
-    public LibraryDownloadService(ICustomLogger<LibraryDownloadService> logger, IHttpService httpService)
+    public LibraryDownloadService(IBeaconLogger<LibraryDownloadService> logger, IHttpService httpService)
     {
         _logger = logger;
         _httpService = httpService;
@@ -53,11 +53,16 @@ public class LibraryDownloadService : ILibraryDownloadService
         if (versionResult == null) return null;
 
         // JAR
-        await DownloadAndSaveBinaryFileAsync(
+        var progress = new Progress<double>();
+        progress.ProgressChanged += (_, e) =>
+        {
+            progressReporter?.Report(EProgressKind.INSTANCE_DOWNLOADING_VERSION_JAR, e);
+        };
+        await _httpService.DownloadFileAsync(
+            versionResult.Downloads!.Client.Url,
             versionData.VanillaJarPath,
-            versionResult.Downloads.Client.Url,
             string.Empty, // allow modified jar usage
-            progressReporter,
+            progress,
             cancellationToken);
 
         // Create default JavaVersionMeta if null
@@ -142,7 +147,7 @@ public class LibraryDownloadService : ILibraryDownloadService
                         {
                             await _httpService.DownloadFileAsync(
                                 $"{MicrosoftEndpoints.MinecraftResourcesUrl}/{hash[..2]}/{hash}",
-                                objectPath,
+                                objectPath, hash,
                                 null, cancellationToken);
 
                             if (fileName.Contains("icon") || (objectDir != null && objectDir.Contains("icon")))
@@ -212,7 +217,7 @@ public class LibraryDownloadService : ILibraryDownloadService
                         {
                             await _httpService.DownloadFileAsync(
                                 $"{MicrosoftEndpoints.MinecraftResourcesUrl}/{hash[..2]}/{hash}",
-                                objectPath,
+                                objectPath, hash,
                                 null, cancellationToken);
 
                             var size = 0;
@@ -263,7 +268,7 @@ public class LibraryDownloadService : ILibraryDownloadService
                         {
                             await _httpService.DownloadFileAsync(
                                 $"{MicrosoftEndpoints.MinecraftResourcesUrl}/{hash[..2]}/{hash}",
-                                objectPath,
+                                objectPath, hash,
                                 null, cancellationToken);
 
                             var size = 0;
@@ -413,6 +418,9 @@ public class LibraryDownloadService : ILibraryDownloadService
         foreach (var lib in libraryMetas)
         {
             var libParts = lib.Name.Split(':').ToList();
+            if (libParts.Count < 3)
+                continue;
+
             var libVersion = libParts[2];
             libParts.RemoveAt(2);
             var libName = string.Join(":", libParts);
@@ -448,7 +456,7 @@ public class LibraryDownloadService : ILibraryDownloadService
                     {
                         var classifier = lib.Downloads.Classifiers.GetOsNative();
                         var libJarFilePath = Path.Combine(libsDir, classifier.Path);
-                        await DownloadNativeFileAsync(classifier.Url, libJarFilePath, versionData.NativesDir,
+                        await DownloadNativeFileAsync(classifier.Url, libJarFilePath, classifier.Sha1, versionData.NativesDir,
                             progressReporter, cancellationToken);
                         Interlocked.Add(ref downloadedBytes, classifier.Size);
 
@@ -469,7 +477,7 @@ public class LibraryDownloadService : ILibraryDownloadService
         progressReporter?.ReportExpectedTask(tasks.Count);
         await Task.WhenAll(tasks);
         progressReporter?.ReportExpectedTask(null);
-        return safeClassPath.ToList();
+        return [.. safeClassPath];
     }
 
     /// <summary>
@@ -503,7 +511,7 @@ public class LibraryDownloadService : ILibraryDownloadService
                 progressReporter?.Report(EProgressKind.INSTANCE_DOWNLOADING_LIBRARIES, e);
             };
 
-            await _httpService.DownloadFileAsync(lib.Downloads.Artifact.Url, libFilePath, progress, cancellationToken);
+            await _httpService.DownloadFileAsync(lib.Downloads.Artifact.Url, libFilePath, lib.Downloads.Artifact.Sha1, progress, cancellationToken);
         }
 
         return libFilePath;
@@ -514,11 +522,15 @@ public class LibraryDownloadService : ILibraryDownloadService
     /// </summary>
     /// <param name="url">The URL of the native archive to download.</param>
     /// <param name="filePath">The local path where the downloaded native archive should be stored.</param>
+    /// <param name="sha1">
+    ///     The expected SHA1 hash of the file for integrity verification. If null or empty, the hash check is
+    ///     skipped.
+    /// </param>
     /// <param name="nativeDir">The directory where extracted native files should be placed.</param>
     /// <param name="progressReporter">Optional progress reporter used to report download status.</param>
     /// <param name="cancellationToken">Cancellation token observed during the download operation.</param>
     /// <returns>A task that completes when the native file has been downloaded and extracted.</returns>
-    private async Task DownloadNativeFileAsync(string url, string filePath, string nativeDir,
+    private async Task DownloadNativeFileAsync(string url,  string filePath, string sha1, string nativeDir,
         IProgressReporter? progressReporter, CancellationToken cancellationToken = default)
     {
         try
@@ -538,7 +550,7 @@ public class LibraryDownloadService : ILibraryDownloadService
                 progressReporter?.Report(EProgressKind.INSTANCE_DOWNLOADING_NATIVES, e);
             };
 
-            await _httpService.DownloadFileAsync(url, filePath, progress, cancellationToken);
+            await _httpService.DownloadFileAsync(url, filePath,  sha1, progress, cancellationToken);
             ExtractNativeFiles(filePath, nativeDir);
         }
         catch (OperationCanceledException)
@@ -581,6 +593,12 @@ public class LibraryDownloadService : ILibraryDownloadService
             {
                 progressReporter?.Report(e, Path.GetFileName(filePath));
             };
+
+            if (string.IsNullOrEmpty(url))
+            {
+                _logger.LogWarning($"{filePath}: Had empty url, skipping download....");
+                return default;
+            }
 
             var result = await _httpService.GetStringAsync(url, progress, cancellationToken);
             if (result == null)
@@ -635,6 +653,12 @@ public class LibraryDownloadService : ILibraryDownloadService
                 progressReporter?.Report(e, Path.GetFileName(filePath));
             };
 
+            if (string.IsNullOrEmpty(url))
+            {
+                _logger.LogWarning($"{filePath}: Had empty url, skipping download....");
+                return null;
+            }
+
             var result = await _httpService.GetStringAsync(url, progress, cancellationToken);
             if (result == null)
                 return null;
@@ -643,48 +667,6 @@ public class LibraryDownloadService : ILibraryDownloadService
                 Directory.CreateDirectory(fileDir);
             await File.WriteAllTextAsync(filePath, result, cancellationToken);
             return result;
-        }
-        catch (OperationCanceledException)
-        {
-            if (File.Exists(filePath))
-                FileSystemHelper.DeleteFile(filePath);
-            throw;
-        }
-    }
-
-    /// <summary>
-    ///     Downloads a binary file from a URL and saves it locally if it doesn't already exist.
-    /// </summary>
-    /// <param name="filePath">The local file path where the file will be saved.</param>
-    /// <param name="url">The URL from which the file will be downloaded.</param>
-    /// <param name="sha1">
-    ///     The expected SHA1 hash of the file for integrity verification. If null or empty, the hash check is
-    ///     skipped.
-    /// </param>
-    /// <param name="progressReporter">An optional progress reporter for tracking download progress.</param>
-    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    /// <returns>A byte array containing the file content or null if the operation fails.</returns>
-    private async Task DownloadAndSaveBinaryFileAsync(string filePath, string url, string sha1,
-        IProgressReporter? progressReporter, CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            if (File.Exists(filePath) && (string.IsNullOrEmpty(sha1) || FileSystemHelper.CheckSHA1(filePath, sha1)))
-            {
-                progressReporter?.Report(0, Path.GetFileName(filePath), false);
-                return;
-            }
-
-            var progress = new Progress<double>();
-            progress.ProgressChanged += (_, e) =>
-            {
-                progressReporter?.Report(e, Path.GetFileName(filePath));
-            };
-
-            var fileDir = Path.GetDirectoryName(filePath);
-            if (!string.IsNullOrWhiteSpace(fileDir))
-                Directory.CreateDirectory(fileDir);
-            await _httpService.DownloadFileAsync(url, filePath, progress, cancellationToken);
         }
         catch (OperationCanceledException)
         {
