@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Text;
 using Microsoft.Extensions.Logging;
@@ -16,7 +17,7 @@ namespace Tavstal.BeaconSDK.Services.Implementations;
 public class InstanceLaunchService : IInstanceLaunchService
 {
     private readonly ICustomLogger _logger;
-    private readonly Dictionary<string, Process> _runningProcesses = new();
+    private readonly ConcurrentDictionary<string, Process> _runningProcesses = [];
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="InstanceLaunchService" /> class.
@@ -170,8 +171,6 @@ public class InstanceLaunchService : IInstanceLaunchService
         var process = Process.Start(psi);
         if (process != null)
         {
-            process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
             process.EnableRaisingEvents = true;
 #if DEBUG
             process.OutputDataReceived += (_, e) =>
@@ -189,7 +188,7 @@ public class InstanceLaunchService : IInstanceLaunchService
             };
             process.Exited += (_, _) =>
             {
-                _runningProcesses.Remove(instance.Id);
+                _runningProcesses.TryRemove(instance.Id, out _);
                 switch (process.ExitCode)
                 {
                     case 0:
@@ -224,6 +223,10 @@ public class InstanceLaunchService : IInstanceLaunchService
                 if (!string.IsNullOrEmpty(instance.GameDetails.PostExitCommand))
                     StartCommand(instance.GameDetails.PostExitCommand);
             };
+
+            process.BeginOutputReadLine();
+            process.BeginErrorReadLine();
+
             if (shouldHandleLogs)
             {
                 var jvmLogger = new CustomLogger("Game", LogLevel.Trace, false, customLogPath);
@@ -265,7 +268,7 @@ public class InstanceLaunchService : IInstanceLaunchService
             }
         }
 
-        _runningProcesses.Add(instance.Id, process!);
+        _runningProcesses.TryAdd(instance.Id, process!);
         return process;
     }
 
@@ -281,14 +284,16 @@ public class InstanceLaunchService : IInstanceLaunchService
         if (process.HasExited)
         {
             _logger.LogInformation($"Instance {instanceId} process has already exited.");
-            _runningProcesses.Remove(instanceId);
+            _runningProcesses.TryRemove(instanceId, out _);
             return;
         }
 
-        process.Close();
+        if (!process.CloseMainWindow())
+            process.Kill(true);
         await process.WaitForExitAsync(cancellationToken);
         _logger.LogDebug($"Instance {instanceId} stopped.");
-        _runningProcesses.Remove(instanceId);
+        _runningProcesses.TryRemove(instanceId, out _);
+        process.Close();
     }
 
     /// <inheritdoc />
