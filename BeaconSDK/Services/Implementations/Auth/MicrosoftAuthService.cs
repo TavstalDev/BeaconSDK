@@ -21,7 +21,7 @@ public class MicrosoftAuthService : IMicrosoftAuthService
 {
     private readonly IEncryptionService _encryptionService;
     private readonly IHttpService _httpService;
-    private readonly ICustomLogger _logger;
+    private readonly IBeaconLogger _logger;
 
     private readonly string _redirectAuthenticateUrl =
         Path.Combine(MicrosoftHttpAuthService.ListeningUrl, "microsoft/authcallback");
@@ -41,7 +41,7 @@ public class MicrosoftAuthService : IMicrosoftAuthService
     /// <param name="logger">Logger used for diagnostics and error reporting.</param>
     /// <param name="httpService">HTTP service used to create configured <see cref="HttpClient" /> instances.</param>
     /// <param name="encryptionService">Encryption service used to store and reprotect account tokens.</param>
-    public MicrosoftAuthService(ICustomLogger<MicrosoftAuthService> logger, IHttpService httpService,
+    public MicrosoftAuthService(IBeaconLogger<MicrosoftAuthService> logger, IHttpService httpService,
         IEncryptionService encryptionService)
     {
         _logger = logger;

@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Tavstal.BeaconSDK.Enums;
 using Tavstal.BeaconSDK.Helpers.Platform;
 using Tavstal.BeaconSDK.Models.Logging;
+// ReSharper disable UnusedMember.Global
 
 namespace Tavstal.BeaconSDK.Helpers.IO;
 
@@ -15,7 +16,7 @@ namespace Tavstal.BeaconSDK.Helpers.IO;
 /// </summary>
 public static class FileSystemHelper
 {
-    private static readonly ICustomLogger _logger = new CustomLogger(nameof(FileSystemHelper), LogLevel.Error);
+    private static readonly IBeaconLogger _logger = new BeaconLogger(nameof(FileSystemHelper), LogLevel.Error);
 
     /// <summary>
     ///     Path of the temporal directory that is used by the sdk.

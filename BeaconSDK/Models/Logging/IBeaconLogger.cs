@@ -5,7 +5,7 @@ namespace Tavstal.BeaconSDK.Models.Logging;
 /// <summary>
 ///     Provides a custom logging abstraction for modules that emit structured log entries.
 /// </summary>
-public interface ICustomLogger
+public interface IBeaconLogger
 {
     /// <summary>
     ///     Writes a log entry using the specified log level, entry data, and optional exception.
@@ -40,6 +40,6 @@ public interface ICustomLogger
 ///     Represents a strongly typed custom logger for the specified component type.
 /// </summary>
 /// <typeparam name="T">The component type associated with the logger.</typeparam>
-public interface ICustomLogger<T> : ICustomLogger where T : class
+public interface IBeaconLogger<T> : IBeaconLogger where T : class
 {
 }

@@ -31,7 +31,7 @@ public abstract class ForgeInstanceBase(
     PathDetails pathDetails,
     LauncherDetails launcherDetails,
     ClientDetails clientDetails,
-    ICustomLogger logger,
+    IBeaconLogger logger,
     Resolution? resolution = null,
     IProgressReporter? progressReporter = null)
     : MinecraftInstance(id, gameVersion, gameDetails, pathDetails, launcherDetails, clientDetails, logger, resolution,

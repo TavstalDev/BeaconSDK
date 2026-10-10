@@ -34,7 +34,7 @@ public class FabricInstance(
     PathDetails pathDetails,
     LauncherDetails launcherDetails,
     ClientDetails clientDetails,
-    ICustomLogger logger,
+    IBeaconLogger logger,
     Resolution? resolution = null,
     IProgressReporter? progressReporter = null)
     : MinecraftInstance(id, gameVersion, gameDetails, pathDetails, launcherDetails, clientDetails, logger, resolution,
@@ -126,7 +126,7 @@ public class FabricInstance(
             };
             _logger.LogDebug("Downloading fabric loader jar...");
             await httpService.DownloadFileAsync(string.Format(FabricEndpoints.LoaderJarUrl, VersionData.CustomVersion),
-                loaderJarPath, progress, cancellationToken);
+                loaderJarPath, null, progress, cancellationToken);
         }
 
         foreach (var arg in fabricVersionMeta.Arguments.GetGameArgs())

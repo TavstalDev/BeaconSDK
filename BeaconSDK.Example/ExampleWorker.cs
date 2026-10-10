@@ -18,10 +18,10 @@ public class ExampleWorker : IHostedService, IProgressReporter
     private readonly IInstanceInstallService _instanceInstallService;
     private readonly IInstanceLaunchService _instanceLaunchService;
     private readonly IJavaService _javaService;
-    private readonly ICustomLogger<ExampleWorker> _logger;
+    private readonly IBeaconLogger<ExampleWorker> _logger;
     private readonly IManifestService _manifestService;
 
-    public ExampleWorker(ICustomLogger<ExampleWorker> logger, IHttpService httpService, IJavaService javaService,
+    public ExampleWorker(IBeaconLogger<ExampleWorker> logger, IHttpService httpService, IJavaService javaService,
         IInstanceLaunchService instanceLaunchService, IInstanceInstallService instanceInstallService,
         IManifestService manifestService)
     {
@@ -46,7 +46,7 @@ public class ExampleWorker : IHostedService, IProgressReporter
             {
                 _logger.LogInformation($"Downloading minecraft manifest {e:0.00}%...");
             };
-            await _httpService.DownloadFileAsync(MicrosoftEndpoints.MinecraftManifestUrl, manifestPath, progress, cts);
+            await _httpService.DownloadFileAsync(MicrosoftEndpoints.MinecraftManifestUrl, manifestPath, null, progress, cts);
         }
 
         var manifest = await _manifestService.GetMinecraftManifestAsync(manifestPath, cts);
@@ -135,7 +135,7 @@ public class ExampleWorker : IHostedService, IProgressReporter
         var clientDetails = new ClientDetails(null, minecraftUsername, uuid, true);
 
         var instance = new MinecraftInstance(minecraftVersion, targetVersion, gameDetails, pathDetails, launcherDetails,
-            clientDetails, new CustomLogger<MinecraftInstance>(_logger.GetLogLevel()), null, this);
+            clientDetails, new BeaconLogger<MinecraftInstance>(_logger.GetLogLevel()), null, this);
         var installResult = await _instanceInstallService.InstallAsync(instance, this, cts);
         if (!installResult)
         {
@@ -143,7 +143,7 @@ public class ExampleWorker : IHostedService, IProgressReporter
             return;
         }
 
-        var requiredJavaVersion = instance.MinecraftVersionMeta.JavaVersionMeta.MajorVersion;
+        var requiredJavaVersion = instance.MinecraftVersionMeta.JavaVersionMeta?.MajorVersion ?? 8;
         await _javaService.LocateJavaInstallationsAsync(javaDir, cancellationToken: cts);
         var javaPath = await _javaService.GetJavaVersionAsync(requiredJavaVersion, cts);
         if (string.IsNullOrEmpty(javaPath))

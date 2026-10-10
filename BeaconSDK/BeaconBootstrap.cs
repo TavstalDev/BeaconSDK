@@ -46,7 +46,7 @@ public static class BeaconBootstrap
     /// <returns>The same <paramref name="services" /> instance to allow chaining.</returns>
     public static IServiceCollection AddBeaconServices(this IServiceCollection services, string keysDir, string appName)
     {
-        services.AddSingleton(typeof(ICustomLogger<>), typeof(CustomLogger<>));
+        services.AddSingleton(typeof(IBeaconLogger<>), typeof(BeaconLogger<>));
         services.AddSingleton<IHttpService, HttpService>();
         //var keyDir = Path.Combine(appDir, "keys");
         //Directory.CreateDirectory(keyDir);

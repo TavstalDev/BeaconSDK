@@ -4,6 +4,7 @@ using Hardware.Info;
 using Microsoft.Extensions.Logging;
 using Tavstal.BeaconSDK.Enums;
 using Tavstal.BeaconSDK.Models.Logging;
+// ReSharper disable UnusedMember.Global
 
 namespace Tavstal.BeaconSDK.Helpers.Platform;
 
@@ -14,7 +15,7 @@ public static class OSHelper
 {
     private const int Windows11MajorVersion = 10;
     private const int Windows11MinimumBuild = 22000;
-    private static readonly ICustomLogger _logger = new CustomLogger(nameof(OSHelper), LogLevel.Error);
+    private static readonly IBeaconLogger _logger = new BeaconLogger(nameof(OSHelper), LogLevel.Error);
     private static readonly HardwareInfo _hardwareInfo = new();
 
     private static readonly string[] NvidiaKeywords =
@@ -138,21 +139,13 @@ public static class OSHelper
     {
         os ??= GetOperatingSystem();
 
-        switch (os)
+        return os switch
         {
-            case EOperatingSystem.WINDOWS:
-            {
-                return Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            }
-            case EOperatingSystem.LINUX:
-            case EOperatingSystem.MACOS:
-            case EOperatingSystem.UNKNOWN:
-            {
-                return Environment.GetEnvironmentVariable("HOME") ?? string.Empty;
-            }
-            default:
-                throw new ArgumentOutOfRangeException(nameof(os));
-        }
+            EOperatingSystem.WINDOWS => Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            EOperatingSystem.LINUX or EOperatingSystem.MACOS or EOperatingSystem.UNKNOWN => Environment
+                .GetEnvironmentVariable("HOME") ?? string.Empty,
+            _ => throw new ArgumentOutOfRangeException(nameof(os))
+        };
     }
 
     /// <summary>

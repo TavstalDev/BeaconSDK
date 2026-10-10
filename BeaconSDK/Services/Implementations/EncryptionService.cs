@@ -32,7 +32,7 @@ public class EncryptionService : IEncryptionService
     private readonly byte[] E_KEY_LINUX = [.. "5aEcj3cLUm5qYeCpptEaQoFCUTgZyEZw"u8];
     private readonly byte[] E_KEY_MAC = [.. "MqcM2kVeroKpvh9z79t3KjtiTzCUKSRs"u8];
     private readonly byte[] S_ENTROPY = [.. "8AE1C425-241D-46A9-A8F8-6E8A68D2586C"u8];
-    private readonly ICustomLogger<EncryptionService> _logger;
+    private readonly IBeaconLogger<EncryptionService> _logger;
     private readonly IDataProtector? _dataProtector;
 
     /// <summary>
@@ -43,7 +43,7 @@ public class EncryptionService : IEncryptionService
     ///     The data protection protector used to encrypt and decrypt values. When <see langword="null" />,
     ///     platform-specific encryption is used instead.
     /// </param>
-    public EncryptionService(ICustomLogger<EncryptionService> logger, IDataProtectionProvider? provider = null)
+    public EncryptionService(IBeaconLogger<EncryptionService> logger, IDataProtectionProvider? provider = null)
     {
         _logger = logger;
         if (provider == null)

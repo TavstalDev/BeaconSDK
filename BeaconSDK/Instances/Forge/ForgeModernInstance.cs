@@ -35,7 +35,7 @@ public class ForgeModernInstance(
     PathDetails pathDetails,
     LauncherDetails launcherDetails,
     ClientDetails clientDetails,
-    ICustomLogger logger,
+    IBeaconLogger logger,
     Resolution? resolution = null,
     IProgressReporter? progressReporter = null)
     : ForgeInstanceBase(id, gameVersion, gameDetails, pathDetails, launcherDetails, clientDetails, logger, resolution,
@@ -74,7 +74,7 @@ public class ForgeModernInstance(
             await httpService.DownloadFileAsync(
                 string.Format(ForgeEndpoints.InstallerJarUrl,
                     $"{VersionData.MinecraftVersion}-{VersionData.CustomVersion}"), installerJarPath,
-                progress, cancellationToken);
+                null, progress, cancellationToken);
 
             // Extract Installer
             _progressReporter?.Report(EProgressKind.INSTANCE_EXTRACTING_INSTALLER, 0);
@@ -148,8 +148,8 @@ public class ForgeModernInstance(
                 _progressReporter?.Report(EProgressKind.INSTANCE_DOWNLOADING_LIBRARIES, e);
             };
 
-            await httpService.DownloadFileAsync(libMeta.Downloads.Artifact.Url, libraryPath, libProgress,
-                cancellationToken);
+            await httpService.DownloadFileAsync(libMeta.Downloads.Artifact.Url, libraryPath,
+                libMeta.Downloads.Artifact.Sha1, libProgress, cancellationToken);
         }
 
         // Map and start processors

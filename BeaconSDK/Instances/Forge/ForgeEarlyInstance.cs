@@ -37,7 +37,7 @@ public class ForgeEarlyInstance(
     PathDetails pathDetails,
     LauncherDetails launcherDetails,
     ClientDetails clientDetails,
-    ICustomLogger logger,
+    IBeaconLogger logger,
     Resolution? resolution = null,
     IProgressReporter? progressReporter = null)
     : ForgeInstanceBase(id, gameVersion, gameDetails, pathDetails, launcherDetails, clientDetails, logger, resolution,
@@ -69,7 +69,7 @@ public class ForgeEarlyInstance(
 
             await httpService.DownloadFileAsync(
                 string.Format(ForgeEndpoints.LoaderUniversalZipUrl, forgeVersionName, universalName), universalZipPath,
-                progress, cancellationToken);
+                null, progress, cancellationToken);
 
             // Create vanilla extract directory
             var vanillaExtractDir = Path.Combine(tempDir, "vanilla_extract");

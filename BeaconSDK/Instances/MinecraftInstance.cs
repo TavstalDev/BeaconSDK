@@ -19,7 +19,7 @@ public class MinecraftInstance
     /// <summary>
     ///     Gets the logger used to write diagnostic and progress messages.
     /// </summary>
-    protected readonly ICustomLogger _logger;
+    protected readonly IBeaconLogger _logger;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="MinecraftInstance" /> class and prepares
@@ -36,7 +36,7 @@ public class MinecraftInstance
     /// <param name="progressReporter">Optional progress reporter for long running tasks.</param>
     public MinecraftInstance(string id, MinecraftVersion gameVersion, GameDetails gameDetails, PathDetails pathDetails,
         LauncherDetails launcherDetails,
-        ClientDetails clientDetails, ICustomLogger logger, Resolution? resolution = null,
+        ClientDetails clientDetails, IBeaconLogger logger, Resolution? resolution = null,
         IProgressReporter? progressReporter = null)
     {
         Id = id;

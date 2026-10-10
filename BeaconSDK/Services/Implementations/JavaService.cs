@@ -17,7 +17,7 @@ namespace Tavstal.BeaconSDK.Services.Implementations;
 public class JavaService : IJavaService
 {
     private readonly IHttpService _httpService;
-    private readonly ICustomLogger _logger;
+    private readonly IBeaconLogger _logger;
 
     private readonly Dictionary<EOperatingSystem, string[]> _lookupDirectories = new()
     {
@@ -51,7 +51,7 @@ public class JavaService : IJavaService
     /// </summary>
     /// <param name="logger">Logger used to record diagnostic messages, warnings, and errors related to Java operations.</param>
     /// <param name="httpService">HTTP service used to download Java distributions and related files.</param>
-    public JavaService(ICustomLogger<JavaService> logger, IHttpService httpService)
+    public JavaService(IBeaconLogger<JavaService> logger, IHttpService httpService)
     {
         _logger = logger;
         _httpService = httpService;
@@ -120,7 +120,7 @@ public class JavaService : IJavaService
                 Directory.CreateDirectory(tempDir);
                 var extension = url.EndsWith(".zip") ? "zip" : "tar.gz";
                 var zipFilePath = Path.Combine(tempDir, $"java_{majorVersion}.{extension}");
-                await _httpService.DownloadFileAsync(url, zipFilePath, progress, cancellationToken);
+                await _httpService.DownloadFileAsync(url, zipFilePath, null, progress, cancellationToken);
 
                 if (!File.Exists(zipFilePath))
                 {

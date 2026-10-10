@@ -34,7 +34,7 @@ public class QuiltInstance(
     PathDetails pathDetails,
     LauncherDetails launcherDetails,
     ClientDetails clientDetails,
-    ICustomLogger logger,
+    IBeaconLogger logger,
     Resolution? resolution = null,
     IProgressReporter? progressReporter = null)
     : MinecraftInstance(id, gameVersion, gameDetails, pathDetails, launcherDetails, clientDetails, logger, resolution,
@@ -126,7 +126,7 @@ public class QuiltInstance(
             };
             _logger.LogDebug("Downloading quilt loader jar...");
             await httpService.DownloadFileAsync(string.Format(QuiltEndpoints.LoaderJarUrl, VersionData.CustomVersion),
-                loaderJarPath, progress, cancellationToken);
+                loaderJarPath, null, progress, cancellationToken);
         }
 
 

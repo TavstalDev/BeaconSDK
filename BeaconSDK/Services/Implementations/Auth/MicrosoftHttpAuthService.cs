@@ -15,7 +15,7 @@ public class MicrosoftHttpAuthService : IMicrosoftHttpAuthService
     /// </summary>
     public const string ListeningUrl = "http://localhost:43319/";
 
-    private readonly ICustomLogger _logger;
+    private readonly IBeaconLogger _logger;
     private readonly IMicrosoftAuthService _microsoftAuthService;
     private HttpListener? _httpListener;
     private bool _isListening;
@@ -29,7 +29,7 @@ public class MicrosoftHttpAuthService : IMicrosoftHttpAuthService
     /// <param name="microsoftAuthService">
     ///     The Microsoft authentication service that raises authentication status change notifications.
     /// </param>
-    public MicrosoftHttpAuthService(ICustomLogger<MicrosoftHttpAuthService> logger,
+    public MicrosoftHttpAuthService(IBeaconLogger<MicrosoftHttpAuthService> logger,
         IMicrosoftAuthService microsoftAuthService)
     {
         _logger = logger;

@@ -39,7 +39,7 @@ public static class ForgeInstance
         PathDetails pathDetails,
         LauncherDetails launcherDetails,
         ClientDetails clientDetails,
-        ICustomLogger logger,
+        IBeaconLogger logger,
         Resolution? resolution = null,
         IProgressReporter? progressReporter = null)
     {

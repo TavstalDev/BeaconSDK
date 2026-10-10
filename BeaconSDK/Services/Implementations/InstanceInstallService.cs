@@ -16,7 +16,7 @@ public class InstanceInstallService : IInstanceInstallService
 {
     private readonly IHttpService _httpService;
     private readonly ILibraryDownloadService _libraryDownloadService;
-    private readonly ICustomLogger _logger;
+    private readonly IBeaconLogger _logger;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="InstanceInstallService" /> class with the
@@ -28,7 +28,7 @@ public class InstanceInstallService : IInstanceInstallService
     ///     Service responsible for downloading Minecraft libraries, mappings, assets, and
     ///     related files.
     /// </param>
-    public InstanceInstallService(ICustomLogger<InstanceInstallService> logger, IHttpService httpService,
+    public InstanceInstallService(IBeaconLogger<InstanceInstallService> logger, IHttpService httpService,
         ILibraryDownloadService libraryDownloadService)
     {
         _logger = logger;
@@ -66,7 +66,7 @@ public class InstanceInstallService : IInstanceInstallService
                 instance.PathDetails,
                 instance.Resolution);
 
-            if (instance.MinecraftVersionMeta.JavaVersionMeta.MajorVersion >= 9)
+            if (instance.MinecraftVersionMeta.JavaVersionMeta?.MajorVersion >= 9)
             {
                 instance.ArgumentBuilder.UseClasspathFile = true;
                 instance.ArgumentBuilder.ClasspathFilePath =
@@ -149,7 +149,7 @@ public class InstanceInstallService : IInstanceInstallService
             // Set the required Java version to 7 for Forge versions 1.7.2 and below
             if (forgeMinecraftVersion.Major == 1 &&
                 (forgeMinecraftVersion.Minor < 7 || forgeMinecraftVersion is { Minor: 7, Build: < 10 }))
-                instance.MinecraftVersionMeta.JavaVersionMeta.MajorVersion = 7;
+                instance.MinecraftVersionMeta.JavaVersionMeta?.MajorVersion = 7;
         }
 
         await _libraryDownloadService.DownloadMappingsAsync(instance.MinecraftVersionMeta, instance.VersionData,

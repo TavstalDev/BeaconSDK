@@ -6,7 +6,7 @@ namespace Tavstal.BeaconSDK.Models.Logging;
 /// <summary>
 ///     Provides extension helpers for the custom logging system used by the launcher.
 /// </summary>
-public static class CustomLoggerExtensions
+public static class BeaconLoggerExtensions
 {
     /// <summary>
     ///     Formats a <see cref="LogEntry" /> and an optional <see cref="Exception" /> into a single string
@@ -40,8 +40,8 @@ public static class CustomLoggerExtensions
         return input.Replace( "{", "{{").Replace("}", "}}");
     }
 
-    /// <param name="logger">The <see cref="ICustomLogger" /> to write to.</param>
-    extension(ICustomLogger logger)
+    /// <param name="logger">The <see cref="IBeaconLogger" /> to write to.</param>
+    extension(IBeaconLogger logger)
     {
         /// <summary>
         ///     Formats and writes a debug log message.

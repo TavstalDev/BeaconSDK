@@ -16,7 +16,7 @@ namespace Tavstal.BeaconSDK.Services.Implementations;
 public class ManifestService : IManifestService
 {
     // ReSharper disable once NotAccessedField.Local
-    private readonly ICustomLogger _logger;
+    private readonly IBeaconLogger _logger;
     private List<IModManifest>? _fabricManifest;
     private List<IModManifest>? _forgeManifest;
     private List<IModManifest>? _neoForgeManifest;
@@ -27,7 +27,7 @@ public class ManifestService : IManifestService
     ///     Initializes a new instance of the <see cref="ManifestService" /> class.
     /// </summary>
     /// <param name="logger">Logger instance used to record diagnostic and error messages during manifest operations.</param>
-    public ManifestService(ICustomLogger<ManifestService> logger)
+    public ManifestService(IBeaconLogger<ManifestService> logger)
     {
         _logger = logger;
     }

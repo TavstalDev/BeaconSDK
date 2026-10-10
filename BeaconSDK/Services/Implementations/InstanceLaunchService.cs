@@ -16,14 +16,14 @@ namespace Tavstal.BeaconSDK.Services.Implementations;
 /// <inheritdoc />
 public class InstanceLaunchService : IInstanceLaunchService
 {
-    private readonly ICustomLogger _logger;
+    private readonly IBeaconLogger _logger;
     private readonly ConcurrentDictionary<string, Process> _runningProcesses = [];
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="InstanceLaunchService" /> class.
     /// </summary>
     /// <param name="logger">The logger used to record launch lifecycle events, process output, and error diagnostics.</param>
-    public InstanceLaunchService(ICustomLogger<InstanceLaunchService> logger)
+    public InstanceLaunchService(IBeaconLogger<InstanceLaunchService> logger)
     {
         _logger = logger;
     }
@@ -229,7 +229,7 @@ public class InstanceLaunchService : IInstanceLaunchService
 
             if (shouldHandleLogs)
             {
-                var jvmLogger = new CustomLogger("Game", LogLevel.Trace, false, customLogPath);
+                var jvmLogger = new BeaconLogger("Game", LogLevel.Trace, false, customLogPath);
                 var replaceSD = sensitiveDataToReplace != null;
                 process.OutputDataReceived += (_, e) =>
                 {

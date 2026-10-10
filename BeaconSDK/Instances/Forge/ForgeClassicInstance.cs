@@ -42,7 +42,7 @@ public class ForgeClassicInstance(
     PathDetails pathDetails,
     LauncherDetails launcherDetails,
     ClientDetails clientDetails,
-    ICustomLogger logger,
+    IBeaconLogger logger,
     Resolution? resolution = null,
     IProgressReporter? progressReporter = null)
     : ForgeInstanceBase(id, gameVersion, gameDetails, pathDetails, launcherDetails, clientDetails, logger, resolution,
@@ -86,7 +86,7 @@ public class ForgeClassicInstance(
 
             await httpService.DownloadFileAsync(
                 string.Format(ForgeEndpoints.InstallerJarUrl, forgeVersionName), installerJarPath,
-                progress, cancellationToken);
+                null, progress, cancellationToken);
 
             // Extract Installer
             _progressReporter?.Report(EProgressKind.INSTANCE_EXTRACTING_INSTALLER, 0);

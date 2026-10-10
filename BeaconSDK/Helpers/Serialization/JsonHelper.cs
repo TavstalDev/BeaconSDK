@@ -14,7 +14,7 @@ namespace Tavstal.BeaconSDK.Helpers.Serialization;
 public static class JsonHelper
 {
     private const int _maxRetries = 5;
-    private static readonly ICustomLogger _logger = new CustomLogger(nameof(JsonHelper), LogLevel.Error);
+    private static readonly IBeaconLogger _logger = new BeaconLogger(nameof(JsonHelper), LogLevel.Error);
 
     private static readonly ConcurrentDictionary<string, SemaphoreSlim> _fileLocks =
         new(StringComparer.OrdinalIgnoreCase);

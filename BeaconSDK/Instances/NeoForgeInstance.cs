@@ -34,7 +34,7 @@ public class NeoForgeInstance(
     PathDetails pathDetails,
     LauncherDetails launcherDetails,
     ClientDetails clientDetails,
-    ICustomLogger logger,
+    IBeaconLogger logger,
     Resolution? resolution = null,
     IProgressReporter? progressReporter = null)
     : ForgeInstanceBase(id, gameVersion, gameDetails, pathDetails, launcherDetails, clientDetails, logger, resolution,
@@ -72,7 +72,7 @@ public class NeoForgeInstance(
 
             await httpService.DownloadFileAsync(
                 string.Format(NeoForgeEndpoints.InstallerJarUrl, VersionData.CustomVersion), installerJarPath,
-                progress, cancellationToken);
+                null, progress, cancellationToken);
 
             // Extract Installer
             _progressReporter?.Report(EProgressKind.INSTANCE_EXTRACTING_INSTALLER, 0);
@@ -166,8 +166,8 @@ public class NeoForgeInstance(
                 _progressReporter?.Report(e, libMeta.Name);
             };
 
-            await httpService.DownloadFileAsync(libMeta.Downloads.Artifact.Url, libraryPath, libProgress,
-                cancellationToken);
+            await httpService.DownloadFileAsync(libMeta.Downloads.Artifact.Url, libraryPath,
+                libMeta.Downloads.Artifact.Sha1, libProgress, cancellationToken);
         }
 
         // Map and start processors

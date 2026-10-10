@@ -14,7 +14,7 @@ namespace Tavstal.BeaconSDK.Services.Implementations;
 public class MojangSkinService : IMojangSkinService
 {
     private readonly IHttpService _httpService;
-    private readonly ICustomLogger _logger;
+    private readonly IBeaconLogger _logger;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="MojangSkinService" /> class.
@@ -27,7 +27,7 @@ public class MojangSkinService : IMojangSkinService
     ///     The HTTP service instance used for making authenticated requests to the Microsoft/Mojang
     ///     player configuration API endpoints.
     /// </param>
-    public MojangSkinService(ICustomLogger<MojangSkinService> logger, IHttpService httpService)
+    public MojangSkinService(IBeaconLogger<MojangSkinService> logger, IHttpService httpService)
     {
         _logger = logger;
         _httpService = httpService;
