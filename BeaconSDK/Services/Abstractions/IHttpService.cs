@@ -80,9 +80,9 @@ public interface IHttpService
     /// </param>
     /// <param name="cancellationToken">Cancellation token observed during the download.</param>
     /// <returns>
-    ///     A task that resolves to the file path if the download succeeds; otherwise, <see langword="null" />.
+    ///     A task that returns <see langword="true"/> if the download succeeds; otherwise, <see langword="false" />.
     /// </returns>
-    Task<string?> DownloadFileAsync(string url, string filePath, string? sha1, IProgress<double>? progress,
+    Task<bool> DownloadFileAsync(string url, string filePath, string? sha1, IProgress<double>? progress,
         CancellationToken cancellationToken = default);
 
     /// <summary>

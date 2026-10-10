@@ -185,7 +185,7 @@ public class HttpService : IHttpService
     }
 
     /// <inheritdoc />
-    public async Task<string?> DownloadFileAsync(string url, string filePath, string? sha1, IProgress<double>? progress,
+    public async Task<bool> DownloadFileAsync(string url, string filePath, string? sha1, IProgress<double>? progress,
         CancellationToken cancellationToken = default)
     {
         string tempFilePath = filePath + ".tmp";
@@ -205,7 +205,7 @@ public class HttpService : IHttpService
                     }
                 }
                 if (shouldReturn)
-                    return filePath;
+                    return true;
             }
 
             var response = await _httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
@@ -246,13 +246,13 @@ public class HttpService : IHttpService
                     !string.IsNullOrEmpty(hash))
                 {
                     _logger.LogWarning($"{url}: Had mismatching sha1 checksum, skipping download...");
-                    return null;
+                    return false;
                 }
             }
 
             File.Move(tempFilePath, filePath, true);
 
-            return filePath; // Return the path to the downloaded file
+            return true; // Return the path to the downloaded file
         }
         catch (OperationCanceledException)
         {
@@ -265,14 +265,14 @@ public class HttpService : IHttpService
             if (File.Exists(tempFilePath))
                 FileSystemHelper.DeleteFile(tempFilePath);
             _logger.LogError($"HTTP request to {url} failed with {ex.StatusCode}: {ex.Message}");
-            return null;
+            return false;
         }
         catch (Exception ex)
         {
             if (File.Exists(tempFilePath))
                 FileSystemHelper.DeleteFile(tempFilePath);
             _logger.LogCritical(ex, $"Failed to download file from {url}:");
-            return null;
+            return false;
         }
     }
 
