@@ -37,8 +37,8 @@ public static class OSHelper
         {
             PlatformID.Win32NT or PlatformID.Win32Windows or PlatformID.Win32S or PlatformID.WinCE => EOperatingSystem
                 .WINDOWS,
-            PlatformID.Unix => EOperatingSystem.LINUX,
             PlatformID.MacOSX => EOperatingSystem.MACOS,
+            PlatformID.Unix => EOperatingSystem.LINUX,
             _ => EOperatingSystem.UNKNOWN
         };
     }
@@ -294,5 +294,26 @@ public static class OSHelper
             _logger.LogCritical(ex, "Failed to open the website after installation:");
             return false;
         }
+    }
+
+    /// <summary>
+    ///     Retrieves the file extension for native platform libraries on the current operating system.
+    /// </summary>
+    /// <returns>
+    ///     A string representing the platform-specific library extension:
+    ///     <c>dll</c> for Windows, <c>so</c> for Linux, and <c>dylib</c> for macOS.
+    /// </returns>
+    /// <exception cref="InvalidOperationException">
+    ///     Thrown when the operating system is unknown or unsupported.
+    /// </exception>
+    public static string GetPlatformLibraryExtension()
+    {
+        return GetOperatingSystem() switch
+        {
+            EOperatingSystem.WINDOWS => "dll",
+            EOperatingSystem.LINUX => "so",
+            EOperatingSystem.MACOS => "dylib",
+            _ => throw new InvalidOperationException()
+        };
     }
 }
