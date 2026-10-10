@@ -88,7 +88,7 @@ public class ArgumentBuilder
             _jvmArgumentsBeforeClassPath.Add(new LaunchArg("-Dminecraft.api.services.host=https://nope.invalid", 99));
         }
 
-        if (string.IsNullOrEmpty(gameDetails.JvmArgs))
+        if (!string.IsNullOrEmpty(gameDetails.JvmArgs))
             _jvmArgumentsBeforeClassPath.Add(new LaunchArg(gameDetails.JvmArgs, 98));
 
         var metaArgs = versionMeta.GetJvmArguments();
