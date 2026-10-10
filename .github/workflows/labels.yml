@@ -1,0 +1,17 @@
+name: Sync labels
+on:
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  sync:
+    name: Run EndBug/label-sync
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: EndBug/label-sync@52074158190acb45f3077f9099fea818aa43f97a
+        with:
+          delete-other-labels: true
+          config-file: 'https://raw.githubusercontent.com/TavstalDev/.github/refs/heads/main/.github/labels-config.yml'
