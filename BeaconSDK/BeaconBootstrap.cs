@@ -61,7 +61,6 @@ public static class BeaconBootstrap
         services.AddSingleton<IInstanceInstallService, InstanceInstallService>();
         services.AddSingleton<IInstanceLaunchService, InstanceLaunchService>();
 
-        services.AddSingleton<ISkinService, SkinService>();
         services.AddSingleton<IMojangSkinService, MojangSkinService>();
         services.AddSingleton<IMicrosoftAuthService, MicrosoftAuthService>();
         services.AddSingleton<IMicrosoftDeviceAuthService, MicrosoftDeviceAuthService>();
