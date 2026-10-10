@@ -8,7 +8,6 @@ public class MicrosoftDeviceAuthService : IMicrosoftDeviceAuthService
 {
     private readonly IMicrosoftAuthService _microsoftAuthService;
     private bool _isListening;
-    private DateTime _nextCheckTime = DateTime.MinValue;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="MicrosoftDeviceAuthService" /> class.
@@ -20,7 +19,7 @@ public class MicrosoftDeviceAuthService : IMicrosoftDeviceAuthService
     }
 
     /// <inheritdoc />
-    public async Task StartListeningAsync(string deviceCode, int interval,
+    public async Task StartListeningAsync(string deviceCode, TimeSpan interval,
         CancellationToken cancellationToken = default)
     {
         // Prevents starting the listener if it is already active.
@@ -40,13 +39,9 @@ public class MicrosoftDeviceAuthService : IMicrosoftDeviceAuthService
                 break;
             }
 
-            // Skips the check if the next check time has not been reached.
-            if (_nextCheckTime > DateTime.Now)
-                continue;
-
             // Checks the device code and updates the next check time.
             await _microsoftAuthService.CheckDeviceCodeAsync(deviceCode, cancellationToken);
-            _nextCheckTime = DateTime.Now.AddSeconds(interval);
+            await Task.Delay(interval, cancellationToken);
         }
     }
 
