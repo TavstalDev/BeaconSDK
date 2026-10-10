@@ -9,6 +9,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="FluentAssertions" Version="8.11.0" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
         <PackageReference Include="xunit.v3" Version="4.0.2" />
     </ItemGroup>
@@ -19,6 +20,17 @@
 
     <ItemGroup>
       <ProjectReference Include="..\BeaconSDK\BeaconSDK.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Fakes\" />
+      <Folder Include="Helpers\IO\" />
+      <Folder Include="Helpers\Platform\" />
+      <Folder Include="Helpers\Serialization\" />
+      <Folder Include="Json\" />
+      <Folder Include="Mocks\" />
+      <Folder Include="Models\" />
+      <Folder Include="Services\" />
     </ItemGroup>
 
 </Project>
