@@ -199,7 +199,7 @@ public static class FileSystemHelper
                     var subDir = new DirectoryInfo(dir);
                     var attrs = subDir.Attributes;
                     if (attrs.HasFlag(FileAttributes.ReadOnly))
-                        dirInfo.Attributes = attrs & ~FileAttributes.ReadOnly;
+                        subDir.Attributes = attrs & ~FileAttributes.ReadOnly;
                     Directory.Delete(dir);
                 }
                 catch (Exception ex)
@@ -279,6 +279,7 @@ public static class FileSystemHelper
         if (IsFileLocked(source))
             return false;
 
+        bool failed = false;
         try
         {
             using var sourceStream = new FileStream(source, FileMode.Open, FileAccess.Read);
@@ -288,9 +289,14 @@ public static class FileSystemHelper
             sourceStream.CopyTo(compressionStream);
             return true;
         }
+        catch (Exception)
+        {
+            failed = true;
+            throw;
+        }
         finally
         {
-            if (deleteSource)
+            if (deleteSource && !failed)
                 DeleteFile(source);
         }
     }
