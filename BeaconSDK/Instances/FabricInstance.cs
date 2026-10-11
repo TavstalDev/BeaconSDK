@@ -41,6 +41,7 @@ public class FabricInstance(
         progressReporter)
 {
     /// <inheritdoc />
+    /// <exception cref="InvalidOperationException">Thrown when <see cref="MinecraftInstance.ArgumentBuilder" /> is null.</exception>
     public override async Task<ModdedData?> InstallModdedAsync(string tempDir, IHttpService httpService,
         CancellationToken cancellationToken = default)
     {

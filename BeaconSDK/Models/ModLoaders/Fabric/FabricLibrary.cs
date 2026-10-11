@@ -81,6 +81,9 @@ public class FabricLibrary
     ///     or similar error may occur when splitting parts. Consumers should ensure valid coordinates.
     /// </remarks>
     /// <returns>The full download URL for the artifact.</returns>
+    /// <exception cref="FormatException">
+    ///     Thrown when <see cref="Name" /> is not a valid Maven coordinate in the form "group:artifact:version".
+    /// </exception>
     public string GetURL()
     {
         var parts = Name.Split(':');

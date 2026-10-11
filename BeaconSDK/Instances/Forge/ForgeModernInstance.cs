@@ -42,6 +42,8 @@ public class ForgeModernInstance(
         progressReporter)
 {
     /// <inheritdoc />
+    /// <exception cref="InvalidOperationException">Thrown when <see cref="MinecraftInstance.ArgumentBuilder" /> is null.</exception>
+    /// <exception cref="FileNotFoundException">Thrown when the Forge version or install profile metadata cannot be read.</exception>
     public override async Task<ModdedData?> InstallModdedAsync(string tempDir, IHttpService httpService,
         CancellationToken cancellationToken = default)
     {

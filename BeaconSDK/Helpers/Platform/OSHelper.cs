@@ -135,6 +135,9 @@ public static class OSHelper
     /// <returns>
     ///     A string representing the path to the user's home directory.
     /// </returns>
+    /// <exception cref="ArgumentOutOfRangeException">
+    ///     Thrown when <paramref name="os" /> is not a supported operating system.
+    /// </exception>
     public static string GetHomeDirectory(EOperatingSystem? os = null)
     {
         os ??= GetOperatingSystem();
@@ -157,6 +160,9 @@ public static class OSHelper
     /// <returns>
     ///     A string representing the path to the user's desktop directory.
     /// </returns>
+    /// <exception cref="ArgumentOutOfRangeException">
+    ///     Thrown when <paramref name="os" /> is not a supported operating system.
+    /// </exception>
     public static string GetDesktopDirectory(EOperatingSystem? os = null)
     {
         os ??= GetOperatingSystem();
@@ -213,6 +219,9 @@ public static class OSHelper
     /// <returns>
     ///     A string representing the path to the user's programs directory.
     /// </returns>
+    /// <exception cref="ArgumentOutOfRangeException">
+    ///     Thrown when <paramref name="os" /> is not a supported operating system.
+    /// </exception>
     public static string GetProgramsDirectory(EOperatingSystem? os = null)
     {
         os ??= GetOperatingSystem();
