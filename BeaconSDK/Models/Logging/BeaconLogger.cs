@@ -99,7 +99,7 @@ public class BeaconLogger<T> : BeaconLogger, IBeaconLogger<T> where T : class
     {
     }
 #else
-    public CustomLogger() 
+    public BeaconLogger()
         : this(LogLevel.Information) { }
 #endif
 
