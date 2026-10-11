@@ -1,0 +1,91 @@
+using System.Text.Json;
+using FluentAssertions;
+using Tavstal.BeaconSDK.Enums;
+using Tavstal.BeaconSDK.Models.Accounts;
+using Tavstal.BeaconSDK.Services.Implementations;
+using Tavstal.BeaconSDK.Tests.Fakes;
+
+#pragma warning disable CS0618 // Type or member is obsolete
+
+namespace Tavstal.BeaconSDK.Tests.Models.Accounts;
+
+public class AccountTests
+{
+    [Fact(DisplayName = "Set then get access token round-trips through the recording encryption service")]
+    public void SetThenGetAccessToken_RoundTrips_ThroughRecordingEncryptionService()
+    {
+        var encryption = new RecordingEncryptionService();
+        var account = new Account();
+        var plain = "access-token-value"u8.ToArray();
+
+        account.SetAccessToken(plain, encryption);
+
+        account.GetAccessToken(encryption).Should().Equal(plain);
+    }
+
+    [Fact(DisplayName = "SetAccessToken uses Reprotect rather than Encrypt")]
+    public void SetAccessToken_UsesReprotect_NotEncrypt()
+    {
+        var encryption = new RecordingEncryptionService();
+        var account = new Account();
+
+        account.SetAccessToken("token"u8.ToArray(), encryption);
+
+        encryption.ReprotectCallCount.Should().Be(1);
+        encryption.EncryptCallCount.Should().Be(0);
+    }
+
+    [Fact(DisplayName = "SetAccessToken leaves plaintext input unchanged when Reprotect fails")]
+    public void SetAccessToken_WithPlainTextInput_LeavesInputUnchanged_WhenReprotectFails()
+    {
+        Assert.SkipUnless(
+            Tavstal.BeaconSDK.Helpers.Platform.OSHelper.GetOperatingSystem() == EOperatingSystem.LINUX,
+            "Host-pinned: the no-provider encryption fallback only works on Linux/macOS hosts.");
+
+        var encryption = new EncryptionService(new CapturingBeaconLogger<EncryptionService>());
+        var plain = "plaintext-token-value"u8.ToArray();
+        var account = new Account();
+
+        account.SetAccessToken(plain, encryption);
+
+        account.EncryptedAccessToken.Should().Equal(plain);
+    }
+
+    [Fact(DisplayName = "Token arrays are initialized to empty by the constructor")]
+    public void TokenArrays_CtorInitializedToEmpty()
+    {
+        var account = new Account();
+
+        account.EncryptedAccessToken.Should().BeEmpty();
+        account.EncryptedRefreshToken.Should().BeEmpty();
+    }
+
+    [Fact(DisplayName = "CanExpire is false for offline and true for Microsoft accounts")]
+    public void CanExpire_FalseForOffline_TrueForMicrosoft()
+    {
+        new Account { Type = EAccountType.OFFLINE }.CanExpire.Should().BeFalse();
+        new Account { Type = EAccountType.MICROSOFT }.CanExpire.Should().BeTrue();
+    }
+
+    [Fact(DisplayName = "JSON round-trip via BeaconJsonContext preserves tokens and enum")]
+    public void JsonRoundTrip_ViaBeaconJsonContext_PreservesTokensAndEnum()
+    {
+        var account = new Account
+        {
+            Id = "account-id",
+            Uuid = "11111111-1111-1111-1111-111111111111",
+            DisplayName = "PlayerOne",
+            Type = EAccountType.MICROSOFT,
+            EncryptedAccessToken = [1, 2, 3],
+            EncryptedRefreshToken = [4, 5],
+            AccessTokenExpireDate = new DateTime(2030, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+        };
+
+        var json = JsonSerializer.Serialize(account, BeaconJsonContext.Default.Account);
+        var restored = JsonSerializer.Deserialize(json, BeaconJsonContext.Default.Account);
+
+        restored.Should().NotBeNull();
+        restored.Should().BeEquivalentTo(account);
+        restored.Type.Should().Be(EAccountType.MICROSOFT);
+    }
+}

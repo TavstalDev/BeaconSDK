@@ -1,0 +1,26 @@
+{
+  "id": "profile-id",
+  "name": "PlayerOne",
+  "skins": [
+    {
+      "id": "skin-id-1",
+      "state": "ACTIVE",
+      "url": "https://example.com/skin1.png",
+      "variant": "classic"
+    },
+    {
+      "id": "skin-id-2",
+      "state": "INACTIVE",
+      "url": "https://example.com/skin2.png",
+      "variant": "slim"
+    }
+  ],
+  "capes": [
+    {
+      "id": "cape-active",
+      "state": "active",
+      "url": "https://example.com/cape.png",
+      "alias": "Migrator"
+    }
+  ]
+}

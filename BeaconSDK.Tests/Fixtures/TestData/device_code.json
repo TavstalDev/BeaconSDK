@@ -1,0 +1,7 @@
+{
+  "device_code": "device-code-123",
+  "user_code": "USER-123",
+  "verification_uri": "https://microsoft.com/devicelogin",
+  "expires_in": 900,
+  "interval": 5
+}

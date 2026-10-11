@@ -1,0 +1,10 @@
+{
+  "keyId": "key-id",
+  "signature": "signature-value",
+  "items": [
+    {
+      "name": "game_minecraft",
+      "signature": "item-signature"
+    }
+  ]
+}

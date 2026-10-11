@@ -1,0 +1,12 @@
+{
+  "Token": "xbox-token",
+  "IssueInstant": "2024-01-01T00:00:00Z",
+  "NotAfter": "2024-12-31T00:00:00Z",
+  "DisplayClaims": {
+    "xui": [
+      {
+        "uhs": "user-hash"
+      }
+    ]
+  }
+}

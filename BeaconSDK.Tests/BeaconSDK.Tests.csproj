@@ -10,6 +10,10 @@
 
     <ItemGroup>
         <PackageReference Include="FluentAssertions" Version="8.11.0" />
+        <PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="10.0.12" />
+        <PackageReference Include="Microsoft.AspNetCore.DataProtection.Extensions" Version="10.0.12" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.12" />
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.12" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
         <PackageReference Include="xunit.v3" Version="4.0.2" />
     </ItemGroup>
@@ -23,14 +27,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Fakes\" />
-      <Folder Include="Helpers\IO\" />
-      <Folder Include="Helpers\Platform\" />
-      <Folder Include="Helpers\Serialization\" />
-      <Folder Include="Json\" />
-      <Folder Include="Mocks\" />
-      <Folder Include="Models\" />
-      <Folder Include="Services\" />
+      <None Update="Fixtures\TestData\**\*.json" CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>
 
 </Project>

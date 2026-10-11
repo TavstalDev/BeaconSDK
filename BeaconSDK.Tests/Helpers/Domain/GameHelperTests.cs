@@ -5,12 +5,6 @@ namespace Tavstal.BeaconSDK.Tests.Helpers.Domain;
 
 public class GameHelperTests
 {
-    private readonly ITestOutputHelper _output;
-    public GameHelperTests(ITestOutputHelper output)
-    {
-        _output = output;
-    }
-
     [Theory(DisplayName = "isNewer should return true when version A is newer than B")]
     [InlineData("1.0.0", "0.0.0")]
     [InlineData("5.0.0", "2.0.0")]
