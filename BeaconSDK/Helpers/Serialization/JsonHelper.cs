@@ -33,6 +33,7 @@ public static class JsonHelper
     {
         var fileLock = GetFileLock(path);
         var lockTaken = false;
+        string? tempPath = null;
 
         try
         {
@@ -45,13 +46,13 @@ public static class JsonHelper
 
             CreateDirectory(path);
 
+            tempPath = GetTempPath(path);
             for (var i = 0; i < _maxRetries; i++)
             {
-                var tempPath = GetTempPath(path);
                 try
                 {
                     using (var fileStream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None,
-                               65536, true))
+                               8192, true))
                     {
                         JsonSerializer.Serialize(fileStream, obj, typeInfo);
                     }
@@ -70,6 +71,8 @@ public static class JsonHelper
         }
         catch (Exception ex)
         {
+            if (!string.IsNullOrEmpty(tempPath) && File.Exists(tempPath))
+                FileSystemHelper.DeleteFile(tempPath);
             _logger.LogCritical(ex, $"Error in WriteJsonFile<T> {path}:");
             return false;
         }
@@ -104,6 +107,7 @@ public static class JsonHelper
     {
         var fileLock = GetFileLock(path);
         var lockTaken = false;
+        string? tempPath = null;
 
         try
         {
@@ -117,14 +121,14 @@ public static class JsonHelper
 
             CreateDirectory(path);
 
+            tempPath = GetTempPath(path);
             for (var i = 0; i < _maxRetries; i++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                var tempPath = GetTempPath(path);
                 try
                 {
                     await using (var fileStream = new FileStream(tempPath, FileMode.Create, FileAccess.Write,
-                                     FileShare.None, 65536, true))
+                                     FileShare.None, 8192, true))
                     {
                         await JsonSerializer.SerializeAsync(fileStream, obj, typeInfo, cancellationToken);
                     }
@@ -146,6 +150,8 @@ public static class JsonHelper
         }
         catch (Exception ex)
         {
+            if (!string.IsNullOrEmpty(tempPath) && File.Exists(tempPath))
+                FileSystemHelper.DeleteFile(tempPath);
             _logger.LogCritical(ex, $"Error in WriteJsonFileAsync<T> {path}:");
             return false;
         }
