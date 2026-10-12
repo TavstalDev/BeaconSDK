@@ -1,6 +1,6 @@
 using FluentAssertions;
 using Tavstal.BeaconSDK.Models.Instance;
-using Tavstal.BeaconSDK.Models.Installer;
+using Tavstal.BeaconSDK.Models.Instance.Config;
 using Tavstal.BeaconSDK.Models.MojangApi.Meta;
 using Tavstal.BeaconSDK.Tests.Fixtures;
 

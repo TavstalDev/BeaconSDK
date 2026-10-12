@@ -1,6 +1,6 @@
 using Tavstal.BeaconSDK.Enums;
 using Tavstal.BeaconSDK.Models.Instance;
-using Tavstal.BeaconSDK.Models.Installer;
+using Tavstal.BeaconSDK.Models.Instance.Config;
 using Tavstal.BeaconSDK.Models.MojangApi.Meta;
 
 namespace Tavstal.BeaconSDK.Tests.Fixtures;
