@@ -3,11 +3,9 @@ using Tavstal.BeaconSDK.Helpers.IO;
 using Tavstal.BeaconSDK.Helpers.Serialization;
 using Tavstal.BeaconSDK.Models;
 using Tavstal.BeaconSDK.Models.Endpoints.Modding;
-using Tavstal.BeaconSDK.Models.Installer;
 using Tavstal.BeaconSDK.Models.Instance;
 using Tavstal.BeaconSDK.Models.Logging;
 using Tavstal.BeaconSDK.Models.ModLoaders.Forge.Legacy;
-using Tavstal.BeaconSDK.Models.MojangApi;
 using Tavstal.BeaconSDK.Models.MojangApi.Meta;
 using Tavstal.BeaconSDK.Models.MojangApi.Meta.Library;
 using Tavstal.BeaconSDK.Services.Abstractions;
@@ -25,28 +23,17 @@ namespace Tavstal.BeaconSDK.Instances.Forge;
 /// </param>
 /// <param name="universalFormat">The expected universal jar naming format used by this Forge generation.</param>
 /// <param name="id">Unique identifier for the launcher instance.</param>
-/// <param name="gameVersion">The selected base Minecraft version metadata.</param>
-/// <param name="gameDetails">Per-instance game configuration (kind, versions, Java path, etc.).</param>
-/// <param name="pathDetails">Resolved filesystem paths used by the instance (versions, libraries, assets, etc.).</param>
-/// <param name="launcherDetails">Launcher-level metadata and settings used during install/launch.</param>
-/// <param name="clientDetails">Client/session details associated with this instance.</param>
+/// <param name="configuration">The configuration describing the game, paths, launcher and client settings for the instance.</param>
 /// <param name="logger">Logger used for progress, diagnostics, and error reporting.</param>
-/// <param name="resolution">Optional window resolution configuration for the instance.</param>
 /// <param name="progressReporter">Optional progress reporter used to surface long-running install status updates.</param>
 public class ForgeClassicInstance(
     string forgeVersionName,
     string universalFormat,
     string id,
-    MinecraftVersion gameVersion,
-    GameDetails gameDetails,
-    PathDetails pathDetails,
-    LauncherDetails launcherDetails,
-    ClientDetails clientDetails,
+    InstanceConfiguration configuration,
     IBeaconLogger logger,
-    Resolution? resolution = null,
     IProgressReporter? progressReporter = null)
-    : ForgeInstanceBase(id, gameVersion, gameDetails, pathDetails, launcherDetails, clientDetails, logger, resolution,
-        progressReporter)
+    : ForgeInstanceBase(id, configuration, logger, progressReporter)
 {
     /// <inheritdoc />
     /// <exception cref="InvalidOperationException">Thrown when <see cref="MinecraftInstance.ArgumentBuilder" /> is null.</exception>
@@ -57,7 +44,7 @@ public class ForgeClassicInstance(
         if (ArgumentBuilder == null)
             throw new InvalidOperationException($"{nameof(ArgumentBuilder)} is null.");
 
-        if (!File.Exists(PathDetails.CustomManifestPath))
+        if (!File.Exists(Config.Path.CustomManifestPath))
         {
             _logger.LogError("Forge manifest file does not exist. Please ensure the manifest is downloaded.");
             return null;
@@ -73,7 +60,7 @@ public class ForgeClassicInstance(
         var installerJarPath = Path.Combine(tempDir, "installer.jar");
         var installerDir = Path.Combine(tempDir, $"installer-{forgeVersionName}");
         var installerProfilePath = Path.Combine(VersionData.CustomVersionDirectory!, "install_profile.json");
-        var forgeUniversalDir = Path.Combine(PathDetails.LibrariesDir, "net", "minecraftforge", "forge",
+        var forgeUniversalDir = Path.Combine(Config.Path.LibrariesDir, "net", "minecraftforge", "forge",
             forgeVersionName);
         var forgeUniversalPath = Path.Combine(forgeUniversalDir,
             universalFormatName);
@@ -144,7 +131,7 @@ public class ForgeClassicInstance(
 
         // Fix 1.6.1 Forge Version
         // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
-        if (GameDetails.MinecraftVersion == "1.6.1" && !File.Exists(VersionData.CustomJsonPath) &&
+        if (Config.Game.MinecraftVersion == "1.6.1" && !File.Exists(VersionData.CustomJsonPath) &&
             installProfile.VersionInfo != null)
             await JsonHelper.WriteJsonFileAsync(VersionData.CustomJsonPath!, installProfile.VersionInfo,
                 CoreJsonContext.Default.ForgeVersionMetaLegacy, cancellationToken);
@@ -222,7 +209,7 @@ public class ForgeClassicInstance(
             }
         }
 
-        var legacyLibraries = ForgeInstance.GetLegacyLibraries(GameDetails.MinecraftVersion);
+        var legacyLibraries = ForgeInstance.GetLegacyLibraries(Config.Game.MinecraftVersion);
         var moddedData = new ModdedData(mainClass, legacyLibraries.Count > 0 ? [] : localLibraries);
         if (legacyLibraries.Count == 0)
             return moddedData;

@@ -3,12 +3,10 @@ using System.Text.Json;
 using Tavstal.BeaconSDK.Helpers.Domain;
 using Tavstal.BeaconSDK.Helpers.IO;
 using Tavstal.BeaconSDK.Models;
-using Tavstal.BeaconSDK.Models.Installer;
 using Tavstal.BeaconSDK.Models.Instance;
 using Tavstal.BeaconSDK.Models.Logging;
 using Tavstal.BeaconSDK.Models.ModLoaders.Forge;
 using Tavstal.BeaconSDK.Models.ModLoaders.Forge.Modern;
-using Tavstal.BeaconSDK.Models.MojangApi;
 
 namespace Tavstal.BeaconSDK.Instances.Forge;
 
@@ -16,26 +14,15 @@ namespace Tavstal.BeaconSDK.Instances.Forge;
 ///     Represents the base class for a Forge instance, inheriting from MinecraftInstance.
 /// </summary>
 /// <param name="id">Unique instance identifier.</param>
-/// <param name="gameVersion">Selected vanilla <see cref="MinecraftVersion" /> metadata.</param>
-/// <param name="gameDetails">Details about the game, such as version and paths.</param>
-/// <param name="pathDetails">Details about the file paths used by the instance.</param>
-/// <param name="launcherDetails">Details about the launcher configuration.</param>
-/// <param name="clientDetails">Details about the client configuration.</param>
+/// <param name="configuration">The configuration describing the game, paths, launcher and client settings for the instance.</param>
 /// <param name="logger">The logger instance for logging information and errors.</param>
-/// <param name="resolution">Optional screen resolution settings for the instance.</param>
 /// <param name="progressReporter">Optional progress reporter for tracking installation or setup progress.</param>
 public abstract class ForgeInstanceBase(
     string id,
-    MinecraftVersion gameVersion,
-    GameDetails gameDetails,
-    PathDetails pathDetails,
-    LauncherDetails launcherDetails,
-    ClientDetails clientDetails,
+    InstanceConfiguration configuration,
     IBeaconLogger logger,
-    Resolution? resolution = null,
     IProgressReporter? progressReporter = null)
-    : MinecraftInstance(id, gameVersion, gameDetails, pathDetails, launcherDetails, clientDetails, logger, resolution,
-        progressReporter)
+    : MinecraftInstance(id, configuration, logger, progressReporter)
 {
     // The following methods are originally from https://github.com/CmlLib
     // but have been adapted to fit the current code structure and conventions.
@@ -74,7 +61,7 @@ public abstract class ForgeInstanceBase(
             if (string.IsNullOrEmpty(value))
                 continue;
 
-            var fullPath = ForgeMapper.ToFullPath(value, PathDetails.LibrariesDir);
+            var fullPath = ForgeMapper.ToFullPath(value, Config.Path.LibrariesDir);
             dataMapping[key] = fullPath == value
                 ? Path.Combine(installDir, value.Trim('/'))
                 : fullPath;
@@ -178,7 +165,7 @@ public abstract class ForgeInstanceBase(
         if (string.IsNullOrEmpty(name))
             return;
 
-        var jarPath = Path.Combine(PathDetails.LibrariesDir, PackageName.Parse(name).GetPath());
+        var jarPath = Path.Combine(Config.Path.LibrariesDir, PackageName.Parse(name).GetPath());
         var jarManifest = new ProcessorJarFile(jarPath).GetManifest();
 
         if (jarManifest == null || !jarManifest.TryGetValue("Main-Class", out var mainClass) ||
@@ -195,7 +182,7 @@ public abstract class ForgeInstanceBase(
                 if (string.IsNullOrEmpty(libNameString))
                     continue;
 
-                var lib = Path.Combine(PathDetails.LibrariesDir, PackageName.Parse(libNameString).GetPath());
+                var lib = Path.Combine(Config.Path.LibrariesDir, PackageName.Parse(libNameString).GetPath());
                 classpath.Add(lib);
             }
 
@@ -207,7 +194,7 @@ public abstract class ForgeInstanceBase(
             argsProp.ValueKind == JsonValueKind.Array)
         {
             var arrStrs = argsProp.EnumerateArray().Select(x => x.ToString()).ToArray();
-            args = ForgeMapper.Map(arrStrs, mapData, PathDetails.LibrariesDir);
+            args = ForgeMapper.Map(arrStrs, mapData, Config.Path.LibrariesDir);
         }
 
 
@@ -222,7 +209,7 @@ public abstract class ForgeInstanceBase(
     /// <param name="args">The arguments to pass to the Java process.</param>
     private async Task StartJava(string[] classpath, string mainClass, string[]? args)
     {
-        var defaultJava = string.IsNullOrEmpty(GameDetails.JavaPath) ? "java" : GameDetails.JavaPath;
+        var defaultJava = string.IsNullOrEmpty(Config.Game.JavaPath) ? "java" : Config.Game.JavaPath;
         if (string.IsNullOrEmpty(defaultJava))
             throw new InvalidOperationException("JavaPath was empty");
 

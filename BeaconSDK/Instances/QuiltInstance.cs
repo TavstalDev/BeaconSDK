@@ -3,15 +3,15 @@ using Tavstal.BeaconSDK.Helpers.IO;
 using Tavstal.BeaconSDK.Helpers.Serialization;
 using Tavstal.BeaconSDK.Models;
 using Tavstal.BeaconSDK.Models.Endpoints.Modding;
-using Tavstal.BeaconSDK.Models.Installer;
 using Tavstal.BeaconSDK.Models.Instance;
+using Tavstal.BeaconSDK.Models.Instance.Config;
 using Tavstal.BeaconSDK.Models.Logging;
 using Tavstal.BeaconSDK.Models.ModLoaders.Fabric;
-using Tavstal.BeaconSDK.Models.MojangApi;
 using Tavstal.BeaconSDK.Models.MojangApi.Meta;
 using Tavstal.BeaconSDK.Models.MojangApi.Meta.Library;
 using Tavstal.BeaconSDK.Services.Abstractions;
 using CoreJsonContext = Tavstal.BeaconSDK.Models.Json.CoreJsonContext;
+// ReSharper disable UnusedType.Global
 
 namespace Tavstal.BeaconSDK.Instances;
 
@@ -19,26 +19,15 @@ namespace Tavstal.BeaconSDK.Instances;
 ///     An implementation of <see cref="MinecraftInstance" /> that installs and configures Quilt-based modded instances.
 /// </summary>
 /// <param name="id">Unique identifier for the instance.</param>
-/// <param name="gameVersion">The vanilla <see cref="MinecraftVersion" /> used as the base for this instance.</param>
-/// <param name="gameDetails">Details about the game/runtime configuration.</param>
-/// <param name="pathDetails">Filesystem paths used by the instance (libraries, assets, etc.).</param>
-/// <param name="launcherDetails">Launcher metadata and settings.</param>
-/// <param name="clientDetails">Client-specific data (e.g. credentials).</param>
+/// <param name="configuration">The configuration describing the game, paths, launcher and client settings for the instance.</param>
 /// <param name="logger">Logger used for diagnostic messages.</param>
-/// <param name="resolution">Optional default resolution for the instance.</param>
 /// <param name="progressReporter">Optional progress reporter used to surface download/install progress to callers.</param>
 public class QuiltInstance(
     string id,
-    MinecraftVersion gameVersion,
-    GameDetails gameDetails,
-    PathDetails pathDetails,
-    LauncherDetails launcherDetails,
-    ClientDetails clientDetails,
+    InstanceConfiguration configuration,
     IBeaconLogger logger,
-    Resolution? resolution = null,
     IProgressReporter? progressReporter = null)
-    : MinecraftInstance(id, gameVersion, gameDetails, pathDetails, launcherDetails, clientDetails, logger, resolution,
-        progressReporter)
+    : MinecraftInstance(id, configuration, logger, progressReporter)
 {
     /// <inheritdoc />
     /// <exception cref="InvalidOperationException">Thrown when <see cref="MinecraftInstance.ArgumentBuilder" /> is null.</exception>
@@ -49,9 +38,9 @@ public class QuiltInstance(
             throw new InvalidOperationException($"{nameof(ArgumentBuilder)} is null.");
 
         _progressReporter?.Report(EProgressKind.INSTANCE_READING_MANIFEST, 0);
-        if (!File.Exists(PathDetails.CustomManifestPath))
+        if (!File.Exists(Config.Path.CustomManifestPath))
         {
-            _logger.LogError("Quilt manifest file not found at path: " + PathDetails.CustomManifestPath);
+            _logger.LogError("Quilt manifest file not found at path: " + Config.Path.CustomManifestPath);
             return null;
         }
 
@@ -113,7 +102,7 @@ public class QuiltInstance(
 
 
         // Download Loader
-        var loaderDirPath = Path.Combine(PathDetails.LibrariesDir, "net", "quiltmc", "quilt-loader",
+        var loaderDirPath = Path.Combine(Config.Path.LibrariesDir, "net", "quiltmc", "quilt-loader",
             VersionData.CustomVersion!);
         var loaderJarPath = Path.Combine(loaderDirPath, $"quilt-loader-{VersionData.CustomVersion}.jar");
         Directory.CreateDirectory(loaderDirPath);

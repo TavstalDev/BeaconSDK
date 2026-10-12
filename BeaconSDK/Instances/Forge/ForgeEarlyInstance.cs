@@ -2,10 +2,8 @@ using System.IO.Compression;
 using Tavstal.BeaconSDK.Helpers.IO;
 using Tavstal.BeaconSDK.Models;
 using Tavstal.BeaconSDK.Models.Endpoints.Modding;
-using Tavstal.BeaconSDK.Models.Installer;
 using Tavstal.BeaconSDK.Models.Instance;
 using Tavstal.BeaconSDK.Models.Logging;
-using Tavstal.BeaconSDK.Models.MojangApi;
 using Tavstal.BeaconSDK.Services.Abstractions;
 
 namespace Tavstal.BeaconSDK.Instances.Forge;
@@ -20,34 +18,23 @@ namespace Tavstal.BeaconSDK.Instances.Forge;
 /// <param name="forgeVersionName">The Forge version identifier used to build download URLs (e.g. "10.13.4.1614").</param>
 /// <param name="universalName">The name of the universal artifact inside the Forge distribution (used in download URL).</param>
 /// <param name="id">Unique identifier for the instance.</param>
-/// <param name="gameVersion">The base vanilla <see cref="MinecraftVersion" /> used by this instance.</param>
-/// <param name="gameDetails">Game-level configuration (version strings, custom game directory, etc.).</param>
-/// <param name="pathDetails">Filesystem path configuration for versions, libraries, assets and so on.</param>
-/// <param name="launcherDetails">Launcher-level metadata.</param>
-/// <param name="clientDetails">Client-specific details such as auth tokens or client-side settings.</param>
+/// <param name="configuration">The configuration describing the game, paths, launcher and client settings for the instance.</param>
 /// <param name="logger">Logger used for diagnostics and progress reporting.</param>
-/// <param name="resolution">Optional default resolution for the instance window.</param>
 /// <param name="progressReporter">Optional progress reporter to surface download/extract progress to callers.</param>
 public class ForgeEarlyInstance(
     string forgeVersionName,
     string universalName,
     string id,
-    MinecraftVersion gameVersion,
-    GameDetails gameDetails,
-    PathDetails pathDetails,
-    LauncherDetails launcherDetails,
-    ClientDetails clientDetails,
+    InstanceConfiguration configuration,
     IBeaconLogger logger,
-    Resolution? resolution = null,
     IProgressReporter? progressReporter = null)
-    : ForgeInstanceBase(id, gameVersion, gameDetails, pathDetails, launcherDetails, clientDetails, logger, resolution,
-        progressReporter)
+    : ForgeInstanceBase(id, configuration, logger, progressReporter)
 {
     /// <inheritdoc />
     public override async Task<ModdedData?> InstallModdedAsync(string tempDir, IHttpService httpService,
         CancellationToken cancellationToken = default)
     {
-        if (!File.Exists(PathDetails.CustomManifestPath))
+        if (!File.Exists(Config.Path.CustomManifestPath))
         {
             _logger.LogError("Forge manifest file does not exist. Please ensure the manifest is downloaded.");
             return null;
@@ -94,7 +81,7 @@ public class ForgeEarlyInstance(
         }
 
         var moddedData = new ModdedData(null, []);
-        var libraries = ForgeInstance.GetLegacyLibraries(GameDetails.MinecraftVersion);
+        var libraries = ForgeInstance.GetLegacyLibraries(Config.Game.MinecraftVersion);
         if (libraries.Count == 0)
             return moddedData;
 

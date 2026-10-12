@@ -39,9 +39,9 @@ public class InstanceLaunchService : IInstanceLaunchService
         var stopper = new Stopwatch();
 
         // Execute pre-launch command if specified
-        if (!string.IsNullOrEmpty(instance.GameDetails.PreLaunchCommand))
+        if (!string.IsNullOrEmpty(instance.Config.Game.PreLaunchCommand))
         {
-            var preLaunchProc = StartCommand(instance.GameDetails.PreLaunchCommand);
+            var preLaunchProc = StartCommand(instance.Config.Game.PreLaunchCommand);
             if (preLaunchProc != null)
             {
                 _logger.LogDebug("Executing pre-launch command...");
@@ -55,7 +55,7 @@ public class InstanceLaunchService : IInstanceLaunchService
         // Below 1.7 there is no dedicated logs directory
         // so this fixes this issue
         string? customLogPath = null;
-        if (!GameHelper.isNewer(instance.GameDetails.MinecraftVersion, "1.7"))
+        if (!GameHelper.isNewer(instance.Config.Game.MinecraftVersion, "1.7"))
         {
             var logsDir = Path.Combine(instance.VersionData.GameDir, "logs");
             Directory.CreateDirectory(logsDir);
@@ -64,16 +64,16 @@ public class InstanceLaunchService : IInstanceLaunchService
 
         // Launch the Minecraft game process with the constructed arguments
 
-        List<string>? sensitiveDataToReplace = instance.Client is { IsOffline: false, AccessToken: not null }
-            ? [instance.Client.AccessToken]
+        List<string>? sensitiveDataToReplace = instance.Config.Client is { IsOffline: false, AccessToken: not null }
+            ? [instance.Config.Client.AccessToken]
             : null;
 
-        var finalJavaPath = string.IsNullOrEmpty(instance.GameDetails.JavaPath)
+        var finalJavaPath = string.IsNullOrEmpty(instance.Config.Game.JavaPath)
             ? "java"
-            : instance.GameDetails.JavaPath;
+            : instance.Config.Game.JavaPath;
         string args;
         var useWrapper = false;
-        switch (instance.GameDetails.Kind)
+        switch (instance.Config.Game.Kind)
         {
             case EMinecraftKind.NEOFORGE:
             case EMinecraftKind.FORGE:
@@ -93,9 +93,9 @@ public class InstanceLaunchService : IInstanceLaunchService
         }
 
         ProcessStartInfo psi;
-        if (instance.GameDetails.WrapperCommands is { Count: > 0 })
+        if (instance.Config.Game.WrapperCommands is { Count: > 0 })
         {
-            var fileName = instance.GameDetails.WrapperCommands[0];
+            var fileName = instance.Config.Game.WrapperCommands[0];
             psi = new ProcessStartInfo
             {
                 FileName = fileName,
@@ -105,7 +105,7 @@ public class InstanceLaunchService : IInstanceLaunchService
                 UseShellExecute = false
             };
             var commandInjected = false;
-            foreach (var command in instance.GameDetails.WrapperCommands.Skip(1))
+            foreach (var command in instance.Config.Game.WrapperCommands.Skip(1))
             {
                 if (command.Contains("%command%"))
                 {
@@ -140,7 +140,7 @@ public class InstanceLaunchService : IInstanceLaunchService
         }
 
         // Add environment variables if provided
-        foreach (var kvp in instance.GameDetails.EnvironmentVariables)
+        foreach (var kvp in instance.Config.Game.EnvironmentVariables)
             psi.EnvironmentVariables[kvp.Key] = kvp.Value;
 
         // Log the process start details
@@ -220,8 +220,8 @@ public class InstanceLaunchService : IInstanceLaunchService
                         break;
                 }
 
-                if (!string.IsNullOrEmpty(instance.GameDetails.PostExitCommand))
-                    StartCommand(instance.GameDetails.PostExitCommand);
+                if (!string.IsNullOrEmpty(instance.Config.Game.PostExitCommand))
+                    StartCommand(instance.Config.Game.PostExitCommand);
             };
 
             process.BeginOutputReadLine();

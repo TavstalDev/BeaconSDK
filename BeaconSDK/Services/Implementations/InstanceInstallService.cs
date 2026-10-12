@@ -3,8 +3,8 @@ using Tavstal.BeaconSDK.Helpers.Domain;
 using Tavstal.BeaconSDK.Helpers.IO;
 using Tavstal.BeaconSDK.Instances;
 using Tavstal.BeaconSDK.Models;
-using Tavstal.BeaconSDK.Models.Installer;
 using Tavstal.BeaconSDK.Models.Instance;
+using Tavstal.BeaconSDK.Models.Instance.Config;
 using Tavstal.BeaconSDK.Models.Logging;
 using Tavstal.BeaconSDK.Models.MojangApi.Meta;
 using Tavstal.BeaconSDK.Services.Abstractions;
@@ -54,17 +54,17 @@ public class InstanceInstallService : IInstanceInstallService
 
 
             instance.ArgumentBuilder = new ArgumentBuilder(
-                instance.MinecraftVersion.Id,
+                instance.Config.Version.Id,
                 instance.GetVersionName(null),
                 instance.VersionData.NativesDir,
                 instance.VersionData.GameDir,
                 instance.MinecraftVersionMeta.Index.Id,
                 instance.MinecraftVersionMeta,
-                instance.LauncherDetails,
-                instance.GameDetails,
-                instance.Client,
-                instance.PathDetails,
-                instance.Resolution);
+                instance.Config.Launcher,
+                instance.Config.Game,
+                instance.Config.Client,
+                instance.Config.Path,
+                instance.Config.Resolution);
 
             if (instance.MinecraftVersionMeta.JavaVersionMeta?.MajorVersion >= 9)
             {
@@ -96,7 +96,7 @@ public class InstanceInstallService : IInstanceInstallService
             _logger.LogInformation($"Dependencies downloaded in {(endTime - startTime).TotalMilliseconds}ms.");
 
             // Fix for Forge: 1.17.x-1.20.3 unable to launch issue
-            if (instance.GameDetails.Kind != EMinecraftKind.FORGE ||
+            if (instance.Config.Game.Kind != EMinecraftKind.FORGE ||
                 GameHelper.isNewer(instance.VersionData.MinecraftVersion, "1.20.3") ||
                 !GameHelper.isNewer(instance.VersionData.MinecraftVersion, "1.16.5"))
                 instance.ArgumentBuilder.AddClass(moddedData != null
@@ -106,7 +106,7 @@ public class InstanceInstallService : IInstanceInstallService
             // Copy custom natives if specified
             _logger.LogDebug("Copying custom native files if specified...");
             startTime = DateTime.Now;
-            foreach (var nativePath in instance.PathDetails.CustomNativeFiles)
+            foreach (var nativePath in instance.Config.Path.CustomNativeFiles)
             {
                 if (!File.Exists(nativePath))
                     continue;
@@ -137,15 +137,15 @@ public class InstanceInstallService : IInstanceInstallService
         CancellationToken cancellationToken = default)
     {
         var localVersionMeta = await _libraryDownloadService.DownloadVersionAsync(instance.VersionData,
-            instance.MinecraftVersion, progressReporter, cancellationToken);
+            instance.Config.Version, progressReporter, cancellationToken);
         instance.MinecraftVersionMeta = localVersionMeta ??
                                         throw new InvalidOperationException(
                                             "Failed to download the version meta data. Please check your internet connection and try again.");
 
         // Change the required Java version if necessary
-        if (instance.GameDetails.Kind == EMinecraftKind.FORGE)
+        if (instance.Config.Game.Kind == EMinecraftKind.FORGE)
         {
-            var forgeMinecraftVersion = new Version(instance.GameDetails.MinecraftVersion);
+            var forgeMinecraftVersion = new Version(instance.Config.Game.MinecraftVersion);
             // Set the required Java version to 7 for Forge versions 1.7.2 and below
             if (forgeMinecraftVersion.Major == 1 &&
                 (forgeMinecraftVersion.Minor < 7 || forgeMinecraftVersion is { Minor: 7, Build: < 10 }))
@@ -154,7 +154,7 @@ public class InstanceInstallService : IInstanceInstallService
 
         await _libraryDownloadService.DownloadMappingsAsync(instance.MinecraftVersionMeta, instance.VersionData,
             progressReporter, cancellationToken);
-        await _libraryDownloadService.DownloadAssetsAsync(instance.MinecraftVersionMeta, instance.PathDetails.AssetsDir,
+        await _libraryDownloadService.DownloadAssetsAsync(instance.MinecraftVersionMeta, instance.Config.Path.AssetsDir,
             instance.VersionData.GameDir, progressReporter, cancellationToken);
     }
 
@@ -181,17 +181,17 @@ public class InstanceInstallService : IInstanceInstallService
         if (loggingArg != null)
             instance.ArgumentBuilder.AddJvmArgumentBeforeClassPath(loggingArg);
 
-        var classPath = await _libraryDownloadService.DownloadLibrariesAsync(instance.GameDetails.Kind,
+        var classPath = await _libraryDownloadService.DownloadLibrariesAsync(instance.Config.Game.Kind,
             instance.VersionData, libraries,
-            instance.ArgumentBuilder.ClassPath, instance.PathDetails.CacheDir, instance.PathDetails.LibrariesDir,
+            instance.ArgumentBuilder.ClassPath, instance.Config.Path.CacheDir, instance.Config.Path.LibrariesDir,
             progressReporter, cancellationToken);
         foreach (var cp in classPath)
             instance.ArgumentBuilder.AddClass(cp);
 
-        if (instance.GameDetails.Kind is not (EMinecraftKind.FORGE or EMinecraftKind.NEOFORGE))
+        if (instance.Config.Game.Kind is not (EMinecraftKind.FORGE or EMinecraftKind.NEOFORGE))
         {
             var result =
-                await _libraryDownloadService.ExtractLaunchWrapperAsync(instance.PathDetails.LibrariesDir,
+                await _libraryDownloadService.ExtractLaunchWrapperAsync(instance.Config.Path.LibrariesDir,
                     cancellationToken);
             if (!string.IsNullOrEmpty(result))
                 instance.ArgumentBuilder.AddClass(result);

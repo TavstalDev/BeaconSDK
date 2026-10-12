@@ -3,11 +3,10 @@ using Tavstal.BeaconSDK.Helpers.IO;
 using Tavstal.BeaconSDK.Helpers.Serialization;
 using Tavstal.BeaconSDK.Models;
 using Tavstal.BeaconSDK.Models.Endpoints.Modding;
-using Tavstal.BeaconSDK.Models.Installer;
 using Tavstal.BeaconSDK.Models.Instance;
+using Tavstal.BeaconSDK.Models.Instance.Config;
 using Tavstal.BeaconSDK.Models.Logging;
 using Tavstal.BeaconSDK.Models.ModLoaders.Forge.Modern;
-using Tavstal.BeaconSDK.Models.MojangApi;
 using Tavstal.BeaconSDK.Models.MojangApi.Meta;
 using Tavstal.BeaconSDK.Services.Abstractions;
 using CoreJsonContext = Tavstal.BeaconSDK.Models.Json.CoreJsonContext;
@@ -20,26 +19,15 @@ namespace Tavstal.BeaconSDK.Instances.Forge;
 ///     setup logic used by newer Forge distributions.
 /// </summary>
 /// <param name="id">Unique identifier for the launcher instance.</param>
-/// <param name="gameVersion">The base Mojang <see cref="MinecraftVersion" /> selected for this instance.</param>
-/// <param name="gameDetails">Game-level settings such as Minecraft version, Forge version, and custom directories.</param>
-/// <param name="pathDetails">Resolved filesystem locations (versions, libraries, assets, cache, etc.).</param>
-/// <param name="launcherDetails">Launcher metadata and configuration used during installation and launch preparation.</param>
-/// <param name="clientDetails">Client/session information associated with this instance.</param>
+/// <param name="configuration">The configuration describing the game, paths, launcher and client settings for the instance.</param>
 /// <param name="logger">Logger used to report installation progress, warnings, and errors.</param>
-/// <param name="resolution">Optional launch resolution override for the game window.</param>
 /// <param name="progressReporter">Optional progress reporter for UI/status updates during long-running tasks.</param>
 public class ForgeModernInstance(
     string id,
-    MinecraftVersion gameVersion,
-    GameDetails gameDetails,
-    PathDetails pathDetails,
-    LauncherDetails launcherDetails,
-    ClientDetails clientDetails,
+    InstanceConfiguration configuration,
     IBeaconLogger logger,
-    Resolution? resolution = null,
     IProgressReporter? progressReporter = null)
-    : ForgeInstanceBase(id, gameVersion, gameDetails, pathDetails, launcherDetails, clientDetails, logger, resolution,
-        progressReporter)
+    : ForgeInstanceBase(id, configuration, logger, progressReporter)
 {
     /// <inheritdoc />
     /// <exception cref="InvalidOperationException">Thrown when <see cref="MinecraftInstance.ArgumentBuilder" /> is null.</exception>
@@ -50,7 +38,7 @@ public class ForgeModernInstance(
         if (ArgumentBuilder == null)
             throw new InvalidOperationException($"{nameof(ArgumentBuilder)} is null.");
 
-        if (!File.Exists(PathDetails.CustomManifestPath))
+        if (!File.Exists(Config.Path.CustomManifestPath))
         {
             _logger.LogError("Forge manifest file does not exist. Please ensure the manifest is downloaded.");
             return null;
@@ -99,7 +87,7 @@ public class ForgeModernInstance(
             // Extract Maven
             source = Path.Combine(installerDir, "maven");
             if (Directory.Exists(source))
-                FileSystemHelper.MoveDirectory(source, PathDetails.LibrariesDir, true, false);
+                FileSystemHelper.MoveDirectory(source, Config.Path.LibrariesDir, true, false);
         }
 
         // Read Forge Version Meta
@@ -128,13 +116,13 @@ public class ForgeModernInstance(
             }
 
             var localPath = libMeta.Downloads.Artifact.Path;
-            var libraryDir = Path.Combine(PathDetails.LibrariesDir,
+            var libraryDir = Path.Combine(Config.Path.LibrariesDir,
                 localPath.Remove(localPath.LastIndexOf('/'), localPath.Length - localPath.LastIndexOf('/')));
 
             if (!Directory.Exists(libraryDir))
                 Directory.CreateDirectory(libraryDir);
 
-            var libraryPath = Path.Combine(PathDetails.LibrariesDir, localPath);
+            var libraryPath = Path.Combine(Config.Path.LibrariesDir, localPath);
             if (File.Exists(libraryPath))
                 continue;
 
@@ -187,7 +175,7 @@ public class ForgeModernInstance(
                 new LaunchArg("--tweakClass net.minecraftforge.fml.common.launcher.FMLTweaker", 1));
 
         ArgumentBuilder.AddJvmArgumentBeforeClassPath(
-            new LaunchArg($"-DlibraryDirectory={PathDetails.LibrariesDir}", 1));
+            new LaunchArg($"-DlibraryDirectory={Config.Path.LibrariesDir}", 1));
 
         return new ModdedData(forgeVersionMeta.MainClass, localLibraries);
     }

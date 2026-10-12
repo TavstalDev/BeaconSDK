@@ -1,9 +1,8 @@
 ﻿using Tavstal.BeaconSDK.Enums;
 using Tavstal.BeaconSDK.Models;
-using Tavstal.BeaconSDK.Models.Installer;
 using Tavstal.BeaconSDK.Models.Instance;
+using Tavstal.BeaconSDK.Models.Instance.Config;
 using Tavstal.BeaconSDK.Models.Logging;
-using Tavstal.BeaconSDK.Models.MojangApi;
 using Tavstal.BeaconSDK.Models.MojangApi.Meta;
 using Tavstal.BeaconSDK.Services.Abstractions;
 
@@ -26,50 +25,38 @@ public class MinecraftInstance
     ///     the <see cref="VersionData" /> by computing file-system locations for vanilla and custom versions.
     /// </summary>
     /// <param name="id">Unique instance identifier.</param>
-    /// <param name="gameVersion">Selected vanilla <see cref="MinecraftVersion" /> metadata.</param>
-    /// <param name="gameDetails">Game runtime details like version strings and custom paths.</param>
-    /// <param name="pathDetails">Filesystem root paths used by the instance (libraries, assets, versions, etc.).</param>
-    /// <param name="launcherDetails">Launcher-global details and settings.</param>
-    /// <param name="clientDetails">Client-specific information passed to the instance.</param>
+    /// <param name="configuration">The configuration describing the game, paths, launcher and client settings for the instance.</param>
     /// <param name="logger">Logger used to write diagnostic and progress messages.</param>
-    /// <param name="resolution">Optional default resolution for the instance window.</param>
-    /// <param name="progressReporter">Optional progress reporter for long running tasks.</param>
-    public MinecraftInstance(string id, MinecraftVersion gameVersion, GameDetails gameDetails, PathDetails pathDetails,
-        LauncherDetails launcherDetails,
-        ClientDetails clientDetails, IBeaconLogger logger, Resolution? resolution = null,
-        IProgressReporter? progressReporter = null)
+    /// <param name="progressReporter">Optional progress reporter for long-running tasks.</param>
+    public MinecraftInstance(string id, InstanceConfiguration configuration,
+        IBeaconLogger logger, IProgressReporter? progressReporter = null)
     {
         Id = id;
-        MinecraftVersion = gameVersion;
-        GameDetails = gameDetails;
-        PathDetails = pathDetails;
-        LauncherDetails = launcherDetails;
-        Client = clientDetails;
-        Resolution = resolution;
+        Config = configuration;
         _logger = logger;
         _progressReporter = progressReporter;
 
-        var vanillaVersionsRoot = Path.Combine(PathDetails.VersionsDir, "vanilla");
+        var vanillaVersionsRoot = Path.Combine(Config.Path.VersionsDir, "vanilla");
         Directory.CreateDirectory(vanillaVersionsRoot);
-        var vanillaVersionDir = Path.Combine(vanillaVersionsRoot, GameDetails.MinecraftVersion);
+        var vanillaVersionDir = Path.Combine(vanillaVersionsRoot, Config.Game.MinecraftVersion);
 
         VersionData = new VersionDetails
         {
-            MinecraftVersion = GameDetails.MinecraftVersion,
-            CustomVersion = GameDetails.CustomVersion,
+            MinecraftVersion = Config.Game.MinecraftVersion,
+            CustomVersion = Config.Game.CustomVersion,
             VanillaVersionDirectory = vanillaVersionDir,
-            VanillaJarPath = Path.Combine(vanillaVersionDir, $"{GameDetails.MinecraftVersion}.jar"),
-            VanillaJsonPath = Path.Combine(vanillaVersionDir, $"{GameDetails.MinecraftVersion}.json")
+            VanillaJarPath = Path.Combine(vanillaVersionDir, $"{Config.Game.MinecraftVersion}.jar"),
+            VanillaJsonPath = Path.Combine(vanillaVersionDir, $"{Config.Game.MinecraftVersion}.json")
         };
 
-        var hasCustomGameDir = string.IsNullOrEmpty(GameDetails.CustomGameDirectory);
-        if (GameDetails.Kind != EMinecraftKind.VANILLA)
+        var hasCustomGameDir = string.IsNullOrEmpty(Config.Game.CustomGameDirectory);
+        if (Config.Game.Kind != EMinecraftKind.VANILLA)
         {
-            var customVersionRoot = Path.Combine(PathDetails.VersionsDir, GameDetails.Kind.ToString().ToLower());
+            var customVersionRoot = Path.Combine(Config.Path.VersionsDir, Config.Game.Kind.ToString().ToLower());
             Directory.CreateDirectory(customVersionRoot);
-            var customVersionName = $"{GameDetails.MinecraftVersion}-{GameDetails.CustomVersion}";
+            var customVersionName = $"{Config.Game.MinecraftVersion}-{Config.Game.CustomVersion}";
             var customVersionDir = Path.Combine(customVersionRoot, customVersionName);
-            var isFabric = GameDetails.Kind is EMinecraftKind.FABRIC or EMinecraftKind.QUILT;
+            var isFabric = Config.Game.Kind is EMinecraftKind.FABRIC or EMinecraftKind.QUILT;
 
             VersionData.CustomVersionDirectory = customVersionDir;
             VersionData.CustomJarPath = isFabric
@@ -77,7 +64,7 @@ public class MinecraftInstance
                 : Path.Combine(customVersionDir, $"{customVersionName}.jar");
             VersionData.CustomJsonPath = Path.Combine(customVersionDir, $"{customVersionName}.json");
             VersionData.GameDir =
-                hasCustomGameDir ? Path.Combine(customVersionDir, "game") : GameDetails.CustomGameDirectory!;
+                hasCustomGameDir ? Path.Combine(customVersionDir, "game") : Config.Game.CustomGameDirectory!;
             VersionData.NativesDir = hasCustomGameDir
                 ? Path.Combine(customVersionDir, "natives")
                 : Path.Combine(VersionData.GameDir, "natives");
@@ -86,7 +73,7 @@ public class MinecraftInstance
         {
             VersionData.GameDir = hasCustomGameDir
                 ? Path.Combine(vanillaVersionDir, "game")
-                : GameDetails.CustomGameDirectory!;
+                : Config.Game.CustomGameDirectory!;
             VersionData.NativesDir = hasCustomGameDir
                 ? Path.Combine(vanillaVersionDir, "natives")
                 : Path.Combine(VersionData.GameDir, "natives");
@@ -99,40 +86,15 @@ public class MinecraftInstance
     public string Id { get; }
 
     /// <summary>
-    ///     Gets the launcher-global details (name and version) used when building launch arguments.
+    ///     Gets or sets the configuration of this instance, describing the game, paths, launcher and client settings.
     /// </summary>
-    public LauncherDetails LauncherDetails { get; }
-
-    /// <summary>
-    ///     Gets the authenticated client details (tokens, uuid, display name) used when building launch arguments.
-    /// </summary>
-    public ClientDetails Client { get; }
-
-    /// <summary>
-    ///     Gets the per-instance game settings such as the Minecraft version, memory allocation and extra JVM arguments.
-    /// </summary>
-    public GameDetails GameDetails { get; }
-
-    /// <summary>
-    ///     Gets the resolved file-system roots (assets, libraries, versions, etc.) used by the instance.
-    /// </summary>
-    public PathDetails PathDetails { get; }
-
-    /// <summary>
-    ///     Gets the optional window resolution applied to the launched game.
-    /// </summary>
-    public Resolution? Resolution { get; }
+    public InstanceConfiguration Config { get; set; }
 
     /// <summary>
     ///     Gets the version metadata resolved for this instance, containing the vanilla and custom
     ///     version directories and jar/json paths.
     /// </summary>
     public VersionDetails VersionData { get; }
-
-    /// <summary>
-    ///     Gets the vanilla <see cref="Models.MojangApi.MinecraftVersion" /> metadata selected for this instance.
-    /// </summary>
-    public MinecraftVersion MinecraftVersion { get; }
 
     /// <summary>
     ///     Gets or sets the argument builder used to produce the JVM and game argument strings.
@@ -193,7 +155,7 @@ public class MinecraftInstance
     /// <returns>A formatted version name appropriate for the configured <see cref="GameDetails.Kind" />.</returns>
     public string GetVersionName(string? modVersion)
     {
-        return GameDetails.Kind switch
+        return Config.Game.Kind switch
         {
             EMinecraftKind.VANILLA => VersionData.MinecraftVersion,
             EMinecraftKind.FABRIC => $"fabric-loader-{modVersion}-{VersionData.MinecraftVersion}",

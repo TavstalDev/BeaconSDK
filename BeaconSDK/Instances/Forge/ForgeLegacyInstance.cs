@@ -2,11 +2,10 @@
 using Tavstal.BeaconSDK.Helpers.Serialization;
 using Tavstal.BeaconSDK.Models;
 using Tavstal.BeaconSDK.Models.Endpoints.Modding;
-using Tavstal.BeaconSDK.Models.Installer;
 using Tavstal.BeaconSDK.Models.Instance;
+using Tavstal.BeaconSDK.Models.Instance.Config;
 using Tavstal.BeaconSDK.Models.Logging;
 using Tavstal.BeaconSDK.Models.ModLoaders.Forge.Legacy;
-using Tavstal.BeaconSDK.Models.MojangApi;
 using Tavstal.BeaconSDK.Models.MojangApi.Meta;
 using Tavstal.BeaconSDK.Models.MojangApi.Meta.Library;
 using Tavstal.BeaconSDK.Services.Abstractions;
@@ -23,27 +22,16 @@ namespace Tavstal.BeaconSDK.Instances.Forge;
 ///     (for example: <c>1.12.2-14.23.5.2860</c>).
 /// </param>
 /// <param name="id">Unique identifier for this launcher instance.</param>
-/// <param name="gameVersion">The base Minecraft version metadata selected for the instance.</param>
-/// <param name="gameDetails">Game-specific runtime settings (kind, version values, custom paths, etc.).</param>
-/// <param name="pathDetails">Filesystem path configuration used by the instance (versions, libraries, assets, ...).</param>
-/// <param name="launcherDetails">Launcher-level configuration and metadata.</param>
-/// <param name="clientDetails">Client/session metadata associated with this instance.</param>
+/// <param name="configuration">The configuration describing the game, paths, launcher and client settings for the instance.</param>
 /// <param name="logger">Logger used for diagnostics, warnings, and install progress messages.</param>
-/// <param name="resolution">Optional launch resolution override.</param>
 /// <param name="progressReporter">Optional progress reporter for long-running install/download operations.</param>
 public class ForgeLegacyInstance(
     string forgeVersionName,
     string id,
-    MinecraftVersion gameVersion,
-    GameDetails gameDetails,
-    PathDetails pathDetails,
-    LauncherDetails launcherDetails,
-    ClientDetails clientDetails,
+    InstanceConfiguration configuration,
     IBeaconLogger logger,
-    Resolution? resolution = null,
     IProgressReporter? progressReporter = null)
-    : ForgeInstanceBase(id, gameVersion, gameDetails, pathDetails, launcherDetails, clientDetails, logger, resolution,
-        progressReporter)
+    : ForgeInstanceBase(id, configuration, logger, progressReporter)
 {
     /// <inheritdoc />
     /// <exception cref="InvalidOperationException">Thrown when <see cref="MinecraftInstance.ArgumentBuilder" /> is null.</exception>
@@ -54,7 +42,7 @@ public class ForgeLegacyInstance(
         if (ArgumentBuilder == null)
             throw new InvalidOperationException($"{nameof(ArgumentBuilder)} is null.");
 
-        if (!File.Exists(PathDetails.CustomManifestPath))
+        if (!File.Exists(Config.Path.CustomManifestPath))
         {
             _logger.LogError("Forge manifest file does not exist. Please ensure the manifest is downloaded.");
             return null;
@@ -69,7 +57,7 @@ public class ForgeLegacyInstance(
         var installerJarPath = Path.Combine(tempDir, "installer.jar");
         var installerDir = Path.Combine(tempDir, $"installer-{forgeVersionName}");
         var installerProfilePath = Path.Combine(VersionData.CustomVersionDirectory!, "install_profile.json");
-        var forgeUniversalDir = Path.Combine(PathDetails.LibrariesDir, "net", "minecraftforge", "forge",
+        var forgeUniversalDir = Path.Combine(Config.Path.LibrariesDir, "net", "minecraftforge", "forge",
             forgeVersionName);
         var forgeUniversalPath = Path.Combine(forgeUniversalDir,
             $"forge-{forgeVersionName}-universal.jar");

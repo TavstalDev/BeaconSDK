@@ -1,9 +1,7 @@
 using Tavstal.BeaconSDK.Instances.Forge;
 using Tavstal.BeaconSDK.Models;
-using Tavstal.BeaconSDK.Models.Installer;
 using Tavstal.BeaconSDK.Models.Instance;
 using Tavstal.BeaconSDK.Models.Logging;
-using Tavstal.BeaconSDK.Models.MojangApi;
 
 namespace Tavstal.BeaconSDK.Instances;
 
@@ -16,13 +14,8 @@ public static class ForgeInstance
     ///     Create a configured <see cref="MinecraftInstance" /> for the given Forge build.
     /// </summary>
     /// <param name="id">Unique instance identifier.</param>
-    /// <param name="gameVersion">The Minecraft version to use for this instance.</param>
-    /// <param name="gameDetails">Gameplay and version information such as the Minecraft version and custom version.</param>
-    /// <param name="pathDetails">Paths used by the instance (libraries, versions, assets, etc.).</param>
-    /// <param name="launcherDetails">Information about the launcher (branding, version, etc.).</param>
-    /// <param name="clientDetails">Client-specific details (user agent, client settings).</param>
+    /// <param name="configuration">The configuration describing the game, paths, launcher and client settings for the instance.</param>
     /// <param name="logger">Logger for recording instance operations and errors.</param>
-    /// <param name="resolution">Optional screen resolution to use when launching the game.</param>
     /// <param name="progressReporter">Optional progress reporter used during instance creation/install operations.</param>
     /// <returns>
     ///     A concrete <see cref="MinecraftInstance" /> appropriate for the combination of Minecraft and Forge versions.
@@ -34,100 +27,78 @@ public static class ForgeInstance
     /// </returns>
     public static MinecraftInstance GetForgeInstance(
         string id,
-        MinecraftVersion gameVersion,
-        GameDetails gameDetails,
-        PathDetails pathDetails,
-        LauncherDetails launcherDetails,
-        ClientDetails clientDetails,
+        InstanceConfiguration configuration,
         IBeaconLogger logger,
-        Resolution? resolution = null,
         IProgressReporter? progressReporter = null)
     {
-        var minecraftVersion = new Version(gameDetails.MinecraftVersion);
+        var minecraftVersion = new Version(configuration.Game.MinecraftVersion);
 
-        var mcVer = gameDetails.MinecraftVersion;
-        var forgeVer = gameDetails.CustomVersion!;
+        var mcVer = configuration.Game.MinecraftVersion;
+        var forgeVer = configuration.Game.CustomVersion!;
         return (minecraftVersion.Major, minecraftVersion.Minor) switch
         {
             // Early 1.1 - 1.2.5
             // Only 1.2.5 is supported
-            (1, <= 2) => new ForgeEarlyInstance(GetLegacyName(mcVer, forgeVer), "client", id, gameVersion, gameDetails,
-                pathDetails, launcherDetails, clientDetails, logger, resolution, progressReporter),
+            (1, <= 2) => new ForgeEarlyInstance(GetLegacyName(mcVer, forgeVer), "client",
+                id, configuration, logger, progressReporter),
             // Early 1.3.2 - 1.5.1
             // Classic 1.5.2
             (1, <= 5) => mcVer switch
             {
                 "1.5.2" => new ForgeClassicInstance(GetLegacyName(mcVer, forgeVer),
-                    "minecraftforge-universal-${version}.jar", id, gameVersion,
-                    gameDetails, pathDetails, launcherDetails, clientDetails, logger, resolution, progressReporter),
+                    "minecraftforge-universal-${version}.jar", id, configuration, logger, progressReporter),
 
-                _ => new ForgeEarlyInstance(GetLegacyName(mcVer, forgeVer), "universal", id, gameVersion, gameDetails,
-                    pathDetails, launcherDetails,
-                    clientDetails, logger, resolution, progressReporter)
+                _ => new ForgeEarlyInstance(GetLegacyName(mcVer, forgeVer), "universal",
+                    id, configuration, logger, progressReporter)
             },
             // Classic 1.6 - 1.7.2
             // Legacy 1.7.10-pre4 & 1.7.10
             (1, <= 7) => mcVer switch
             {
-                "1.7.10" => new ForgeLegacyInstance($"1.7.10-{forgeVer}-1.7.10", id, gameVersion, gameDetails,
-                    pathDetails, launcherDetails, clientDetails, logger,
-                    resolution, progressReporter),
+                "1.7.10" => new ForgeLegacyInstance($"1.7.10-{forgeVer}-1.7.10",
+                    id, configuration, logger, progressReporter),
 
-                "1.7.10-pre4" => new ForgeLegacyInstance($"1.7.10_pre4-{forgeVer}-prerelease", id, gameVersion,
-                    gameDetails, pathDetails, launcherDetails,
-                    clientDetails, logger, resolution, progressReporter),
+                "1.7.10-pre4" => new ForgeLegacyInstance($"1.7.10_pre4-{forgeVer}-prerelease",
+                    id, configuration, logger, progressReporter),
 
-                "1.7.2" => new ForgeClassicInstance($"1.7.2-{forgeVer}-mc172", "forge-${version}-universal.jar", id,
-                    gameVersion, gameDetails,
-                    pathDetails, launcherDetails, clientDetails, logger, resolution, progressReporter),
+                "1.7.2" => new ForgeClassicInstance($"1.7.2-{forgeVer}-mc172", "forge-${version}-universal.jar",
+                    id, configuration, logger, progressReporter),
 
                 _ => new ForgeClassicInstance(GetLegacyName(mcVer, forgeVer), "minecraftforge-universal-${version}.jar",
-                    id, gameVersion,
-                    gameDetails, pathDetails, launcherDetails, clientDetails, logger, resolution, progressReporter)
+                    id, configuration, logger, progressReporter)
             },
             // Legacy 1.8+ - 1.12.x
             (1, <= 12) => (mcVer, forgeVer) switch
             {
-                ("1.8", _) => new ForgeLegacyInstance(GetLegacyName(mcVer, forgeVer), id, gameVersion, gameDetails,
-                    pathDetails, launcherDetails,
-                    clientDetails, logger, resolution, progressReporter),
-                ("1.8.8", _) => new ForgeLegacyInstance(GetLegacyName(mcVer, forgeVer), id, gameVersion, gameDetails,
-                    pathDetails, launcherDetails,
-                    clientDetails, logger, resolution, progressReporter),
-                ("1.8.9", _) => new ForgeLegacyInstance(GetLegacyNameWithMc(mcVer, forgeVer), id, gameVersion,
-                    gameDetails, pathDetails, launcherDetails,
-                    clientDetails, logger, resolution, progressReporter),
+                ("1.8", _) => new ForgeLegacyInstance(GetLegacyName(mcVer, forgeVer),
+                    id, configuration, logger, progressReporter),
+                ("1.8.8", _) => new ForgeLegacyInstance(GetLegacyName(mcVer, forgeVer),
+                    id, configuration, logger, progressReporter),
+                ("1.8.9", _) => new ForgeLegacyInstance(GetLegacyNameWithMc(mcVer, forgeVer),
+                    id, configuration, logger, progressReporter),
 
-                ("1.9", "12.16.1.1938") => new ForgeLegacyInstance(GetLegacyNameWithZero(mcVer, forgeVer), id,
-                    gameVersion, gameDetails,
-                    pathDetails, launcherDetails, clientDetails, logger, resolution, progressReporter),
+                ("1.9", "12.16.1.1938") => new ForgeLegacyInstance(GetLegacyNameWithZero(mcVer, forgeVer),
+                    id, configuration, logger, progressReporter),
 
-                ("1.9", _) => new ForgeLegacyInstance(GetLegacyName(mcVer, forgeVer), id, gameVersion, gameDetails,
-                    pathDetails, launcherDetails,
-                    clientDetails, logger, resolution, progressReporter),
+                ("1.9", _) => new ForgeLegacyInstance(GetLegacyName(mcVer, forgeVer),
+                    id, configuration, logger, progressReporter),
 
-                ("1.9.4", _) => new ForgeLegacyInstance(GetLegacyNameWithMc(mcVer, forgeVer), id, gameVersion,
-                    gameDetails, pathDetails, launcherDetails,
-                    clientDetails, logger, resolution, progressReporter),
+                ("1.9.4", _) => new ForgeLegacyInstance(GetLegacyNameWithMc(mcVer, forgeVer),
+                    id, configuration, logger, progressReporter),
 
-                ("1.10", _) => new ForgeLegacyInstance(GetLegacyNameWithZero(mcVer, forgeVer), id, gameVersion,
-                    gameDetails, pathDetails, launcherDetails,
-                    clientDetails, logger, resolution, progressReporter),
+                ("1.10", _) => new ForgeLegacyInstance(GetLegacyNameWithZero(mcVer, forgeVer),
+                    id, configuration, logger, progressReporter),
 
                 ("1.10.2", _) or ("1.11", _) or ("1.11.2", _) or ("1.12", _) or
-                    ("1.12.1", _) => new ForgeLegacyInstance(GetLegacyName(mcVer, forgeVer), id, gameVersion,
-                        gameDetails, pathDetails, launcherDetails,
-                        clientDetails, logger, resolution, progressReporter),
-                ("1.12.2", _) => new ForgeModernInstance(id, gameVersion, gameDetails, pathDetails, launcherDetails,
-                    clientDetails, logger, resolution, progressReporter),
+                    ("1.12.1", _) => new ForgeLegacyInstance(GetLegacyName(mcVer, forgeVer),
+                        id, configuration, logger, progressReporter),
+                ("1.12.2", _) => new ForgeModernInstance(id, configuration, logger, progressReporter),
 
-                _ => new ForgeLegacyInstance(GetLegacyName(mcVer, forgeVer), id, gameVersion, gameDetails, pathDetails,
-                    launcherDetails, clientDetails,
-                    logger, resolution, progressReporter)
+                _ => new ForgeLegacyInstance(GetLegacyName(mcVer, forgeVer),
+                    id, configuration, logger, progressReporter)
             },
             // Modern 1.13+
-            _ => new ForgeModernInstance(id, gameVersion, gameDetails, pathDetails, launcherDetails, clientDetails,
-                logger, resolution, progressReporter)
+            _ => new ForgeModernInstance(id, configuration, logger, progressReporter)
         };
     }
 

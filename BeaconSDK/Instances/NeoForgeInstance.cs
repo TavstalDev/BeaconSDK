@@ -3,14 +3,14 @@ using Tavstal.BeaconSDK.Helpers.Serialization;
 using Tavstal.BeaconSDK.Instances.Forge;
 using Tavstal.BeaconSDK.Models;
 using Tavstal.BeaconSDK.Models.Endpoints.Modding;
-using Tavstal.BeaconSDK.Models.Installer;
 using Tavstal.BeaconSDK.Models.Instance;
+using Tavstal.BeaconSDK.Models.Instance.Config;
 using Tavstal.BeaconSDK.Models.Logging;
 using Tavstal.BeaconSDK.Models.ModLoaders.Forge.Modern;
-using Tavstal.BeaconSDK.Models.MojangApi;
 using Tavstal.BeaconSDK.Models.MojangApi.Meta;
 using Tavstal.BeaconSDK.Services.Abstractions;
 using CoreJsonContext = Tavstal.BeaconSDK.Models.Json.CoreJsonContext;
+// ReSharper disable UnusedType.Global
 
 namespace Tavstal.BeaconSDK.Instances;
 
@@ -19,26 +19,15 @@ namespace Tavstal.BeaconSDK.Instances;
 ///     NeoForge is the community-driven fork of Minecraft Forge for modern Java Edition versions.
 /// </summary>
 /// <param name="id">Unique identifier for the instance.</param>
-/// <param name="gameVersion">The vanilla <see cref="MinecraftVersion" /> used as the base for this instance.</param>
-/// <param name="gameDetails">Details about the game/runtime configuration.</param>
-/// <param name="pathDetails">Filesystem paths used by the instance (libraries, assets, etc.).</param>
-/// <param name="launcherDetails">Launcher metadata and settings.</param>
-/// <param name="clientDetails">Client-specific data (e.g. credentials).</param>
+/// <param name="configuration">The configuration describing the game, paths, launcher and client settings for the instance.</param>
 /// <param name="logger">Logger used for diagnostic messages.</param>
-/// <param name="resolution">Optional default resolution for the instance.</param>
 /// <param name="progressReporter">Optional progress reporter used to surface download/install progress to callers.</param>
 public class NeoForgeInstance(
     string id,
-    MinecraftVersion gameVersion,
-    GameDetails gameDetails,
-    PathDetails pathDetails,
-    LauncherDetails launcherDetails,
-    ClientDetails clientDetails,
+    InstanceConfiguration configuration,
     IBeaconLogger logger,
-    Resolution? resolution = null,
     IProgressReporter? progressReporter = null)
-    : ForgeInstanceBase(id, gameVersion, gameDetails, pathDetails, launcherDetails, clientDetails, logger, resolution,
-        progressReporter)
+    : ForgeInstanceBase(id, configuration, logger, progressReporter)
 {
     /// <inheritdoc />
     /// <exception cref="InvalidOperationException">Thrown when <see cref="MinecraftInstance.ArgumentBuilder" /> is null.</exception>
@@ -49,7 +38,7 @@ public class NeoForgeInstance(
         if (ArgumentBuilder == null)
             throw new InvalidOperationException($"{nameof(ArgumentBuilder)} is null.");
 
-        if (!File.Exists(PathDetails.CustomManifestPath))
+        if (!File.Exists(Config.Path.CustomManifestPath))
         {
             _logger.LogError("NeoForge manifest file does not exist. Please ensure the manifest is downloaded.");
             return null;
@@ -101,7 +90,7 @@ public class NeoForgeInstance(
                 var content = Directory.GetDirectories(source);
                 foreach (var dir in content)
                 {
-                    var newDirPath = dir.Replace(source, PathDetails.LibrariesDir);
+                    var newDirPath = dir.Replace(source, Config.Path.LibrariesDir);
                     if (!Directory.Exists(newDirPath))
                         Directory.CreateDirectory(newDirPath);
                 }
@@ -109,7 +98,7 @@ public class NeoForgeInstance(
                 content = Directory.GetFiles(source);
                 foreach (var file in content)
                 {
-                    var newFilePath = file.Replace(source, PathDetails.LibrariesDir);
+                    var newFilePath = file.Replace(source, Config.Path.LibrariesDir);
                     if (!File.Exists(newFilePath))
                         File.Copy(file, newFilePath, true);
                 }
@@ -146,13 +135,13 @@ public class NeoForgeInstance(
             }
 
             var localPath = libMeta.Downloads.Artifact.Path;
-            var libraryDir = Path.Combine(PathDetails.LibrariesDir,
+            var libraryDir = Path.Combine(Config.Path.LibrariesDir,
                 localPath.Remove(localPath.LastIndexOf('/'), localPath.Length - localPath.LastIndexOf('/')));
 
             if (!Directory.Exists(libraryDir))
                 Directory.CreateDirectory(libraryDir);
 
-            var libraryPath = Path.Combine(PathDetails.LibrariesDir, localPath);
+            var libraryPath = Path.Combine(Config.Path.LibrariesDir, localPath);
             if (File.Exists(libraryPath))
                 continue;
 
