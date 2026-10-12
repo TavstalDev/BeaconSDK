@@ -1,4 +1,4 @@
-﻿namespace Tavstal.BeaconSDK.Models.Installer;
+﻿namespace Tavstal.BeaconSDK.Models.Instance.Config;
 
 /// <summary>
 ///     Represents a launch argument with a specified priority.

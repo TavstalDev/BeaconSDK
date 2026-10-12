@@ -1,6 +1,6 @@
 ﻿using Tavstal.BeaconSDK.Models.MojangApi.Meta;
 
-namespace Tavstal.BeaconSDK.Models.Installer;
+namespace Tavstal.BeaconSDK.Models.Instance;
 
 /// <summary>
 ///     Represents the modded data required for the installation process.

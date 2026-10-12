@@ -1,6 +1,6 @@
 using Tavstal.BeaconSDK.Enums;
 
-namespace Tavstal.BeaconSDK.Models.Installer;
+namespace Tavstal.BeaconSDK.Models.Instance.Config;
 
 /// <summary>
 ///     Represents the details of a Minecraft game configuration, including Java path, memory allocation,

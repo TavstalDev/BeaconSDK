@@ -1,4 +1,4 @@
-namespace Tavstal.BeaconSDK.Models.Installer;
+namespace Tavstal.BeaconSDK.Models.Instance.Config;
 
 /// <summary>
 ///     Represents the details of a Minecraft client, including authentication and user information.
