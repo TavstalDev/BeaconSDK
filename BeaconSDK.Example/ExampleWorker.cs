@@ -4,7 +4,8 @@ using Tavstal.BeaconSDK.Helpers.Domain;
 using Tavstal.BeaconSDK.Instances;
 using Tavstal.BeaconSDK.Models;
 using Tavstal.BeaconSDK.Models.Endpoints;
-using Tavstal.BeaconSDK.Models.Installer;
+using Tavstal.BeaconSDK.Models.Instance;
+using Tavstal.BeaconSDK.Models.Instance.Config;
 using Tavstal.BeaconSDK.Models.Logging;
 using Tavstal.BeaconSDK.Services.Abstractions;
 
@@ -134,8 +135,16 @@ public class ExampleWorker : IHostedService, IProgressReporter
         var uuid = GameHelper.GetOfflinePlayerUUID(minecraftUsername);
         var clientDetails = new ClientDetails(null, minecraftUsername, uuid, true);
 
-        var instance = new MinecraftInstance(minecraftVersion, targetVersion, gameDetails, pathDetails, launcherDetails,
-            clientDetails, new BeaconLogger<MinecraftInstance>(_logger.GetLogLevel()), null, this);
+        var config = new InstanceConfiguration
+        {
+          Version  = targetVersion,
+          Game = gameDetails,
+          Path = pathDetails,
+          Launcher = launcherDetails,
+          Client = clientDetails
+        };
+
+        var instance = new MinecraftInstance(minecraftVersion, config, new BeaconLogger<MinecraftInstance>(_logger.GetLogLevel()), this);
         var installResult = await _instanceInstallService.InstallAsync(instance, this, cts);
         if (!installResult)
         {
@@ -187,7 +196,7 @@ public class ExampleWorker : IHostedService, IProgressReporter
             }
         }
 
-        instance.GameDetails.JavaPath = javaPath;
+        instance.Config.Game.JavaPath = javaPath;
 
         var process = await _instanceLaunchService.LaunchAsync(instance, this, cts);
         if (process == null)
