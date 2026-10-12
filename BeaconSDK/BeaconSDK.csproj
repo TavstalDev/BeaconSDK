@@ -9,7 +9,7 @@
         <AssemblyName>BeaconSDK</AssemblyName>
         <AssemblyTitle>BeaconSDK</AssemblyTitle>
         <Product>BeaconSDK</Product>
-        <Description></Description>
+        <Description>A .NET library for building Minecraft launchers. Handles Microsoft authentication, game file installation, Fabric/Quilt/Forge/NeoForge mod loaders, Java runtime management and launching the game.</Description>
         <Company>Tavstal</Company>
         <Authors>Tavstal</Authors>
         <Copyright>Copyright © 2026 Tavstal</Copyright>
