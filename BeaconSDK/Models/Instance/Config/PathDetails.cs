@@ -12,18 +12,13 @@ public class PathDetails
     /// <param name="cacheDir">The directory path for cached files.</param>
     /// <param name="librariesDir">The directory path for libraries.</param>
     /// <param name="versionsDir">The directory path for versions.</param>
-    /// <param name="manifestPath">The path to the manifest file.</param>
-    /// <param name="customManifestPath">The path to a custom manifest file, if any.</param>
     /// <param name="customNativeFiles">The list of custom native files.</param>
-    public PathDetails(string assetsDir, string cacheDir, string librariesDir, string versionsDir, string manifestPath,
-        string? customManifestPath, List<string> customNativeFiles)
+    public PathDetails(string assetsDir, string cacheDir, string librariesDir, string versionsDir, List<string> customNativeFiles)
     {
         AssetsDir = assetsDir;
         CacheDir = cacheDir;
         LibrariesDir = librariesDir;
         VersionsDir = versionsDir;
-        ManifestPath = manifestPath;
-        CustomManifestPath = customManifestPath;
         CustomNativeFiles = customNativeFiles;
     }
 
@@ -46,16 +41,6 @@ public class PathDetails
     ///     Gets or sets the directory path for versions.
     /// </summary>
     public string VersionsDir { get; set; }
-
-    /// <summary>
-    ///     Gets or sets the path to the manifest file.
-    /// </summary>
-    public string ManifestPath { get; set; }
-
-    /// <summary>
-    ///     Gets or sets the path to a custom manifest file, if any.
-    /// </summary>
-    public string? CustomManifestPath { get; set; }
 
     /// <summary>
     ///     Gets or sets the list of custom native files.

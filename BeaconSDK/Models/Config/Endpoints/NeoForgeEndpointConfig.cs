@@ -16,18 +16,6 @@ public class NeoForgeEndpointConfig
         "https://maven.neoforged.net/releases/net/neoforged/neoforge/maven-metadata.xml";
 
     /// <summary>
-    ///     The URL template for downloading the NeoForge universal JAR file for a specific version.
-    /// </summary>
-    /// <remarks>
-    ///     Replace `{0}` with the NeoForge version (e.g., "20.4.237").
-    ///     Example:
-    ///     https://maven.neoforged.net/releases/net/neoforged/neoforge/20.4.237/neoforge-20.4.237-universal.jar
-    /// </remarks>
-    [JsonPropertyName("LoaderUniversalZipUrl")]
-    public string LoaderUniversalZipUrl { get; set; } =
-        "https://maven.neoforged.net/releases/net/neoforged/neoforge/{0}/neoforge-{0}-universal.jar";
-
-    /// <summary>
     ///     The URL template for downloading the NeoForge installer JAR file for a specific version.
     /// </summary>
     /// <remarks>

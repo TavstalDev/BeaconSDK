@@ -28,7 +28,6 @@ public class MinecraftVersion
     public MinecraftVersion(string id, string type, string url, DateTime time, DateTime releaseTime)
     {
         Id = id;
-        _version = new Version(id);
         Type = type;
         Url = url;
         Time = time;
@@ -64,13 +63,6 @@ public class MinecraftVersion
     /// </summary>
     [JsonPropertyName("releaseTime")]
     public DateTime ReleaseTime { get; set; }
-
-    /// <summary>
-    ///     Gets or sets the .NET version associated with the Minecraft version.
-    ///     This property is ignored during JSON serialization and deserialization.
-    /// </summary>
-    [JsonIgnore]
-    private Version? _version { get; set; }
 
     /// <summary>
     ///     Determines whether the specified object is equal to the current instance.

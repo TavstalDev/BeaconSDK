@@ -175,8 +175,7 @@ public class MicrosoftAuthService : IMicrosoftAuthService
     }
 
     /// <inheritdoc />
-    public async Task<DeviceCodeResult?> CreateDeviceCodeAsync(IProgressReporter? progressReporter = null,
-        CancellationToken cancellationToken = default)
+    public async Task<DeviceCodeResult?> CreateDeviceCodeAsync(CancellationToken cancellationToken = default)
     {
         try
         {

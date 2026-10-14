@@ -43,13 +43,4 @@ public class DataProtectionConfig
     /// </summary>
     [JsonPropertyName("MacKey")]
     public byte[] MacKey { get; set; } = [.. "MqcM2kVeroKpvh9z79t3KjtiTzCUKSRs"u8];
-
-    /// <summary>
-    ///     Gets or sets the AES initialization vector (IV) length in bytes for the fallback encryption. Defaults to 16.
-    /// </summary>
-    /// <remarks>
-    ///     This value is currently informational; the fallback encryption always uses the AES block size of 16 bytes.
-    /// </remarks>
-    [JsonPropertyName("IvLength")]
-    public byte IvLength { get; set; } = 16;
 }

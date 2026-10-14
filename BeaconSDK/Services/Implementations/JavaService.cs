@@ -82,7 +82,7 @@ public class JavaService : IJavaService
 
             var operatingSystem = OSHelper.GetOperatingSystem();
             var isArmBased = OSHelper.IsArmBased();
-            if (!_mirrorConfig.Mirrors.TryGetValue(operatingSystem, out var osMirrors) && osMirrors == null)
+            if (!_mirrorConfig.Mirrors.TryGetValue(operatingSystem, out var osMirrors))
             {
                 _logger.LogWarning($"Failed to get java mirrors for {operatingSystem} OS.");
                 return null;

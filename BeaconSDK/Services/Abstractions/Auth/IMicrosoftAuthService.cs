@@ -62,14 +62,12 @@ public interface IMicrosoftAuthService
     /// <summary>
     ///     Creates a device code for the Microsoft OAuth2 device code flow.
     /// </summary>
-    /// <param name="progressReporter">Optional reporter for tracking the creation progress.</param>
     /// <param name="cancellationToken">Token to cancel the operation if needed.</param>
     /// <returns>
     ///     A <see cref="DeviceCodeResult" /> containing the device code and user code,
     ///     or null if the operation fails.
     /// </returns>
-    Task<DeviceCodeResult?> CreateDeviceCodeAsync(IProgressReporter? progressReporter = null,
-        CancellationToken cancellationToken = default);
+    Task<DeviceCodeResult?> CreateDeviceCodeAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     ///     Checks the status of a device code authentication and completes the flow if authenticated.
