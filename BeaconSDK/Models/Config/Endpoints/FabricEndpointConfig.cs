@@ -1,14 +1,17 @@
-namespace Tavstal.BeaconSDK.Models.Endpoints.Modding;
+using System.Text.Json.Serialization;
+
+namespace Tavstal.BeaconSDK.Models.Config.Endpoints;
 
 /// <summary>
-///     Provides constants for Fabric-related endpoints used in the application.
+///     Represents the Fabric meta and maven endpoint URLs used to download Fabric manifests, profiles and loader jars.
 /// </summary>
-public static class FabricEndpoints
+public class FabricEndpointConfig
 {
     /// <summary>
-    ///     The URL for retrieving the Fabric version manifest.
+    ///     Gets or sets the URL of the Fabric version manifest listing available game, loader and interop versions.
     /// </summary>
-    public const string VersionManifestUrl = "https://meta.fabricmc.net/v2/versions";
+    [JsonPropertyName("VersionManifestUrl")]
+    public string VersionManifestUrl { get; set; } = "https://meta.fabricmc.net/v2/versions";
 
     /// <summary>
     ///     The URL template for retrieving the Fabric loader JSON profile for a specific Minecraft version and loader version.
@@ -17,7 +20,8 @@ public static class FabricEndpoints
     ///     Replace `{0}` with the Minecraft version and `{1}` with the Fabric loader version.
     ///     Example: https://meta.fabricmc.net/v2/versions/loader/1.16.5/0.15.6/profile/json
     /// </remarks>
-    public const string LoaderJsonUrl = "https://meta.fabricmc.net/v2/versions/loader/{0}/{1}/profile/json";
+    [JsonPropertyName("LoaderJsonUrl")]
+    public string LoaderJsonUrl { get; set; } = "https://meta.fabricmc.net/v2/versions/loader/{0}/{1}/profile/json";
 
     /// <summary>
     ///     The URL template for downloading the Fabric loader JAR file for a specific version.
@@ -26,6 +30,7 @@ public static class FabricEndpoints
     ///     Replace `{0}` with the Fabric loader version.
     ///     Example: https://maven.fabricmc.net/net/fabricmc/fabric-loader/0.15.6/fabric-loader-0.15.6.jar
     /// </remarks>
-    public const string LoaderJarUrl =
+    [JsonPropertyName("LoaderJarUrl")]
+    public string LoaderJarUrl { get; set; } =
         "https://maven.fabricmc.net/net/fabricmc/fabric-loader/{0}/fabric-loader-{0}.jar";
 }
