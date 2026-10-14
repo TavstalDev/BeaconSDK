@@ -3,7 +3,6 @@ using Tavstal.BeaconSDK.Enums;
 using Tavstal.BeaconSDK.Helpers.Domain;
 using Tavstal.BeaconSDK.Instances;
 using Tavstal.BeaconSDK.Models;
-using Tavstal.BeaconSDK.Models.Endpoints;
 using Tavstal.BeaconSDK.Models.Instance;
 using Tavstal.BeaconSDK.Models.Instance.Config;
 using Tavstal.BeaconSDK.Models.Logging;
@@ -15,19 +14,17 @@ namespace Tavstal.BeaconSDK.Example;
 
 public class ExampleWorker : IHostedService, IProgressReporter
 {
-    private readonly IHttpService _httpService;
     private readonly IInstanceInstallService _instanceInstallService;
     private readonly IInstanceLaunchService _instanceLaunchService;
     private readonly IJavaService _javaService;
     private readonly IBeaconLogger<ExampleWorker> _logger;
     private readonly IManifestService _manifestService;
 
-    public ExampleWorker(IBeaconLogger<ExampleWorker> logger, IHttpService httpService, IJavaService javaService,
+    public ExampleWorker(IBeaconLogger<ExampleWorker> logger, IJavaService javaService,
         IInstanceLaunchService instanceLaunchService, IInstanceInstallService instanceInstallService,
         IManifestService manifestService)
     {
         _logger = logger;
-        _httpService = httpService;
         _javaService = javaService;
         _instanceLaunchService = instanceLaunchService;
         _instanceInstallService = instanceInstallService;
@@ -47,7 +44,7 @@ public class ExampleWorker : IHostedService, IProgressReporter
             {
                 _logger.LogInformation($"Downloading minecraft manifest {e:0.00}%...");
             };
-            await _httpService.DownloadFileAsync(MicrosoftEndpoints.MinecraftManifestUrl, manifestPath, null, progress, cts);
+            await _manifestService.DownloadMinecraftManifestAsync(manifestPath, progress, cts);
         }
 
         var manifest = await _manifestService.GetMinecraftManifestAsync(manifestPath, cts);
