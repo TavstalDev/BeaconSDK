@@ -58,8 +58,7 @@ public sealed class FakeMicrosoftAuthService : IMicrosoftAuthService
         return Task.CompletedTask;
     }
 
-    public Task<DeviceCodeResult?> CreateDeviceCodeAsync(IProgressReporter? progressReporter = null,
-        CancellationToken cancellationToken = default)
+    public Task<DeviceCodeResult?> CreateDeviceCodeAsync(CancellationToken cancellationToken = default)
     {
         return Task.FromResult<DeviceCodeResult?>(new DeviceCodeResult("device", "user", "uri", 900, 5));
     }

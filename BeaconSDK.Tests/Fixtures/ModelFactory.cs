@@ -68,12 +68,9 @@ public static class ModelFactory
         string cacheDir = "/cache",
         string librariesDir = "/libraries",
         string versionsDir = "/versions",
-        string manifestPath = "/manifest.json",
-        string? customManifestPath = null,
         List<string>? customNativeFiles = null)
     {
-        return new PathDetails(assetsDir, cacheDir, librariesDir, versionsDir, manifestPath, customManifestPath,
-            customNativeFiles ?? []);
+        return new PathDetails(assetsDir, cacheDir, librariesDir, versionsDir, customNativeFiles ?? []);
     }
 
     public static Resolution CreateResolution(uint x = 854, uint y = 480)
