@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using Microsoft.AspNetCore.DataProtection;
 using Tavstal.BeaconSDK.Enums;
 using Tavstal.BeaconSDK.Helpers.Platform;
+using Tavstal.BeaconSDK.Models.Config;
 using Tavstal.BeaconSDK.Models.Logging;
 using Tavstal.BeaconSDK.Services.Abstractions;
 
@@ -12,8 +13,8 @@ namespace Tavstal.BeaconSDK.Services.Implementations;
 /// <remarks>
 /// <para>
 /// <b>SECURITY WARNING:</b> If an <see cref="IDataProtectionProvider" /> instance is not provided during initialization,
-/// this service falls back to platform-specific encryption: DPAPI scoped to the current user on Windows, and AES with a
-/// static embedded key on Linux and macOS.
+/// this service falls back to platform-specific encryption: DPAPI scoped to the current user on Windows, and AES with the
+/// keys configured in <see cref="DataProtectionConfig" /> (Linux and macOS).
 /// </para>
 /// <para>
 /// This fallback mechanism is intended strictly for unconfigured or lower-tier environments. For production workloads,
@@ -29,23 +30,23 @@ public class EncryptionService : IEncryptionService
     private readonly byte[] PREFIX_V1_WIN = [.. "winv1:"u8];
     private readonly byte[] PREFIX_V1_LINUX = [.. "linv1:"u8];
     private readonly byte[] PREFIX_V1_MAC = [.. "macv1:"u8];
-    private readonly byte[] E_KEY_LINUX = [.. "5aEcj3cLUm5qYeCpptEaQoFCUTgZyEZw"u8];
-    private readonly byte[] E_KEY_MAC = [.. "MqcM2kVeroKpvh9z79t3KjtiTzCUKSRs"u8];
-    private readonly byte[] S_ENTROPY = [.. "8AE1C425-241D-46A9-A8F8-6E8A68D2586C"u8];
     private readonly IBeaconLogger<EncryptionService> _logger;
     private readonly IDataProtector? _dataProtector;
+    private readonly BeaconConfiguration _config;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="EncryptionService" /> class.
     /// </summary>
     /// <param name="logger">Logger used to record diagnostic messages, warnings, and errors.</param>
+    /// <param name="config">The Beacon SDK configuration providing the data protection purpose, entropy and fallback keys.</param>
     /// <param name="provider">
     ///     The data protection protector used to encrypt and decrypt values. When <see langword="null" />,
     ///     platform-specific encryption is used instead.
     /// </param>
-    public EncryptionService(IBeaconLogger<EncryptionService> logger, IDataProtectionProvider? provider = null)
+    public EncryptionService(IBeaconLogger<EncryptionService> logger, BeaconConfiguration config, IDataProtectionProvider? provider = null)
     {
         _logger = logger;
+        _config = config;
         if (provider == null)
         {
             logger.LogWarning(
@@ -54,7 +55,7 @@ public class EncryptionService : IEncryptionService
             );
             return;
         }
-        _dataProtector = provider.CreateProtector("BeaconSDK.Encryption.v1");
+        _dataProtector = provider.CreateProtector(config.DataProtection.ProtectorPurpose);
     }
 
     /// <inheritdoc />
@@ -164,7 +165,7 @@ public class EncryptionService : IEncryptionService
     [SuppressMessage("Interoperability", "CA1416:Validate platform compatibility")]
     private byte[] EncryptWin(byte[] plainBytes)
     {
-        var encryptedBytes = ProtectedData.Protect(plainBytes, S_ENTROPY, DataProtectionScope.CurrentUser);
+        var encryptedBytes = ProtectedData.Protect(plainBytes, _config.DataProtection.WindowsEntropy, DataProtectionScope.CurrentUser);
         return encryptedBytes;
     }
 
@@ -176,12 +177,12 @@ public class EncryptionService : IEncryptionService
     [SuppressMessage("Interoperability", "CA1416:Validate platform compatibility")]
     private byte[] DecryptWin(byte[] cipherBytes)
     {
-        var decryptedBytes = ProtectedData.Unprotect(cipherBytes, S_ENTROPY, DataProtectionScope.CurrentUser);
+        var decryptedBytes = ProtectedData.Unprotect(cipherBytes, _config.DataProtection.WindowsEntropy, DataProtectionScope.CurrentUser);
         return decryptedBytes;
     }
 
     /// <summary>
-    ///     Encrypts bytes using AES with the Linux fallback key.
+    ///     Encrypts bytes using AES with the configured Linux fallback key from <see cref="DataProtectionConfig" />.
     /// </summary>
     /// <param name="plainBytes">The bytes to encrypt.</param>
     /// <returns>The encrypted bytes, or the input unchanged when it is empty.</returns>
@@ -189,11 +190,11 @@ public class EncryptionService : IEncryptionService
     {
         if (plainBytes.Length == 0)
             return plainBytes;
-        return Encrypt(E_KEY_LINUX, plainBytes);
+        return Encrypt(_config.DataProtection.LinuxKey, plainBytes);
     }
 
     /// <summary>
-    ///     Decrypts bytes using AES with the Linux fallback key.
+    ///     Decrypts bytes using AES with the configured Linux fallback key from <see cref="DataProtectionConfig" />.
     /// </summary>
     /// <param name="cipherBytes">The bytes to decrypt.</param>
     /// <returns>The decrypted bytes, or the input unchanged when it is empty.</returns>
@@ -201,11 +202,11 @@ public class EncryptionService : IEncryptionService
     {
         if (cipherBytes.Length == 0)
             return cipherBytes;
-        return Decrypt(E_KEY_LINUX, cipherBytes);
+        return Decrypt(_config.DataProtection.LinuxKey, cipherBytes);
     }
 
     /// <summary>
-    ///     Encrypts bytes using AES with the macOS fallback key.
+    ///     Encrypts bytes using AES with the configured macOS fallback key from <see cref="DataProtectionConfig" />.
     /// </summary>
     /// <param name="plainBytes">The bytes to encrypt.</param>
     /// <returns>The encrypted bytes, or the input unchanged when it is empty.</returns>
@@ -213,11 +214,11 @@ public class EncryptionService : IEncryptionService
     {
         if (plainBytes.Length == 0)
             return plainBytes;
-        return Encrypt(E_KEY_MAC, plainBytes);
+        return Encrypt(_config.DataProtection.MacKey, plainBytes);
     }
 
     /// <summary>
-    ///     Decrypts bytes using AES with the macOS fallback key.
+    ///     Decrypts bytes using AES with the configured macOS fallback key from <see cref="DataProtectionConfig" />.
     /// </summary>
     /// <param name="cipherBytes">The bytes to decrypt.</param>
     /// <returns>The decrypted bytes, or the input unchanged when it is empty.</returns>
@@ -225,7 +226,7 @@ public class EncryptionService : IEncryptionService
     {
         if (cipherBytes.Length == 0)
             return cipherBytes;
-        return Decrypt(E_KEY_MAC, cipherBytes);
+        return Decrypt(_config.DataProtection.MacKey, cipherBytes);
     }
 
     /// <summary>

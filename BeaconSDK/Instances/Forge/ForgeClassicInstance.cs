@@ -2,7 +2,7 @@
 using Tavstal.BeaconSDK.Helpers.IO;
 using Tavstal.BeaconSDK.Helpers.Serialization;
 using Tavstal.BeaconSDK.Models;
-using Tavstal.BeaconSDK.Models.Endpoints.Modding;
+using Tavstal.BeaconSDK.Models.Config;
 using Tavstal.BeaconSDK.Models.Instance;
 using Tavstal.BeaconSDK.Models.Logging;
 using Tavstal.BeaconSDK.Models.ModLoaders.Forge.Legacy;
@@ -23,6 +23,7 @@ namespace Tavstal.BeaconSDK.Instances.Forge;
 /// </param>
 /// <param name="universalFormat">The expected universal jar naming format used by this Forge generation.</param>
 /// <param name="id">Unique identifier for the launcher instance.</param>
+/// <param name="appConfiguration">The Beacon SDK configuration providing endpoint, HTTP, authentication and data protection settings.</param>
 /// <param name="configuration">The configuration describing the game, paths, launcher and client settings for the instance.</param>
 /// <param name="logger">Logger used for progress, diagnostics, and error reporting.</param>
 /// <param name="progressReporter">Optional progress reporter used to surface long-running install status updates.</param>
@@ -30,10 +31,11 @@ public class ForgeClassicInstance(
     string forgeVersionName,
     string universalFormat,
     string id,
+    BeaconConfiguration appConfiguration,
     InstanceConfiguration configuration,
     IBeaconLogger logger,
     IProgressReporter? progressReporter = null)
-    : ForgeInstanceBase(id, configuration, logger, progressReporter)
+    : ForgeInstanceBase(id, appConfiguration, configuration, logger, progressReporter)
 {
     /// <inheritdoc />
     /// <exception cref="InvalidOperationException">Thrown when <see cref="MinecraftInstance.ArgumentBuilder" /> is null.</exception>
@@ -74,7 +76,7 @@ public class ForgeClassicInstance(
             };
 
             await httpService.DownloadFileAsync(
-                string.Format(ForgeEndpoints.InstallerJarUrl, forgeVersionName), installerJarPath,
+                string.Format(_appConfiguration.Endpoints.Forge.InstallerJarUrl, forgeVersionName), installerJarPath,
                 null, progress, cancellationToken);
 
             // Extract Installer

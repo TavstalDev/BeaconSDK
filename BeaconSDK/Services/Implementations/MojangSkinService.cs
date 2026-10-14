@@ -1,7 +1,7 @@
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
-using Tavstal.BeaconSDK.Models.Endpoints;
+using Tavstal.BeaconSDK.Models.Config;
 using Tavstal.BeaconSDK.Models.Logging;
 using Tavstal.BeaconSDK.Models.MojangApi.Requests;
 using Tavstal.BeaconSDK.Models.MojangApi.User;
@@ -15,6 +15,7 @@ public class MojangSkinService : IMojangSkinService
 {
     private readonly IHttpService _httpService;
     private readonly IBeaconLogger _logger;
+    private readonly BeaconConfiguration _config;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="MojangSkinService" /> class.
@@ -27,10 +28,12 @@ public class MojangSkinService : IMojangSkinService
     ///     The HTTP service instance used for making authenticated requests to the Microsoft/Mojang
     ///     player configuration API endpoints.
     /// </param>
-    public MojangSkinService(IBeaconLogger<MojangSkinService> logger, IHttpService httpService)
+    /// <param name="config">The Beacon SDK configuration providing the Mojang player configuration endpoint URLs.</param>
+    public MojangSkinService(IBeaconLogger<MojangSkinService> logger, IHttpService httpService, BeaconConfiguration config)
     {
         _logger = logger;
         _httpService = httpService;
+        _config = config;
     }
 
     /// <inheritdoc />
@@ -39,7 +42,7 @@ public class MojangSkinService : IMojangSkinService
     {
         try
         {
-            const string endpoint = $"{MicrosoftEndpoints.PlayerConfigUrl}/skins";
+            string endpoint = $"{_config.Endpoints.Mojang.PlayerConfigUrl}/skins";
             object body = new ChangeSkinRequestBody { Variant = variant, Url = url };
 
             var reqContent = new StringContent(
@@ -74,7 +77,7 @@ public class MojangSkinService : IMojangSkinService
     {
         try
         {
-            const string endpoint = $"{MicrosoftEndpoints.PlayerConfigUrl}/skins";
+            string endpoint = $"{_config.Endpoints.Mojang.PlayerConfigUrl}/skins";
 
             using var form = new MultipartFormDataContent();
             form.Add(new StringContent(variant), "variant");
@@ -109,7 +112,7 @@ public class MojangSkinService : IMojangSkinService
     {
         try
         {
-            var endpoint = $"{MicrosoftEndpoints.PlayerConfigUrl}/skins/active?uuid={playerId}";
+            var endpoint = $"{_config.Endpoints.Mojang.PlayerConfigUrl}/skins/active?uuid={playerId}";
             using var client = _httpService.CreateHttpClient();
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", mcToken);
             var result = await client.DeleteAsync(endpoint, cancellationToken);
@@ -136,7 +139,7 @@ public class MojangSkinService : IMojangSkinService
     {
         try
         {
-            const string endpoint = $"{MicrosoftEndpoints.PlayerConfigUrl}/capes/active";
+            string endpoint = $"{_config.Endpoints.Mojang.PlayerConfigUrl}/capes/active";
             object body = new ShowCapeRequestBody { CapeId = capeId };
 
             var reqContent = new StringContent(
@@ -169,7 +172,7 @@ public class MojangSkinService : IMojangSkinService
     {
         try
         {
-            const string endpoint = $"{MicrosoftEndpoints.PlayerConfigUrl}/capes/active";
+            string endpoint = $"{_config.Endpoints.Mojang.PlayerConfigUrl}/capes/active";
             using var client = _httpService.CreateHttpClient();
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", mcToken);
             var result = await client.DeleteAsync(endpoint, cancellationToken);

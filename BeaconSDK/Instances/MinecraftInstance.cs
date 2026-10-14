@@ -1,5 +1,6 @@
 ﻿using Tavstal.BeaconSDK.Enums;
 using Tavstal.BeaconSDK.Models;
+using Tavstal.BeaconSDK.Models.Config;
 using Tavstal.BeaconSDK.Models.Instance;
 using Tavstal.BeaconSDK.Models.Instance.Config;
 using Tavstal.BeaconSDK.Models.Logging;
@@ -21,17 +22,24 @@ public class MinecraftInstance
     protected readonly IBeaconLogger _logger;
 
     /// <summary>
+    ///     Gets the SDK-wide configuration providing endpoint, HTTP, authentication and data protection settings.
+    /// </summary>
+    protected readonly BeaconConfiguration _appConfiguration;
+
+    /// <summary>
     ///     Initializes a new instance of the <see cref="MinecraftInstance" /> class and prepares
     ///     the <see cref="VersionData" /> by computing file-system locations for vanilla and custom versions.
     /// </summary>
     /// <param name="id">Unique instance identifier.</param>
+    /// <param name="appConfiguration">The Beacon SDK configuration providing endpoint, HTTP, authentication and data protection settings.</param>
     /// <param name="configuration">The configuration describing the game, paths, launcher and client settings for the instance.</param>
     /// <param name="logger">Logger used to write diagnostic and progress messages.</param>
     /// <param name="progressReporter">Optional progress reporter for long-running tasks.</param>
-    public MinecraftInstance(string id, InstanceConfiguration configuration,
+    public MinecraftInstance(string id, BeaconConfiguration appConfiguration, InstanceConfiguration configuration,
         IBeaconLogger logger, IProgressReporter? progressReporter = null)
     {
         Id = id;
+        _appConfiguration = appConfiguration;
         Config = configuration;
         _logger = logger;
         _progressReporter = progressReporter;

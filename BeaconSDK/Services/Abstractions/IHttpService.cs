@@ -9,10 +9,12 @@ namespace Tavstal.BeaconSDK.Services.Abstractions;
 public interface IHttpService
 {
     /// <summary>
-    ///     Creates and configures an <see cref="HttpClient" /> with platform-specific settings and default headers.
+    ///     Creates and configures an <see cref="HttpClient" /> with the settings from
+    ///     <see cref="Tavstal.BeaconSDK.Models.Config.HttpConfig" /> (user agent, accept header, decompression,
+    ///     redirects, SSL and timeout).
     /// </summary>
     /// <returns>A configured <see cref="HttpClient" /> instance.</returns>
-    HttpClient CreateHttpClient(string agent = "BeaconSDK/1.0.0 (+https://github.com/TavstalDev/BeaconSDK)");
+    HttpClient CreateHttpClient();
 
     /// <summary>
     ///     Performs a GET request and returns the full response message.

@@ -1,4 +1,5 @@
 using Tavstal.BeaconSDK.Enums;
+using Tavstal.BeaconSDK.Models.Config;
 using Tavstal.BeaconSDK.Models.Instance;
 using Tavstal.BeaconSDK.Models.Instance.Config;
 using Tavstal.BeaconSDK.Models.MojangApi.Meta;
@@ -78,5 +79,16 @@ public static class ModelFactory
     public static Resolution CreateResolution(uint x = 854, uint y = 480)
     {
         return new Resolution(x, y);
+    }
+
+    public static BeaconConfiguration CreateAppConfiguration()
+    {
+        return new BeaconConfiguration
+        {
+            Auth = new()
+            {
+                MicrosoftClientId = Guid.NewGuid().ToString(),
+            }
+        };
     }
 }

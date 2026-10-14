@@ -4,6 +4,7 @@ using Microsoft.Extensions.Hosting;
 using Tavstal.BeaconSDK.Models.Logging;
 using Tavstal.BeaconSDK.Services.Abstractions;
 using Tavstal.BeaconSDK.Services.Abstractions.Auth;
+using Tavstal.BeaconSDK.Tests.Fixtures;
 
 namespace Tavstal.BeaconSDK.Tests.Services;
 
@@ -33,7 +34,9 @@ public class BeaconBootstrapTests : IDisposable
 
     private ServiceProvider BuildProvider()
     {
-        return new ServiceCollection().AddBeaconServices(_keysDir, "BeaconTests").BuildServiceProvider();
+        var config = ModelFactory.CreateAppConfiguration();
+        config.DataProtection.KeysDirectory = _keysDir;
+        return new ServiceCollection().AddBeaconServices(config).BuildServiceProvider();
     }
 
     [Fact(DisplayName = "AddBeaconServices registers all expected service types")]

@@ -9,7 +9,7 @@ using Tavstal.BeaconSDK.Helpers.Domain;
 using Tavstal.BeaconSDK.Helpers.IO;
 using Tavstal.BeaconSDK.Helpers.Platform;
 using Tavstal.BeaconSDK.Models;
-using Tavstal.BeaconSDK.Models.Endpoints;
+using Tavstal.BeaconSDK.Models.Config;
 using Tavstal.BeaconSDK.Models.Instance;
 using Tavstal.BeaconSDK.Models.Instance.Config;
 using Tavstal.BeaconSDK.Models.Logging;
@@ -23,19 +23,21 @@ namespace Tavstal.BeaconSDK.Services.Implementations;
 /// <inheritdoc />
 public class LibraryDownloadService : ILibraryDownloadService
 {
-    private const int MaxParallelDownloads = 4;
     private readonly IHttpService _httpService;
     private readonly IBeaconLogger _logger;
+    private readonly BeaconConfiguration _config;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="LibraryDownloadService" /> class.
     /// </summary>
     /// <param name="logger">Logger used to record diagnostics and errors during library download operations.</param>
     /// <param name="httpService">HTTP service used to download files and fetch remote content.</param>
-    public LibraryDownloadService(IBeaconLogger<LibraryDownloadService> logger, IHttpService httpService)
+    /// <param name="config">The Beacon SDK configuration providing endpoint and HTTP settings used while downloading.</param>
+    public LibraryDownloadService(IBeaconLogger<LibraryDownloadService> logger, IHttpService httpService, BeaconConfiguration config)
     {
         _logger = logger;
         _httpService = httpService;
+        _config = config;
     }
 
     /// <inheritdoc />
@@ -102,7 +104,7 @@ public class LibraryDownloadService : ILibraryDownloadService
         // Assets
         progressReporter?.Report(EProgressKind.INSTANCE_READING_ASSETS, 0);
 
-        var semaphore = new SemaphoreSlim(MaxParallelDownloads);
+        var semaphore = new SemaphoreSlim(_config.Http.MaxParallelDownloads);
         long downloadedBytes = 0;
         var tasks = new List<Task>();
 
@@ -146,7 +148,7 @@ public class LibraryDownloadService : ILibraryDownloadService
                         try
                         {
                             await _httpService.DownloadFileAsync(
-                                $"{MicrosoftEndpoints.MinecraftResourcesUrl}/{hash[..2]}/{hash}",
+                                $"{_config.Endpoints.Mojang.MinecraftResourcesUrl}/{hash[..2]}/{hash}",
                                 objectPath, hash,
                                 null, cancellationToken);
 
@@ -216,7 +218,7 @@ public class LibraryDownloadService : ILibraryDownloadService
                         try
                         {
                             await _httpService.DownloadFileAsync(
-                                $"{MicrosoftEndpoints.MinecraftResourcesUrl}/{hash[..2]}/{hash}",
+                                $"{_config.Endpoints.Mojang.MinecraftResourcesUrl}/{hash[..2]}/{hash}",
                                 objectPath, hash,
                                 null, cancellationToken);
 
@@ -267,7 +269,7 @@ public class LibraryDownloadService : ILibraryDownloadService
                         try
                         {
                             await _httpService.DownloadFileAsync(
-                                $"{MicrosoftEndpoints.MinecraftResourcesUrl}/{hash[..2]}/{hash}",
+                                $"{_config.Endpoints.Mojang.MinecraftResourcesUrl}/{hash[..2]}/{hash}",
                                 objectPath, hash,
                                 null, cancellationToken);
 
@@ -407,7 +409,7 @@ public class LibraryDownloadService : ILibraryDownloadService
             await File.WriteAllTextAsync(librarySizeCacheFilePath, cacheObject.ToString(), cancellationToken);
         }
 
-        var semaphore = new SemaphoreSlim(MaxParallelDownloads);
+        var semaphore = new SemaphoreSlim(_config.Http.MaxParallelDownloads);
         long downloadedBytes = 0;
         var tasks = new List<Task>();
 

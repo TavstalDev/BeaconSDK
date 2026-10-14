@@ -3,6 +3,7 @@ using System.Text.Json;
 using Tavstal.BeaconSDK.Helpers.Domain;
 using Tavstal.BeaconSDK.Helpers.IO;
 using Tavstal.BeaconSDK.Models;
+using Tavstal.BeaconSDK.Models.Config;
 using Tavstal.BeaconSDK.Models.Instance;
 using Tavstal.BeaconSDK.Models.Logging;
 using Tavstal.BeaconSDK.Models.ModLoaders.Forge;
@@ -14,15 +15,17 @@ namespace Tavstal.BeaconSDK.Instances.Forge;
 ///     Represents the base class for a Forge instance, inheriting from MinecraftInstance.
 /// </summary>
 /// <param name="id">Unique instance identifier.</param>
+/// <param name="appConfiguration">The Beacon SDK configuration providing endpoint, HTTP, authentication and data protection settings.</param>
 /// <param name="configuration">The configuration describing the game, paths, launcher and client settings for the instance.</param>
 /// <param name="logger">The logger instance for logging information and errors.</param>
 /// <param name="progressReporter">Optional progress reporter for tracking installation or setup progress.</param>
 public abstract class ForgeInstanceBase(
     string id,
+    BeaconConfiguration appConfiguration,
     InstanceConfiguration configuration,
     IBeaconLogger logger,
     IProgressReporter? progressReporter = null)
-    : MinecraftInstance(id, configuration, logger, progressReporter)
+    : MinecraftInstance(id, appConfiguration, configuration, logger, progressReporter)
 {
     // The following methods are originally from https://github.com/CmlLib
     // but have been adapted to fit the current code structure and conventions.

@@ -6,6 +6,7 @@ using Tavstal.BeaconSDK.Enums;
 using Tavstal.BeaconSDK.Helpers.Platform;
 using Tavstal.BeaconSDK.Services.Implementations;
 using Tavstal.BeaconSDK.Tests.Fakes;
+using Tavstal.BeaconSDK.Tests.Fixtures;
 
 namespace Tavstal.BeaconSDK.Tests.Services;
 
@@ -21,12 +22,12 @@ public class EncryptionServiceTests
         keyDirectory = Path.Combine(Path.GetTempPath(), $"beacon-keys-{Guid.NewGuid():N}");
         Directory.CreateDirectory(keyDirectory);
         var provider = DataProtectionProvider.Create(new DirectoryInfo(keyDirectory));
-        return new EncryptionService(new CapturingBeaconLogger<EncryptionService>(), provider);
+        return new EncryptionService(new CapturingBeaconLogger<EncryptionService>(), ModelFactory.CreateAppConfiguration(),  provider);
     }
 
     private static EncryptionService CreateFallback()
     {
-        return new EncryptionService(new CapturingBeaconLogger<EncryptionService>());
+        return new EncryptionService(new CapturingBeaconLogger<EncryptionService>(), ModelFactory.CreateAppConfiguration());
     }
 
     [Fact(DisplayName = "Encrypt produces a six-byte prefix matching the host path")]
@@ -36,8 +37,9 @@ public class EncryptionServiceTests
         Directory.CreateDirectory(keyDirectory);
         try
         {
-            var withDp = new EncryptionService(new CapturingBeaconLogger<EncryptionService>(),
-                DataProtectionProvider.Create(new DirectoryInfo(keyDirectory)));
+            var config = ModelFactory.CreateAppConfiguration();
+            config.DataProtection.KeysDirectory = keyDirectory;
+            var withDp = new EncryptionService(new CapturingBeaconLogger<EncryptionService>(), config, DataProtectionProvider.Create(new DirectoryInfo(keyDirectory)));
 
             PrefixOf(withDp.Encrypt("payload"u8.ToArray())).Should().Be("dpsv1:");
         }

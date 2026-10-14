@@ -1,5 +1,6 @@
 using Tavstal.BeaconSDK.Instances.Forge;
 using Tavstal.BeaconSDK.Models;
+using Tavstal.BeaconSDK.Models.Config;
 using Tavstal.BeaconSDK.Models.Instance;
 using Tavstal.BeaconSDK.Models.Logging;
 
@@ -14,6 +15,7 @@ public static class ForgeInstance
     ///     Create a configured <see cref="MinecraftInstance" /> for the given Forge build.
     /// </summary>
     /// <param name="id">Unique instance identifier.</param>
+    /// <param name="appConfiguration">The Beacon SDK configuration providing endpoint, HTTP, authentication and data protection settings.</param>
     /// <param name="configuration">The configuration describing the game, paths, launcher and client settings for the instance.</param>
     /// <param name="logger">Logger for recording instance operations and errors.</param>
     /// <param name="progressReporter">Optional progress reporter used during instance creation/install operations.</param>
@@ -27,6 +29,7 @@ public static class ForgeInstance
     /// </returns>
     public static MinecraftInstance GetForgeInstance(
         string id,
+        BeaconConfiguration appConfiguration,
         InstanceConfiguration configuration,
         IBeaconLogger logger,
         IProgressReporter? progressReporter = null)
@@ -40,65 +43,65 @@ public static class ForgeInstance
             // Early 1.1 - 1.2.5
             // Only 1.2.5 is supported
             (1, <= 2) => new ForgeEarlyInstance(GetLegacyName(mcVer, forgeVer), "client",
-                id, configuration, logger, progressReporter),
+                id, appConfiguration, configuration, logger, progressReporter),
             // Early 1.3.2 - 1.5.1
             // Classic 1.5.2
             (1, <= 5) => mcVer switch
             {
                 "1.5.2" => new ForgeClassicInstance(GetLegacyName(mcVer, forgeVer),
-                    "minecraftforge-universal-${version}.jar", id, configuration, logger, progressReporter),
+                    "minecraftforge-universal-${version}.jar", id, appConfiguration, configuration, logger, progressReporter),
 
                 _ => new ForgeEarlyInstance(GetLegacyName(mcVer, forgeVer), "universal",
-                    id, configuration, logger, progressReporter)
+                    id, appConfiguration, configuration, logger, progressReporter)
             },
             // Classic 1.6 - 1.7.2
             // Legacy 1.7.10-pre4 & 1.7.10
             (1, <= 7) => mcVer switch
             {
                 "1.7.10" => new ForgeLegacyInstance($"1.7.10-{forgeVer}-1.7.10",
-                    id, configuration, logger, progressReporter),
+                    id, appConfiguration, configuration, logger, progressReporter),
 
                 "1.7.10-pre4" => new ForgeLegacyInstance($"1.7.10_pre4-{forgeVer}-prerelease",
-                    id, configuration, logger, progressReporter),
+                    id, appConfiguration, configuration, logger, progressReporter),
 
                 "1.7.2" => new ForgeClassicInstance($"1.7.2-{forgeVer}-mc172", "forge-${version}-universal.jar",
-                    id, configuration, logger, progressReporter),
+                    id, appConfiguration, configuration, logger, progressReporter),
 
                 _ => new ForgeClassicInstance(GetLegacyName(mcVer, forgeVer), "minecraftforge-universal-${version}.jar",
-                    id, configuration, logger, progressReporter)
+                    id, appConfiguration, configuration, logger, progressReporter)
             },
             // Legacy 1.8+ - 1.12.x
             (1, <= 12) => (mcVer, forgeVer) switch
             {
                 ("1.8", _) => new ForgeLegacyInstance(GetLegacyName(mcVer, forgeVer),
-                    id, configuration, logger, progressReporter),
+                    id, appConfiguration, configuration, logger, progressReporter),
                 ("1.8.8", _) => new ForgeLegacyInstance(GetLegacyName(mcVer, forgeVer),
-                    id, configuration, logger, progressReporter),
+                    id, appConfiguration, configuration, logger, progressReporter),
                 ("1.8.9", _) => new ForgeLegacyInstance(GetLegacyNameWithMc(mcVer, forgeVer),
-                    id, configuration, logger, progressReporter),
+                    id, appConfiguration, configuration, logger, progressReporter),
 
                 ("1.9", "12.16.1.1938") => new ForgeLegacyInstance(GetLegacyNameWithZero(mcVer, forgeVer),
-                    id, configuration, logger, progressReporter),
+                    id, appConfiguration, configuration, logger, progressReporter),
 
                 ("1.9", _) => new ForgeLegacyInstance(GetLegacyName(mcVer, forgeVer),
-                    id, configuration, logger, progressReporter),
+                    id, appConfiguration, configuration, logger, progressReporter),
 
                 ("1.9.4", _) => new ForgeLegacyInstance(GetLegacyNameWithMc(mcVer, forgeVer),
-                    id, configuration, logger, progressReporter),
+                    id, appConfiguration, configuration, logger, progressReporter),
 
                 ("1.10", _) => new ForgeLegacyInstance(GetLegacyNameWithZero(mcVer, forgeVer),
-                    id, configuration, logger, progressReporter),
+                    id, appConfiguration, configuration, logger, progressReporter),
 
                 ("1.10.2", _) or ("1.11", _) or ("1.11.2", _) or ("1.12", _) or
                     ("1.12.1", _) => new ForgeLegacyInstance(GetLegacyName(mcVer, forgeVer),
-                        id, configuration, logger, progressReporter),
-                ("1.12.2", _) => new ForgeModernInstance(id, configuration, logger, progressReporter),
+                        id, appConfiguration, configuration, logger, progressReporter),
+                ("1.12.2", _) => new ForgeModernInstance(id, appConfiguration, configuration, logger, progressReporter),
 
                 _ => new ForgeLegacyInstance(GetLegacyName(mcVer, forgeVer),
-                    id, configuration, logger, progressReporter)
+                    id, appConfiguration, configuration, logger, progressReporter)
             },
             // Modern 1.13+
-            _ => new ForgeModernInstance(id, configuration, logger, progressReporter)
+            _ => new ForgeModernInstance(id, appConfiguration, configuration, logger, progressReporter)
         };
     }
 

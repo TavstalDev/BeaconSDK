@@ -20,7 +20,7 @@ public sealed class FakeHttpService : IHttpService
 
     public StubHttpMessageHandler Handler { get; }
 
-    public HttpClient CreateHttpClient(string agent = "BeaconSDK/1.0.0 (+https://github.com/TavstalDev/BeaconSDK)")
+    public HttpClient CreateHttpClient()
     {
         return new HttpClient(Handler, false);
     }

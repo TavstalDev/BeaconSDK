@@ -40,12 +40,6 @@ public interface IMicrosoftAuthService
     event AuthStatusChangedHandler? OnAuthStatusChanged;
 
     /// <summary>
-    ///     Sets the Microsoft OAuth2 client ID for authentication requests.
-    /// </summary>
-    /// <param name="clientId">The client ID from the Microsoft Azure application registration.</param>
-    void SetClientId(string clientId);
-
-    /// <summary>
     ///     Resets the authentication state, clearing all account and profile information.
     /// </summary>
     void Reset();

@@ -1,7 +1,7 @@
 ﻿using System.IO.Compression;
 using Tavstal.BeaconSDK.Helpers.Serialization;
 using Tavstal.BeaconSDK.Models;
-using Tavstal.BeaconSDK.Models.Endpoints.Modding;
+using Tavstal.BeaconSDK.Models.Config;
 using Tavstal.BeaconSDK.Models.Instance;
 using Tavstal.BeaconSDK.Models.Instance.Config;
 using Tavstal.BeaconSDK.Models.Logging;
@@ -22,16 +22,18 @@ namespace Tavstal.BeaconSDK.Instances.Forge;
 ///     (for example: <c>1.12.2-14.23.5.2860</c>).
 /// </param>
 /// <param name="id">Unique identifier for this launcher instance.</param>
+/// <param name="appConfiguration">The Beacon SDK configuration providing endpoint, HTTP, authentication and data protection settings.</param>
 /// <param name="configuration">The configuration describing the game, paths, launcher and client settings for the instance.</param>
 /// <param name="logger">Logger used for diagnostics, warnings, and install progress messages.</param>
 /// <param name="progressReporter">Optional progress reporter for long-running install/download operations.</param>
 public class ForgeLegacyInstance(
     string forgeVersionName,
     string id,
+    BeaconConfiguration appConfiguration,
     InstanceConfiguration configuration,
     IBeaconLogger logger,
     IProgressReporter? progressReporter = null)
-    : ForgeInstanceBase(id, configuration, logger, progressReporter)
+    : ForgeInstanceBase(id, appConfiguration, configuration, logger, progressReporter)
 {
     /// <inheritdoc />
     /// <exception cref="InvalidOperationException">Thrown when <see cref="MinecraftInstance.ArgumentBuilder" /> is null.</exception>
@@ -70,7 +72,7 @@ public class ForgeLegacyInstance(
             };
 
             await httpService.DownloadFileAsync(
-                string.Format(ForgeEndpoints.InstallerJarUrl, forgeVersionName), installerJarPath,
+                string.Format(_appConfiguration.Endpoints.Forge.InstallerJarUrl, forgeVersionName), installerJarPath,
                 null, progress, cancellationToken);
 
             // Extract Installer

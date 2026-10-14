@@ -2,7 +2,7 @@ using System.IO.Compression;
 using Tavstal.BeaconSDK.Helpers.Serialization;
 using Tavstal.BeaconSDK.Instances.Forge;
 using Tavstal.BeaconSDK.Models;
-using Tavstal.BeaconSDK.Models.Endpoints.Modding;
+using Tavstal.BeaconSDK.Models.Config;
 using Tavstal.BeaconSDK.Models.Instance;
 using Tavstal.BeaconSDK.Models.Instance.Config;
 using Tavstal.BeaconSDK.Models.Logging;
@@ -19,15 +19,17 @@ namespace Tavstal.BeaconSDK.Instances;
 ///     NeoForge is the community-driven fork of Minecraft Forge for modern Java Edition versions.
 /// </summary>
 /// <param name="id">Unique identifier for the instance.</param>
+/// <param name="appConfiguration">The Beacon SDK configuration providing endpoint, HTTP, authentication and data protection settings.</param>
 /// <param name="configuration">The configuration describing the game, paths, launcher and client settings for the instance.</param>
 /// <param name="logger">Logger used for diagnostic messages.</param>
 /// <param name="progressReporter">Optional progress reporter used to surface download/install progress to callers.</param>
 public class NeoForgeInstance(
     string id,
+    BeaconConfiguration appConfiguration,
     InstanceConfiguration configuration,
     IBeaconLogger logger,
     IProgressReporter? progressReporter = null)
-    : ForgeInstanceBase(id, configuration, logger, progressReporter)
+    : ForgeInstanceBase(id, appConfiguration, configuration, logger, progressReporter)
 {
     /// <inheritdoc />
     /// <exception cref="InvalidOperationException">Thrown when <see cref="MinecraftInstance.ArgumentBuilder" /> is null.</exception>
@@ -62,7 +64,7 @@ public class NeoForgeInstance(
             };
 
             await httpService.DownloadFileAsync(
-                string.Format(NeoForgeEndpoints.InstallerJarUrl, VersionData.CustomVersion), installerJarPath,
+                string.Format(_appConfiguration.Endpoints.NeoForge.InstallerJarUrl, VersionData.CustomVersion), installerJarPath,
                 null, progress, cancellationToken);
 
             // Extract Installer

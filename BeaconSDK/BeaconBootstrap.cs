@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Tavstal.BeaconSDK.Helpers;
+using Tavstal.BeaconSDK.Models.Config;
 using Tavstal.BeaconSDK.Models.Logging;
 using Tavstal.BeaconSDK.Services.Abstractions;
 using Tavstal.BeaconSDK.Services.Abstractions.Auth;
@@ -39,21 +40,21 @@ public static class BeaconBootstrap
     /// <summary>
     ///     Registers the Beacon SDK services in the dependency injection container.
     ///     This includes the SDK's own services, data protection, and the Minecraft and launcher services.
+    ///     The supplied <paramref name="configuration" /> is registered as a singleton so SDK services can resolve it.
     /// </summary>
     /// <param name="services">The service collection to add the services to.</param>
-    /// <param name="keysDir">The directory where the data protection key ring is persisted.</param>
-    /// <param name="appName">The application name used to isolate the data protection key ring.</param>
+    /// <param name="configuration">The Beacon SDK configuration providing endpoint, HTTP, authentication and data protection settings.</param>
     /// <returns>The same <paramref name="services" /> instance to allow chaining.</returns>
-    public static IServiceCollection AddBeaconServices(this IServiceCollection services, string keysDir, string appName)
+    public static IServiceCollection AddBeaconServices(this IServiceCollection services, BeaconConfiguration configuration)
     {
+        services.AddSingleton(configuration);
         services.AddSingleton(typeof(IBeaconLogger<>), typeof(BeaconLogger<>));
         services.AddSingleton<IHttpService, HttpService>();
         //var keyDir = Path.Combine(appDir, "keys");
         //Directory.CreateDirectory(keyDir);
         services.AddDataProtection()
-            .PersistKeysToFileSystem(new DirectoryInfo(keysDir))
-            .SetApplicationName(appName);
-        services.AddDataProtection();
+            .PersistKeysToFileSystem(new DirectoryInfo(configuration.DataProtection.KeysDirectory))
+            .SetApplicationName(configuration.DataProtection.ApplicationName);
         services.AddSingleton<IEncryptionService, EncryptionService>();
 
         // Minecraft services

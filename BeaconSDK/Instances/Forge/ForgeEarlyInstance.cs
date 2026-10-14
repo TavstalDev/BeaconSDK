@@ -1,7 +1,7 @@
 using System.IO.Compression;
 using Tavstal.BeaconSDK.Helpers.IO;
 using Tavstal.BeaconSDK.Models;
-using Tavstal.BeaconSDK.Models.Endpoints.Modding;
+using Tavstal.BeaconSDK.Models.Config;
 using Tavstal.BeaconSDK.Models.Instance;
 using Tavstal.BeaconSDK.Models.Logging;
 using Tavstal.BeaconSDK.Services.Abstractions;
@@ -18,6 +18,7 @@ namespace Tavstal.BeaconSDK.Instances.Forge;
 /// <param name="forgeVersionName">The Forge version identifier used to build download URLs (e.g. "10.13.4.1614").</param>
 /// <param name="universalName">The name of the universal artifact inside the Forge distribution (used in download URL).</param>
 /// <param name="id">Unique identifier for the instance.</param>
+/// <param name="appConfiguration">The Beacon SDK configuration providing endpoint, HTTP, authentication and data protection settings.</param>
 /// <param name="configuration">The configuration describing the game, paths, launcher and client settings for the instance.</param>
 /// <param name="logger">Logger used for diagnostics and progress reporting.</param>
 /// <param name="progressReporter">Optional progress reporter to surface download/extract progress to callers.</param>
@@ -25,10 +26,11 @@ public class ForgeEarlyInstance(
     string forgeVersionName,
     string universalName,
     string id,
+    BeaconConfiguration appConfiguration,
     InstanceConfiguration configuration,
     IBeaconLogger logger,
     IProgressReporter? progressReporter = null)
-    : ForgeInstanceBase(id, configuration, logger, progressReporter)
+    : ForgeInstanceBase(id, appConfiguration, configuration, logger, progressReporter)
 {
     /// <inheritdoc />
     public override async Task<ModdedData?> InstallModdedAsync(string tempDir, IHttpService httpService,
@@ -55,7 +57,7 @@ public class ForgeEarlyInstance(
             };
 
             await httpService.DownloadFileAsync(
-                string.Format(ForgeEndpoints.LoaderUniversalZipUrl, forgeVersionName, universalName), universalZipPath,
+                string.Format(_appConfiguration.Endpoints.Forge.LoaderUniversalZipUrl, forgeVersionName, universalName), universalZipPath,
                 null, progress, cancellationToken);
 
             // Create vanilla extract directory

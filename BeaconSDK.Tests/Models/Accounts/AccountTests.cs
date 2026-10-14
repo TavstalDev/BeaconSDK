@@ -4,6 +4,7 @@ using Tavstal.BeaconSDK.Enums;
 using Tavstal.BeaconSDK.Models.Accounts;
 using Tavstal.BeaconSDK.Services.Implementations;
 using Tavstal.BeaconSDK.Tests.Fakes;
+using Tavstal.BeaconSDK.Tests.Fixtures;
 
 #pragma warning disable CS0618 // Type or member is obsolete
 
@@ -42,7 +43,7 @@ public class AccountTests
             Tavstal.BeaconSDK.Helpers.Platform.OSHelper.GetOperatingSystem() == EOperatingSystem.LINUX,
             "Host-pinned: the no-provider encryption fallback only works on Linux/macOS hosts.");
 
-        var encryption = new EncryptionService(new CapturingBeaconLogger<EncryptionService>());
+        var encryption = new EncryptionService(new CapturingBeaconLogger<EncryptionService>(), ModelFactory.CreateAppConfiguration());
         var plain = "plaintext-token-value"u8.ToArray();
         var account = new Account();
 

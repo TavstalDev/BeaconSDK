@@ -6,7 +6,7 @@ using Tavstal.BeaconSDK.Enums;
 using Tavstal.BeaconSDK.Helpers.Platform;
 using Tavstal.BeaconSDK.Models;
 using Tavstal.BeaconSDK.Models.Accounts;
-using Tavstal.BeaconSDK.Models.Endpoints;
+using Tavstal.BeaconSDK.Models.Config;
 using Tavstal.BeaconSDK.Models.Logging;
 using Tavstal.BeaconSDK.Models.Microsoft;
 using Tavstal.BeaconSDK.Models.MojangApi.User;
@@ -22,6 +22,7 @@ public class MicrosoftAuthService : IMicrosoftAuthService
     private readonly IEncryptionService _encryptionService;
     private readonly IHttpService _httpService;
     private readonly IBeaconLogger _logger;
+    private readonly BeaconConfiguration _config;
 
     private readonly string _redirectAuthenticateUrl =
         Path.Combine(MicrosoftHttpAuthService.ListeningUrl, "microsoft/authcallback");
@@ -29,24 +30,25 @@ public class MicrosoftAuthService : IMicrosoftAuthService
     private Account? _account;
 
     private EAuthStatus _authStatus = EAuthStatus.NONE;
-    private string _microsoftClientId = "496a0c42-aa74-41fe-b7bc-0ad155cdaa26";
 
     private MojangProfile? _mojangProfile;
     private IProgressReporter? _progressReporter;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="MicrosoftAuthService" /> class with the
-    ///     logger and HTTP service used to perform Microsoft authentication requests.
+    ///     logger, HTTP service, encryption service and configuration used to perform Microsoft authentication requests.
     /// </summary>
     /// <param name="logger">Logger used for diagnostics and error reporting.</param>
     /// <param name="httpService">HTTP service used to create configured <see cref="HttpClient" /> instances.</param>
     /// <param name="encryptionService">Encryption service used to store and reprotect account tokens.</param>
+    /// <param name="config">The Beacon SDK configuration providing the Microsoft client ID and authentication endpoint URLs.</param>
     public MicrosoftAuthService(IBeaconLogger<MicrosoftAuthService> logger, IHttpService httpService,
-        IEncryptionService encryptionService)
+        IEncryptionService encryptionService, BeaconConfiguration config)
     {
         _logger = logger;
         _httpService = httpService;
         _encryptionService = encryptionService;
+        _config = config;
     }
 
     /// <inheritdoc />
@@ -62,18 +64,6 @@ public class MicrosoftAuthService : IMicrosoftAuthService
     public event IMicrosoftAuthService.AuthStatusChangedHandler? OnAuthStatusChanged;
 
     /// <inheritdoc />
-    public void SetClientId(string clientId)
-    {
-        if (string.IsNullOrEmpty(clientId))
-        {
-            _logger.LogError("Microsoft client ID cannot be null or empty.");
-            return;
-        }
-
-        _microsoftClientId = clientId;
-    }
-
-    /// <inheritdoc />
     public void Reset()
     {
         _progressReporter = null;
@@ -86,13 +76,13 @@ public class MicrosoftAuthService : IMicrosoftAuthService
     /// <inheritdoc />
     public void OpenAuthenticationUrl()
     {
-        if (string.IsNullOrEmpty(_microsoftClientId))
+        if (string.IsNullOrEmpty(_config.Auth.MicrosoftClientId))
         {
-            _logger.LogError("Microsoft client ID is not set.");
+            _logger.LogError("Microsoft client ID was not set.");
             return;
         }
 
-        var authUrl = MicrosoftEndpoints.MakeMicrosoftAuthUrl(_microsoftClientId, _redirectAuthenticateUrl);
+        var authUrl = _config.Endpoints.Microsoft.MakeMicrosoftAuthUrl(_config.Auth.MicrosoftClientId, _redirectAuthenticateUrl);
         OSHelper.OpenUrl(authUrl);
     }
 
@@ -103,9 +93,9 @@ public class MicrosoftAuthService : IMicrosoftAuthService
         _authStatus = EAuthStatus.PENDING;
         OnAuthStatusChanged?.Invoke(_authStatus);
         _progressReporter = progressReporter;
-        if (string.IsNullOrEmpty(_microsoftClientId))
+        if (string.IsNullOrEmpty(_config.Auth.MicrosoftClientId))
         {
-            _logger.LogError("Microsoft client ID is not set.");
+            _logger.LogError("Microsoft client ID was not set.");
             _authStatus = EAuthStatus.FAILED;
             OnAuthStatusChanged?.Invoke(_authStatus);
             return;
@@ -128,14 +118,13 @@ public class MicrosoftAuthService : IMicrosoftAuthService
             return;
         }
 
-        const string requestUrl = MicrosoftEndpoints.MicrosoftTokenUrl;
         _progressReporter?.Report(EProgressKind.AUTH_MICROSOFT_AUTHENTICATING, 0);
 
         try
         {
             var requestParams = new Dictionary<string, string>
             {
-                { "client_id", _microsoftClientId },
+                { "client_id", _config.Auth.MicrosoftClientId },
                 { "grant_type", "authorization_code" },
                 { "code", code },
                 { "redirect_uri", _redirectAuthenticateUrl }
@@ -143,7 +132,7 @@ public class MicrosoftAuthService : IMicrosoftAuthService
             var requestContent = new FormUrlEncodedContent(requestParams);
 
             using var client = _httpService.CreateHttpClient();
-            var response = await client.PostAsync(requestUrl, requestContent, cancellationToken);
+            var response = await client.PostAsync(_config.Endpoints.Microsoft.TokenUrl, requestContent, cancellationToken);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -195,13 +184,13 @@ public class MicrosoftAuthService : IMicrosoftAuthService
 
             var parameters = new Dictionary<string, string>
             {
-                { "client_id", _microsoftClientId }, { "scope", "XboxLive.signin offline_access" }
+                { "client_id", _config.Auth.MicrosoftClientId! }, { "scope", "XboxLive.signin offline_access" }
             };
 
             var formContent = new FormUrlEncodedContent(parameters);
 
             using var client = _httpService.CreateHttpClient();
-            var result = await client.PostAsync(MicrosoftEndpoints.MicrosoftDeviceUrl, formContent, cancellationToken);
+            var result = await client.PostAsync(_config.Endpoints.Microsoft.DeviceUrl, formContent, cancellationToken);
 
             var rawJson = await result.Content.ReadAsStringAsync(cancellationToken);
             return JsonSerializer.Deserialize<DeviceCodeResult>(rawJson, CoreJsonContext.Default.DeviceCodeResult);
@@ -223,7 +212,7 @@ public class MicrosoftAuthService : IMicrosoftAuthService
             _logger.LogDebug("Device code checked at " + DateTime.Now.ToString("HH:mm:ss"));
             var parameters = new Dictionary<string, string>
             {
-                { "client_id", _microsoftClientId },
+                { "client_id", _config.Auth.MicrosoftClientId! },
                 { "device_code", deviceCode },
                 { "grant_type", "urn:ietf:params:oauth:grant-type:device_code" }
             };
@@ -231,7 +220,7 @@ public class MicrosoftAuthService : IMicrosoftAuthService
             var formContent = new FormUrlEncodedContent(parameters);
 
             using var client = _httpService.CreateHttpClient();
-            var response = await client.PostAsync(MicrosoftEndpoints.MicrosoftDeviceTokenUrl, formContent,
+            var response = await client.PostAsync(_config.Endpoints.Microsoft.DeviceTokenUrl, formContent,
                 cancellationToken);
 
             var responseString = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -280,7 +269,7 @@ public class MicrosoftAuthService : IMicrosoftAuthService
             );
 
             using var client = _httpService.CreateHttpClient();
-            var result = await client.PostAsync(MicrosoftEndpoints.XboxAuthUrl, reqContent, cancellationToken);
+            var result = await client.PostAsync(_config.Endpoints.Microsoft.XboxAuthUrl, reqContent, cancellationToken);
 
             var resultObj = JsonElement.Parse(await result.Content.ReadAsStringAsync(cancellationToken));
             if (!resultObj.TryGetProperty("Token", out var value))
@@ -323,7 +312,7 @@ public class MicrosoftAuthService : IMicrosoftAuthService
             );
 
             using var client = _httpService.CreateHttpClient();
-            var result = await client.PostAsync(MicrosoftEndpoints.XboxXstsUrl, reqContent, cancellationToken);
+            var result = await client.PostAsync(_config.Endpoints.Microsoft.XboxXstsUrl, reqContent, cancellationToken);
 
             var rawJson = await result.Content.ReadAsStringAsync(cancellationToken);
             var resultObj = JsonElement.Parse(rawJson);
@@ -398,7 +387,7 @@ public class MicrosoftAuthService : IMicrosoftAuthService
             );
 
             using var client = _httpService.CreateHttpClient();
-            var result = await client.PostAsync(MicrosoftEndpoints.MinecraftAuthUrl, reqContent, cancellationToken);
+            var result = await client.PostAsync(_config.Endpoints.Mojang.AuthUrl, reqContent, cancellationToken);
 
             var resultObj = JsonElement.Parse(await result.Content.ReadAsStringAsync(cancellationToken));
             if (!resultObj.TryGetProperty("access_token", out var minecraftToken))
@@ -438,7 +427,7 @@ public class MicrosoftAuthService : IMicrosoftAuthService
 
             using var client = _httpService.CreateHttpClient();
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", mcToken);
-            var result = await client.GetAsync(MicrosoftEndpoints.MinecraftOwnershipUrl, cancellationToken);
+            var result = await client.GetAsync(_config.Endpoints.Mojang.OwnershipUrl, cancellationToken);
 
             var ownershipData = JsonSerializer.Deserialize(await result.Content.ReadAsStringAsync(cancellationToken),
                 CoreJsonContext.Default.OwnershipData);
@@ -476,7 +465,7 @@ public class MicrosoftAuthService : IMicrosoftAuthService
 
             using var client = _httpService.CreateHttpClient();
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", mcToken);
-            var result = await client.GetAsync(MicrosoftEndpoints.MinecraftProfileUrl, cancellationToken);
+            var result = await client.GetAsync(_config.Endpoints.Mojang.ProfileUrl, cancellationToken);
 
             _mojangProfile =
                 JsonSerializer.Deserialize(await result.Content.ReadAsStringAsync(cancellationToken),
@@ -536,7 +525,7 @@ public class MicrosoftAuthService : IMicrosoftAuthService
 
             using var client = _httpService.CreateHttpClient();
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", mcToken);
-            var result = await client.GetAsync(MicrosoftEndpoints.MinecraftProfileUrl, cancellationToken);
+            var result = await client.GetAsync(_config.Endpoints.Mojang.ProfileUrl, cancellationToken);
 
             return JsonSerializer.Deserialize(await result.Content.ReadAsStringAsync(cancellationToken),
                 CoreJsonContext.Default.MojangProfile);
@@ -551,26 +540,24 @@ public class MicrosoftAuthService : IMicrosoftAuthService
     /// <inheritdoc />
     public async Task<bool> RefreshLoginAsync(string token, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrEmpty(_microsoftClientId))
+        if (string.IsNullOrEmpty(_config.Auth.MicrosoftClientId))
         {
-            _logger.LogError("Microsoft client ID is not set.");
+            _logger.LogError("Microsoft client ID was not set.");
             _authStatus = EAuthStatus.FAILED;
             OnAuthStatusChanged?.Invoke(_authStatus);
             return false;
         }
 
-        const string requestUrl = MicrosoftEndpoints.MicrosoftTokenUrl;
-
         try
         {
             var requestParams = new Dictionary<string, string>
             {
-                { "client_id", _microsoftClientId }, { "grant_type", "refresh_token" }, { "refresh_token", token }
+                { "client_id", _config.Auth.MicrosoftClientId }, { "grant_type", "refresh_token" }, { "refresh_token", token }
             };
             var requestContent = new FormUrlEncodedContent(requestParams);
 
             using var client = _httpService.CreateHttpClient();
-            var response = await client.PostAsync(requestUrl, requestContent, cancellationToken);
+            var response = await client.PostAsync(_config.Endpoints.Microsoft.TokenUrl, requestContent, cancellationToken);
 
             if (!response.IsSuccessStatusCode)
             {

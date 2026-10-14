@@ -3,14 +3,17 @@ using System.Text;
 using System.Text.Json;
 using FluentAssertions;
 using Tavstal.BeaconSDK.Enums;
-using Tavstal.BeaconSDK.Models.Endpoints;
+using Tavstal.BeaconSDK.Models.Config;
 using Tavstal.BeaconSDK.Services.Implementations.Auth;
 using Tavstal.BeaconSDK.Tests.Fakes;
+using Tavstal.BeaconSDK.Tests.Fixtures;
 
 namespace Tavstal.BeaconSDK.Tests.Services.Auth;
 
 public class MicrosoftAuthServiceTests
 {
+    private readonly BeaconConfiguration _config = ModelFactory.CreateAppConfiguration();
+
     private static string TestData(string fileName)
     {
         return File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Fixtures", "TestData", fileName));
@@ -22,7 +25,7 @@ public class MicrosoftAuthServiceTests
         var handler = new StubHttpMessageHandler();
         var http = new FakeHttpService(handler);
         var encryption = new RecordingEncryptionService();
-        var service = new MicrosoftAuthService(new CapturingBeaconLogger<MicrosoftAuthService>(), http, encryption);
+        var service = new MicrosoftAuthService(new CapturingBeaconLogger<MicrosoftAuthService>(), http, encryption, ModelFactory.CreateAppConfiguration());
         return (service, handler, encryption);
     }
 
@@ -74,7 +77,7 @@ public class MicrosoftAuthServiceTests
         await service.CheckDeviceCodeAsync("device-code-123", TestContext.Current.CancellationToken);
 
         service.AuthStatus.Should().Be(EAuthStatus.SUCCESS);
-        handler.Requests.Should().Contain(r => r.Url == MicrosoftEndpoints.XboxAuthUrl);
+        handler.Requests.Should().Contain(r => r.Url == _config.Endpoints.Microsoft.XboxAuthUrl);
     }
 
     [Fact(DisplayName = "XboxTokenCallAsync parses the token and raises status")]
@@ -106,7 +109,7 @@ public class MicrosoftAuthServiceTests
         await service.MinecraftAccessCallAsync("xsts-token", "refresh", "uhs-value",
             TestContext.Current.CancellationToken);
 
-        var request = handler.Requests.Single(r => r.Url == MicrosoftEndpoints.MinecraftAuthUrl);
+        var request = handler.Requests.Single(r => r.Url == _config.Endpoints.Mojang.AuthUrl);
         request.Body.Should().NotBeNull();
         using var document = JsonDocument.Parse(request.Body!);
         document.RootElement.GetProperty("identityToken").GetString()

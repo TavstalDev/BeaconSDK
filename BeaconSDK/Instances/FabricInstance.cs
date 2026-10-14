@@ -2,7 +2,7 @@
 using Tavstal.BeaconSDK.Helpers.IO;
 using Tavstal.BeaconSDK.Helpers.Serialization;
 using Tavstal.BeaconSDK.Models;
-using Tavstal.BeaconSDK.Models.Endpoints.Modding;
+using Tavstal.BeaconSDK.Models.Config;
 using Tavstal.BeaconSDK.Models.Instance;
 using Tavstal.BeaconSDK.Models.Instance.Config;
 using Tavstal.BeaconSDK.Models.Logging;
@@ -19,15 +19,17 @@ namespace Tavstal.BeaconSDK.Instances;
 ///     An instance implementation that installs and configures Fabric-based modded instances.
 /// </summary>
 /// <param name="id">Unique identifier for the instance.</param>
+/// <param name="appConfiguration">The Beacon SDK configuration providing endpoint, HTTP, authentication and data protection settings.</param>
 /// <param name="configuration">The configuration describing the game, paths, launcher and client settings for the instance.</param>
 /// <param name="logger">Logger used to emit diagnostic messages during installation and setup.</param>
 /// <param name="progressReporter">Optional progress reporter used to report long-running download/extract progress.</param>
 public class FabricInstance(
     string id,
+    BeaconConfiguration appConfiguration,
     InstanceConfiguration configuration,
     IBeaconLogger logger,
     IProgressReporter? progressReporter = null)
-    : MinecraftInstance(id, configuration, logger, progressReporter)
+    : MinecraftInstance(id, appConfiguration, configuration, logger, progressReporter)
 {
     /// <inheritdoc />
     /// <exception cref="InvalidOperationException">Thrown when <see cref="MinecraftInstance.ArgumentBuilder" /> is null.</exception>
@@ -59,7 +61,7 @@ public class FabricInstance(
                 _progressReporter?.Report(EProgressKind.INSTANCE_DOWNLOADING_VERSION_JSON, e);
             };
 
-            var fabricVersionJsonUrl = string.Format(FabricEndpoints.LoaderJsonUrl, VersionData.MinecraftVersion,
+            var fabricVersionJsonUrl = string.Format(_appConfiguration.Endpoints.Fabric.LoaderJsonUrl, VersionData.MinecraftVersion,
                 VersionData.CustomVersion);
 
             var resultJson = await httpService.GetStringAsync(fabricVersionJsonUrl, progress, cancellationToken);
@@ -115,7 +117,7 @@ public class FabricInstance(
                 _progressReporter?.Report(EProgressKind.INSTANCE_DOWNLOADING_FABRIC_LOADER, e);
             };
             _logger.LogDebug("Downloading fabric loader jar...");
-            await httpService.DownloadFileAsync(string.Format(FabricEndpoints.LoaderJarUrl, VersionData.CustomVersion),
+            await httpService.DownloadFileAsync(string.Format(_appConfiguration.Endpoints.Fabric.LoaderJarUrl, VersionData.CustomVersion),
                 loaderJarPath, null, progress, cancellationToken);
         }
 

@@ -3,6 +3,7 @@ using Tavstal.BeaconSDK.Enums;
 using Tavstal.BeaconSDK.Helpers.Domain;
 using Tavstal.BeaconSDK.Instances;
 using Tavstal.BeaconSDK.Models;
+using Tavstal.BeaconSDK.Models.Config;
 using Tavstal.BeaconSDK.Models.Instance;
 using Tavstal.BeaconSDK.Models.Instance.Config;
 using Tavstal.BeaconSDK.Models.Logging;
@@ -19,16 +20,18 @@ public class ExampleWorker : IHostedService, IProgressReporter
     private readonly IJavaService _javaService;
     private readonly IBeaconLogger<ExampleWorker> _logger;
     private readonly IManifestService _manifestService;
+    private readonly BeaconConfiguration _appConfiguration;
 
     public ExampleWorker(IBeaconLogger<ExampleWorker> logger, IJavaService javaService,
         IInstanceLaunchService instanceLaunchService, IInstanceInstallService instanceInstallService,
-        IManifestService manifestService)
+        IManifestService manifestService, BeaconConfiguration appConfiguration)
     {
         _logger = logger;
         _javaService = javaService;
         _instanceLaunchService = instanceLaunchService;
         _instanceInstallService = instanceInstallService;
         _manifestService = manifestService;
+        _appConfiguration = appConfiguration;
     }
 
     public async Task StartAsync(CancellationToken cts)
@@ -141,7 +144,7 @@ public class ExampleWorker : IHostedService, IProgressReporter
           Client = clientDetails
         };
 
-        var instance = new MinecraftInstance(minecraftVersion, config, new BeaconLogger<MinecraftInstance>(_logger.GetLogLevel()), this);
+        var instance = new MinecraftInstance(minecraftVersion, _appConfiguration, config, new BeaconLogger<MinecraftInstance>(_logger.GetLogLevel()), this);
         var installResult = await _instanceInstallService.InstallAsync(instance, this, cts);
         if (!installResult)
         {
