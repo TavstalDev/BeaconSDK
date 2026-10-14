@@ -42,14 +42,11 @@ public class InstanceLaunchService : IInstanceLaunchService
         if (!string.IsNullOrEmpty(instance.Config.Game.PreLaunchCommand))
         {
             var preLaunchProc = StartCommand(instance.Config.Game.PreLaunchCommand);
-            if (preLaunchProc != null)
-            {
-                _logger.LogDebug("Executing pre-launch command...");
-                stopper.Start();
-                await preLaunchProc.WaitForExitAsync(cancellationToken);
-                stopper.Stop();
-                _logger.LogInformation($"Pre-launch command executed in {stopper.ElapsedMilliseconds}ms.");
-            }
+            _logger.LogDebug("Executing pre-launch command...");
+            stopper.Start();
+            await preLaunchProc.WaitForExitAsync(cancellationToken);
+            stopper.Stop();
+            _logger.LogInformation($"Pre-launch command executed in {stopper.ElapsedMilliseconds}ms.");
         }
 
         // Below 1.7 there is no dedicated logs directory
@@ -186,7 +183,7 @@ public class InstanceLaunchService : IInstanceLaunchService
                     return;
                 _logger.LogError($"[JVM Process Error] {e.Data}");
             };
-            process.Exited += (_, _) =>
+            process.Exited += (sender, e) =>
             {
                 _runningProcesses.TryRemove(instance.Id, out _);
                 switch (process.ExitCode)
@@ -222,6 +219,9 @@ public class InstanceLaunchService : IInstanceLaunchService
 
                 if (!string.IsNullOrEmpty(instance.Config.Game.PostExitCommand))
                     StartCommand(instance.Config.Game.PostExitCommand);
+
+                if (sender is Process p)
+                    p.Dispose();
             };
 
             process.BeginOutputReadLine();
@@ -314,7 +314,7 @@ public class InstanceLaunchService : IInstanceLaunchService
     ///     A <see cref="Process" /> instance for the started command if process creation succeeds; otherwise,
     ///     <see langword="null" />.
     /// </returns>
-    private Process? StartCommand(string command, Dictionary<string, string>? environmentVariables = null)
+    private Process StartCommand(string command, Dictionary<string, string>? environmentVariables = null)
     {
         // Configure the process start information
         var psi = new ProcessStartInfo
@@ -349,28 +349,24 @@ public class InstanceLaunchService : IInstanceLaunchService
             }
         }
 
-        var process = Process.Start(psi);
-        if (process != null)
-        {
-            process.EnableRaisingEvents = true;
+        // ReSharper disable RedundantAssignment
+        DataReceivedEventHandler? outputHandler = null;
+        DataReceivedEventHandler? errorHandler = null;
+        // ReSharper restore RedundantAssignment
 #if DEBUG
-            process.OutputDataReceived += (_, e) =>
-            {
-                if (!string.IsNullOrEmpty(e.Data))
-                    _logger.LogDebug($"Custom command: {e.Data}");
-            };
-            process.ErrorDataReceived += (_, e) =>
-            {
-                if (!string.IsNullOrEmpty(e.Data))
-                    _logger.LogDebug($"Custom command: {e.Data}");
-            };
-            process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
+        outputHandler = (_, e) =>
+        {
+            if (!string.IsNullOrEmpty(e.Data))
+                _logger.LogDebug($"Custom command: {e.Data}");
+        };
+        errorHandler = (_, e) =>
+        {
+            if (!string.IsNullOrEmpty(e.Data))
+                _logger.LogDebug($"Custom command: {e.Data}");
+        };
 #endif
-        }
-
         // Start the process and return the Process object
-        return process;
+        return ProcessHelper.Start(psi, outputHandler, errorHandler);
     }
 
     /// <summary>

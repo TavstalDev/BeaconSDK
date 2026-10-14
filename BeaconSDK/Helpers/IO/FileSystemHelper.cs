@@ -36,27 +36,25 @@ public static class FileSystemHelper
             return;
         }
 
+        ProcessStartInfo? startInfo = null;
         switch (OSHelper.GetOperatingSystem())
         {
             case EOperatingSystem.WINDOWS:
             {
-                var startInfo = new ProcessStartInfo { FileName = "explorer.exe", UseShellExecute = false };
+                startInfo = new ProcessStartInfo { FileName = "explorer.exe", UseShellExecute = false };
                 startInfo.ArgumentList.Add(path);
-                Process.Start(startInfo);
                 break;
             }
             case EOperatingSystem.MACOS:
             {
-                var startInfo = new ProcessStartInfo { FileName = "open", UseShellExecute = false };
+                startInfo = new ProcessStartInfo { FileName = "open", UseShellExecute = false };
                 startInfo.ArgumentList.Add(path);
-                Process.Start(startInfo);
                 break;
             }
             case EOperatingSystem.LINUX:
             {
-                var startInfo = new ProcessStartInfo { FileName = "xdg-open", UseShellExecute = false };
+                startInfo = new ProcessStartInfo { FileName = "xdg-open", UseShellExecute = false };
                 startInfo.ArgumentList.Add(path);
-                Process.Start(startInfo);
                 break;
             }
             case EOperatingSystem.UNKNOWN:
@@ -65,6 +63,11 @@ public static class FileSystemHelper
                 break;
             }
         }
+
+        if (startInfo == null)
+            return;
+
+        ProcessHelper.Start(startInfo);
     }
 
     /// <summary>

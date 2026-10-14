@@ -288,7 +288,7 @@ public static class OSHelper
             }
 
             // Start the process
-            Process.Start(startInfo);
+            ProcessHelper.Start(startInfo);
             return true;
         }
         catch (Exception ex)

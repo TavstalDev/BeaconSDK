@@ -2,6 +2,7 @@
 using System.Text.Json;
 using Tavstal.BeaconSDK.Helpers.Domain;
 using Tavstal.BeaconSDK.Helpers.IO;
+using Tavstal.BeaconSDK.Helpers.Platform;
 using Tavstal.BeaconSDK.Models;
 using Tavstal.BeaconSDK.Models.Config;
 using Tavstal.BeaconSDK.Models.Instance;
@@ -239,14 +240,12 @@ public abstract class ForgeInstanceBase(
             _logger.LogDebug("Arguments: " + arg.Replace(combinedPath, "[classpath_placeholder]"));
         }
 
-        var process = new Process
+        var process = ProcessHelper.Start(new ProcessStartInfo
         {
-            StartInfo = new ProcessStartInfo
-            {
-                FileName = defaultJava, Arguments = arg, RedirectStandardError = true
-            }
-        };
-        process.Start();
+            FileName = defaultJava,
+            Arguments = arg,
+            RedirectStandardError = true
+        });
         await process.WaitForExitAsync();
 
 #if DEBUG
