@@ -36,12 +36,6 @@ public class ForgeEarlyInstance(
     public override async Task<ModdedData?> InstallModdedAsync(string tempDir, IHttpService httpService,
         CancellationToken cancellationToken = default)
     {
-        if (!File.Exists(Config.Path.CustomManifestPath))
-        {
-            _logger.LogError("Forge manifest file does not exist. Please ensure the manifest is downloaded.");
-            return null;
-        }
-
         // Create versionDir in the versions folder
         Directory.CreateDirectory(VersionData.CustomVersionDirectory!);
 

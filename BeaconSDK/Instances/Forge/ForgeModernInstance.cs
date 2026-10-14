@@ -40,12 +40,6 @@ public class ForgeModernInstance(
         if (ArgumentBuilder == null)
             throw new InvalidOperationException($"{nameof(ArgumentBuilder)} is null.");
 
-        if (!File.Exists(Config.Path.CustomManifestPath))
-        {
-            _logger.LogError("Forge manifest file does not exist. Please ensure the manifest is downloaded.");
-            return null;
-        }
-
         List<LibraryMeta> localLibraries = [];
 
         // Create versionDir in the versions folder

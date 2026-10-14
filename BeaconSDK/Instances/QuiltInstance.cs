@@ -40,11 +40,6 @@ public class QuiltInstance(
             throw new InvalidOperationException($"{nameof(ArgumentBuilder)} is null.");
 
         _progressReporter?.Report(EProgressKind.INSTANCE_READING_MANIFEST, 0);
-        if (!File.Exists(Config.Path.CustomManifestPath))
-        {
-            _logger.LogError("Quilt manifest file not found at path: " + Config.Path.CustomManifestPath);
-            return null;
-        }
 
         // Create versionDir in the versions folder
         Directory.CreateDirectory(VersionData.CustomVersionDirectory!);
@@ -77,7 +72,7 @@ public class QuiltInstance(
             if (quiltVersionMeta == null)
             {
                 FileSystemHelper.DeleteFile(VersionData
-                    .CustomJsonPath!); // Delete it because this if part won't be executed again if it exists
+                    .CustomJsonPath!); // Delete it because this part won't be executed again if it exists
                 _logger.LogError("Quilt version meta is null after deserialization. Invalid JSON format.");
                 return null;
             }
