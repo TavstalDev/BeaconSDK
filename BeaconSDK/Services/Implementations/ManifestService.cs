@@ -1,5 +1,7 @@
 using System.Text.Json;
 using Tavstal.BeaconSDK.Helpers.Serialization;
+using Tavstal.BeaconSDK.Models.Endpoints;
+using Tavstal.BeaconSDK.Models.Endpoints.Modding;
 using Tavstal.BeaconSDK.Models.Logging;
 using Tavstal.BeaconSDK.Models.ModLoaders;
 using Tavstal.BeaconSDK.Models.ModLoaders.Fabric;
@@ -17,37 +19,54 @@ public class ManifestService : IManifestService
 {
     // ReSharper disable once NotAccessedField.Local
     private readonly IBeaconLogger _logger;
+    private readonly IHttpService _httpService;
+    private VersionManifest? _vanillaManifest;
     private List<IModManifest>? _fabricManifest;
     private List<IModManifest>? _forgeManifest;
     private List<IModManifest>? _neoForgeManifest;
     private List<IModManifest>? _quiltManifest;
-    private VersionManifest? _versionManifest;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="ManifestService" /> class.
     /// </summary>
     /// <param name="logger">Logger instance used to record diagnostic and error messages during manifest operations.</param>
-    public ManifestService(IBeaconLogger<ManifestService> logger)
+    /// <param name="httpService">HTTP service used for remote downloads.</param>
+    public ManifestService(IBeaconLogger<ManifestService> logger, IHttpService httpService)
     {
         _logger = logger;
+        _httpService = httpService;
     }
 
     /// <inheritdoc />
     public VersionManifest? GetMinecraftManifest()
     {
-        return _versionManifest;
+        return _vanillaManifest;
     }
 
     /// <inheritdoc />
     public async Task<VersionManifest?> GetMinecraftManifestAsync(string manifestPath,
         CancellationToken cancellationToken = default)
     {
-        if (_versionManifest != null)
-            return _versionManifest;
+        if (_vanillaManifest != null)
+            return _vanillaManifest;
 
-        _versionManifest = await JsonHelper.ReadJsonFileAsync<VersionManifest>(manifestPath,
+        _vanillaManifest = await JsonHelper.ReadJsonFileAsync<VersionManifest>(manifestPath,
             CoreJsonContext.Default.VersionManifest, cancellationToken);
-        return _versionManifest;
+        return _vanillaManifest;
+    }
+
+    /// <inheritdoc />
+    public async Task<VersionManifest?> DownloadMinecraftManifestAsync(string manifestPath, IProgress<double>? progress = null, CancellationToken cancellationToken = default)
+    {
+        var result = await _httpService.DownloadFileAsync(MicrosoftEndpoints.MinecraftManifestUrl, manifestPath, null, progress, cancellationToken);
+        if (!result)
+        {
+            _logger.LogError("Failed to download vanilla manifest.");
+            return null;
+        }
+        // Invalidate cache
+        _vanillaManifest = null;
+        return await GetMinecraftManifestAsync(manifestPath, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -80,6 +99,20 @@ public class ManifestService : IManifestService
     }
 
     /// <inheritdoc />
+    public async Task<List<IModManifest>?> DownloadFabricManifestAsync(string manifestPath, IProgress<double>? progress = null, CancellationToken cancellationToken = default)
+    {
+        var result = await _httpService.DownloadFileAsync(FabricEndpoints.VersionManifestUrl, manifestPath, null, progress, cancellationToken);
+        if (!result)
+        {
+            _logger.LogError("Failed to download fabric manifest.");
+            return null;
+        }
+        // Invalidate cache
+        _fabricManifest = null;
+        return await GetFabricManifestAsync(manifestPath, cancellationToken);
+    }
+
+    /// <inheritdoc />
     public List<IModManifest>? GetQuiltManifest()
     {
         return _quiltManifest;
@@ -108,6 +141,20 @@ public class ManifestService : IManifestService
     }
 
     /// <inheritdoc />
+    public async Task<List<IModManifest>?> DownloadQuiltManifestAsync(string manifestPath, IProgress<double>? progress = null, CancellationToken cancellationToken = default)
+    {
+        var result = await _httpService.DownloadFileAsync(QuiltEndpoints.VersionManifestUrl, manifestPath, null, progress, cancellationToken);
+        if (!result)
+        {
+            _logger.LogError("Failed to download quilt manifest.");
+            return null;
+        }
+        // Invalidate cache
+        _quiltManifest = null;
+        return await GetQuiltManifestAsync(manifestPath, cancellationToken);
+    }
+
+    /// <inheritdoc />
     public List<IModManifest>? GetForgeManifest()
     {
         return _forgeManifest;
@@ -133,13 +180,27 @@ public class ManifestService : IManifestService
     }
 
     /// <inheritdoc />
+    public async Task<List<IModManifest>?> DownloadForgeManifestAsync(string manifestPath, IProgress<double>? progress = null, CancellationToken cancellationToken = default)
+    {
+        var result = await _httpService.DownloadFileAsync(ForgeEndpoints.VersionManifest, manifestPath, null, progress, cancellationToken);
+        if (!result)
+        {
+            _logger.LogError("Failed to download forge manifest.");
+            return null;
+        }
+        // Invalidate cache
+        _forgeManifest = null;
+        return await GetForgeManifestAsync(manifestPath, cancellationToken);
+    }
+
+    /// <inheritdoc />
     public List<IModManifest>? GetNeoForgeManifest()
     {
         return _neoForgeManifest;
     }
 
     /// <inheritdoc />
-    public async Task<List<IModManifest>?> GetNeoForgeManifestAsync(string manifestPath)
+    public async Task<List<IModManifest>?> GetNeoForgeManifestAsync(string manifestPath, CancellationToken cancellationToken = default)
     {
         if (_neoForgeManifest != null)
             return _neoForgeManifest;
@@ -147,7 +208,7 @@ public class ManifestService : IManifestService
         _neoForgeManifest = [];
         var localManifests =
             await JsonHelper.ReadJsonFileAsync<List<NeoForgeManifest>>(manifestPath,
-                CoreJsonContext.Default.ListNeoForgeManifest);
+                CoreJsonContext.Default.ListNeoForgeManifest, cancellationToken);
         if (localManifests == null)
             throw new InvalidOperationException("Neo forge manifest loader not found in the JSON.");
 
@@ -155,5 +216,20 @@ public class ManifestService : IManifestService
             _neoForgeManifest.Add(manifest);
 
         return _neoForgeManifest;
+    }
+
+
+    /// <inheritdoc />
+    public async Task<List<IModManifest>?> DownloadNeoForgeManifestAsync(string manifestPath, IProgress<double>? progress = null, CancellationToken cancellationToken = default)
+    {
+        var result = await _httpService.DownloadFileAsync(NeoForgeEndpoints.VersionManifest, manifestPath, null, progress, cancellationToken);
+        if (!result)
+        {
+            _logger.LogError("Failed to download neoforge manifest.");
+            return null;
+        }
+        // Invalidate cache
+        _neoForgeManifest = null;
+        return await GetNeoForgeManifestAsync(manifestPath, cancellationToken);
     }
 }

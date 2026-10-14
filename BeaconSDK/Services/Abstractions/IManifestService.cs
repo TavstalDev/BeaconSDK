@@ -29,6 +29,20 @@ public interface IManifestService
         GetMinecraftManifestAsync(string manifestPath, CancellationToken cancellationToken = default);
 
     /// <summary>
+    ///     Downloads the latest Minecraft version manifest to the specified path and caches it.
+    /// </summary>
+    /// <param name="manifestPath">The local path where the downloaded manifest will be saved.</param>
+    /// <param name="progress">
+    ///     Optional progress reporter that receives the download percentage (0-100).
+    /// </param>
+    /// <param name="cancellationToken">Cancellation token observed during the download.</param>
+    /// <returns>
+    ///     A task that resolves to the <see cref="VersionManifest" /> if the download succeeds; otherwise,
+    ///     <see langword="null" />.
+    /// </returns>
+    Task<VersionManifest?> DownloadMinecraftManifestAsync(string manifestPath, IProgress<double>? progress = null, CancellationToken cancellationToken = default);
+
+    /// <summary>
     ///     Returns the cached Fabric mod loader manifest entries, or <see langword="null" />
     ///     if no Fabric manifest is cached.
     /// </summary>
@@ -47,6 +61,19 @@ public interface IManifestService
     Task<List<IModManifest>?>
         GetFabricManifestAsync(string manifestPath, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    ///     Downloads the latest Fabric mod loader manifest to the specified path and caches it.
+    /// </summary>
+    /// <param name="manifestPath">The local path where the downloaded manifest will be saved.</param>
+    /// <param name="progress">
+    ///     Optional progress reporter that receives the download percentage (0-100).
+    /// </param>
+    /// <param name="cancellationToken">Cancellation token observed during the download.</param>
+    /// <returns>
+    ///     A task that resolves to a list of <see cref="IModManifest" /> entries if the download succeeds;
+    ///     otherwise, <see langword="null" />.
+    /// </returns>
+    Task<List<IModManifest>?> DownloadFabricManifestAsync(string manifestPath, IProgress<double>? progress = null, CancellationToken cancellationToken = default);
 
     /// <summary>
     ///     Returns the cached Quilt mod loader manifest entries, or <see langword="null" />
@@ -67,6 +94,20 @@ public interface IManifestService
     Task<List<IModManifest>?> GetQuiltManifestAsync(string manifestPath, CancellationToken cancellationToken = default);
 
     /// <summary>
+    ///     Downloads the latest Quilt mod loader manifest to the specified path and caches it.
+    /// </summary>
+    /// <param name="manifestPath">The local path where the downloaded manifest will be saved.</param>
+    /// <param name="progress">
+    ///     Optional progress reporter that receives the download percentage (0-100).
+    /// </param>
+    /// <param name="cancellationToken">Cancellation token observed during the download.</param>
+    /// <returns>
+    ///     A task that resolves to a list of <see cref="IModManifest" /> entries if the download succeeds;
+    ///     otherwise, <see langword="null" />.
+    /// </returns>
+    Task<List<IModManifest>?> DownloadQuiltManifestAsync(string manifestPath, IProgress<double>? progress = null, CancellationToken cancellationToken = default);
+
+    /// <summary>
     ///     Returns the cached Forge mod loader manifest entries, or <see langword="null" />
     ///     if no Forge manifest is cached.
     /// </summary>
@@ -85,6 +126,20 @@ public interface IManifestService
     Task<List<IModManifest>?> GetForgeManifestAsync(string manifestPath, CancellationToken cancellationToken = default);
 
     /// <summary>
+    ///     Downloads the latest Forge mod loader manifest to the specified path and caches it.
+    /// </summary>
+    /// <param name="manifestPath">The local path where the downloaded manifest will be saved.</param>
+    /// <param name="progress">
+    ///     Optional progress reporter that receives the download percentage (0-100).
+    /// </param>
+    /// <param name="cancellationToken">Cancellation token observed during the download.</param>
+    /// <returns>
+    ///     A task that resolves to a list of <see cref="IModManifest" /> entries if the download succeeds;
+    ///     otherwise, <see langword="null" />.
+    /// </returns>
+    Task<List<IModManifest>?> DownloadForgeManifestAsync(string manifestPath, IProgress<double>? progress = null, CancellationToken cancellationToken = default);
+
+    /// <summary>
     ///     Returns the cached NeoForge mod loader manifest entries, or <see langword="null" />
     ///     if no NeoForge manifest is cached.
     /// </summary>
@@ -95,9 +150,24 @@ public interface IManifestService
     ///     Gets the NeoForge mod loader manifest from the specified path, retrieving from cache if valid.
     /// </summary>
     /// <param name="manifestPath">The path to the NeoForge manifest file.</param>
+    /// <param name="cancellationToken">Cancellation token observed during the operation.</param>
     /// <returns>
     ///     A task that resolves to a list of <see cref="IModManifest" /> entries if successful; otherwise,
     ///     <see langword="null" />.
     /// </returns>
-    Task<List<IModManifest>?> GetNeoForgeManifestAsync(string manifestPath);
+    Task<List<IModManifest>?> GetNeoForgeManifestAsync(string manifestPath, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///     Downloads the latest NeoForge mod loader manifest to the specified path and caches it.
+    /// </summary>
+    /// <param name="manifestPath">The local path where the downloaded manifest will be saved.</param>
+    /// <param name="progress">
+    ///     Optional progress reporter that receives the download percentage (0-100).
+    /// </param>
+    /// <param name="cancellationToken">Cancellation token observed during the download.</param>
+    /// <returns>
+    ///     A task that resolves to a list of <see cref="IModManifest" /> entries if the download succeeds;
+    ///     otherwise, <see langword="null" />.
+    /// </returns>
+    Task<List<IModManifest>?> DownloadNeoForgeManifestAsync(string manifestPath, IProgress<double>? progress = null, CancellationToken cancellationToken = default);
 }
