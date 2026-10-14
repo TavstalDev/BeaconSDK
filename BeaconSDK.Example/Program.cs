@@ -20,7 +20,8 @@ public static class Program
         hostBuilder = hostBuilder.ConfigureServices(services =>
         {
             services.AddBeaconServices(config);
-            services.AddHostedService<ExampleWorker>();
+            services.AddHostedService<ExampleVanillaWorker>();
+            //services.AddHostedService<ExampleFabricWorker>();
         });
         var host = hostBuilder.Build();
         await host.RunAsync();

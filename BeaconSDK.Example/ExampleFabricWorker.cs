@@ -7,22 +7,23 @@ using Tavstal.BeaconSDK.Models.Config;
 using Tavstal.BeaconSDK.Models.Instance;
 using Tavstal.BeaconSDK.Models.Instance.Config;
 using Tavstal.BeaconSDK.Models.Logging;
+using Tavstal.BeaconSDK.Models.ModLoaders;
 using Tavstal.BeaconSDK.Services.Abstractions;
 
 // ReSharper disable ClassNeverInstantiated.Global
 
 namespace Tavstal.BeaconSDK.Example;
 
-public class ExampleWorker : IHostedService, IProgressReporter
+public class ExampleFabricWorker : IHostedService, IProgressReporter
 {
     private readonly IInstanceInstallService _instanceInstallService;
     private readonly IInstanceLaunchService _instanceLaunchService;
     private readonly IJavaService _javaService;
-    private readonly IBeaconLogger<ExampleWorker> _logger;
+    private readonly IBeaconLogger<ExampleFabricWorker> _logger;
     private readonly IManifestService _manifestService;
     private readonly BeaconConfiguration _appConfiguration;
 
-    public ExampleWorker(IBeaconLogger<ExampleWorker> logger, IJavaService javaService,
+    public ExampleFabricWorker(IBeaconLogger<ExampleFabricWorker> logger, IJavaService javaService,
         IInstanceLaunchService instanceLaunchService, IInstanceInstallService instanceInstallService,
         IManifestService manifestService, BeaconConfiguration appConfiguration)
     {
@@ -38,6 +39,7 @@ public class ExampleWorker : IHostedService, IProgressReporter
     {
         var workingDir = Directory.GetCurrentDirectory();
         var manifestPath = Path.Combine(workingDir, "manifest.json");
+        var fabricManifestPath = Path.Combine(workingDir, "fabric.json");
         _logger.LogInformation("Example worker started");
         _logger.LogInformation("Fetching minecraft manifest...");
         if (!File.Exists(manifestPath))
@@ -98,6 +100,25 @@ public class ExampleWorker : IHostedService, IProgressReporter
             return;
         }
 
+        List<IModManifest>? fabricManifest;
+        if (!File.Exists(fabricManifestPath))
+        {
+            var progress = new Progress<double>();
+            progress.ProgressChanged += (_, e) =>
+            {
+                _logger.LogInformation($"Downloading fabric manifest {e:0.00}%...");
+            };
+            fabricManifest = await _manifestService.DownloadFabricManifestAsync(fabricManifestPath, progress, cts);
+        }
+        else
+            fabricManifest = await _manifestService.GetFabricManifestAsync(fabricManifestPath, cts);
+
+        if (fabricManifest == null || fabricManifest.Count == 0)
+        {
+            _logger.LogError("Failed to fetch fabric manifest. Please try again.");
+            return;
+        }
+
         var gameDir = Path.Combine(workingDir, "game");
         Directory.CreateDirectory(gameDir);
         var assetsDir = Path.Combine(gameDir, "assets");
@@ -112,17 +133,18 @@ public class ExampleWorker : IHostedService, IProgressReporter
         Directory.CreateDirectory(javaDir);
         var instancesDir = Path.Combine(gameDir, "instances");
         Directory.CreateDirectory(instancesDir);
-        var gameInstanceDir = Path.Combine(instancesDir, minecraftVersion);
+        var gameInstanceDir = Path.Combine(instancesDir, minecraftVersion + "-fabric");
         Directory.CreateDirectory(gameInstanceDir);
 
+        var fabricVerion = fabricManifest.First();
         var gameDetails = new GameDetails(
             string.Empty,
             1024,
             4096,
             string.Empty,
             targetVersion.Id,
-            EMinecraftKind.VANILLA,
-            null,
+            EMinecraftKind.FABRIC,
+            fabricVerion.Version,
             gameInstanceDir,
             string.Empty,
             [],
@@ -130,7 +152,7 @@ public class ExampleWorker : IHostedService, IProgressReporter
             [],
             null
         );
-        var pathDetails = new PathDetails(assetsDir, cacheDir, libsDir, versionsDir, manifestPath, null, []);
+        var pathDetails = new PathDetails(assetsDir, cacheDir, libsDir, versionsDir, []);
         var launcherDetails = new LauncherDetails("exampleApp", "1.0.0");
         var uuid = GameHelper.GetOfflinePlayerUUID(minecraftUsername);
         var clientDetails = new ClientDetails(null, minecraftUsername, uuid, true);
@@ -144,7 +166,7 @@ public class ExampleWorker : IHostedService, IProgressReporter
           Client = clientDetails
         };
 
-        var instance = new MinecraftInstance(minecraftVersion, _appConfiguration, config, new BeaconLogger<MinecraftInstance>(_logger.GetLogLevel()), this);
+        var instance = new FabricInstance(minecraftVersion, _appConfiguration, config, new BeaconLogger<MinecraftInstance>(_logger.GetLogLevel()), this);
         var installResult = await _instanceInstallService.InstallAsync(instance, this, cts);
         if (!installResult)
         {
