@@ -8,7 +8,7 @@ namespace Tavstal.BeaconSDK.Helpers;
 public static class LoggerHelper
 {
     private static readonly ConcurrentDictionary<string, ConcurrentQueue<string>> _queues = new();
-    private static readonly ConcurrentDictionary<string, SemaphoreSlim> _fileLocks = new();
+    private static readonly ConcurrentDictionary<string, (SemaphoreSlim semaphore, int usages)> _fileLocks = new();
     private static readonly SemaphoreSlim _signal = new(0);
 
     /// <summary>
@@ -16,11 +16,6 @@ public static class LoggerHelper
     ///     While this is empty, log entries without a path are discarded.
     /// </summary>
     public static string DefaultLogFilePath { get; set; } = string.Empty;
-
-    /// <summary>
-    ///     Gets the local time at which the helper was first loaded, used to correlate log entries with a session.
-    /// </summary>
-    public static DateTime StartTime { get; } = DateTime.Now;
 
     /// <summary>
     ///     Enqueues a log entry for asynchronous file writing.
@@ -57,15 +52,19 @@ public static class LoggerHelper
                 if (!queue.TryDequeue(out var line))
                     continue;
 
-                var fileLock = _fileLocks.GetOrAdd(path, _ => new SemaphoreSlim(1, 1));
-                await fileLock.WaitAsync(token);
+                var fileLock = _fileLocks.GetOrAdd(path, _ => (new SemaphoreSlim(1, 1), 0));
+                fileLock.usages++;
+                await fileLock.semaphore.WaitAsync(token);
                 try
                 {
                     await File.AppendAllTextAsync(path, line + Environment.NewLine, token);
                 }
                 finally
                 {
-                    fileLock.Release();
+                    fileLock.semaphore.Release();
+                    fileLock.usages--;
+                    if (fileLock.usages == 0)
+                        _fileLocks.TryRemove(path, out _);
                 }
             }
         }
