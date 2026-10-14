@@ -16,13 +16,14 @@ public static class JsonHelper
     private const int _maxRetries = 5;
     private static readonly IBeaconLogger _logger = new BeaconLogger(nameof(JsonHelper), LogLevel.Error);
 
-    private static readonly ConcurrentDictionary<string, SemaphoreSlim> _fileLocks =
+    private static readonly ConcurrentDictionary<string, (SemaphoreSlim semaphore, int usages)> _fileLocks =
         new(StringComparer.OrdinalIgnoreCase);
 
     private static readonly TimeSpan _retryDelay = TimeSpan.FromMilliseconds(1000);
 
     /// <summary>
-    ///     Writes an object to a file as JSON using an atomic write pattern with retries.
+    ///     Writes an object to a file as JSON using an atomic write pattern with retries and a per-path semaphore to
+    ///     prevent concurrent writers to the same file.
     /// </summary>
     /// <typeparam name="T">Type of the object to serialize to JSON.</typeparam>
     /// <param name="path">Destination file path. If necessary the parent directory will be created.</param>
@@ -37,7 +38,8 @@ public static class JsonHelper
 
         try
         {
-            lockTaken = fileLock.Wait(_retryDelay);
+            fileLock.usages++;
+            lockTaken = fileLock.semaphore.Wait(_retryDelay);
             if (!lockTaken)
             {
                 _logger.LogError($"Failed to acquire file lock for sync write to {path} within {_retryDelay}.");
@@ -81,7 +83,10 @@ public static class JsonHelper
             if (lockTaken)
                 try
                 {
-                    fileLock.Release();
+                    fileLock.semaphore.Release();
+                    fileLock.usages--;
+                    if (fileLock.usages == 0)
+                        _fileLocks.TryRemove(path, out _);
                 }
                 catch (SemaphoreFullException ex)
                 {
@@ -91,13 +96,13 @@ public static class JsonHelper
     }
 
     /// <summary>
-    ///     Asynchronously writes an object as formatted JSON to <paramref name="path" /> using an atomic write strategy
-    ///     and a per-path semaphore to prevent concurrent writers to the same file.
+    ///     Asynchronously writes an object to a file as JSON using an atomic write pattern with retries and a per-path
+    ///     semaphore to prevent concurrent writers to the same file.
     /// </summary>
     /// <typeparam name="T">Type of the object to serialize to JSON.</typeparam>
-    /// <param name="path">Destination file path.</param>
-    /// <param name="obj">The object to serialize and write.</param>
-    /// <param name="typeInfo">The type information used for deserialization.</param>
+    /// <param name="path">Destination file path. If necessary the parent directory will be created.</param>
+    /// <param name="obj">Object to serialize and write.</param>
+    /// <param name="typeInfo">Type information of the object.</param>
     /// <param name="cancellationToken">Token used to request cancellation of the operation.</param>
     /// <returns>
     ///     A task that resolves to <c>true</c> when the file was written successfully; <c>false</c> otherwise.
@@ -112,7 +117,8 @@ public static class JsonHelper
         try
         {
             // Attempt to acquire the per-path semaphore with the specified timeout.
-            lockTaken = await fileLock.WaitAsync(_retryDelay, cancellationToken);
+            fileLock.usages++;
+            lockTaken = await fileLock.semaphore.WaitAsync(_retryDelay, cancellationToken);
             if (!lockTaken)
             {
                 _logger.LogError($"Failed to acquire file lock for {path} within {_retryDelay}.");
@@ -138,14 +144,14 @@ public static class JsonHelper
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, $"Failed to delete file {path}:");
+                    _logger.LogError(ex, $"Failed to write temporary file {tempPath}:");
                     FileSystemHelper.DeleteFile(tempPath);
                     if (_maxRetries - 1 > i)
                         await Task.Delay(_retryDelay, cancellationToken);
                 }
             }
 
-            _logger.LogError($"Failed to acquire file lock for {path} after {_maxRetries} attempts.");
+            _logger.LogError($"Failed to write file {path} after {_maxRetries} attempts.");
             return false;
         }
         catch (Exception ex)
@@ -160,7 +166,10 @@ public static class JsonHelper
             if (lockTaken)
                 try
                 {
-                    fileLock.Release();
+                    fileLock.semaphore.Release();
+                    fileLock.usages--;
+                    if (fileLock.usages == 0)
+                        _fileLocks.TryRemove(path, out _);
                 }
                 catch (SemaphoreFullException ex)
                 {
@@ -184,7 +193,8 @@ public static class JsonHelper
         try
         {
             // Attempt to acquire the per-path semaphore with the specified timeout.
-            lockTaken = fileLock.Wait(_retryDelay);
+            fileLock.usages++;
+            lockTaken = fileLock.semaphore.Wait(_retryDelay);
             if (!lockTaken)
             {
                 _logger.LogError($"Failed to acquire file lock for {path} within {_retryDelay}.");
@@ -200,7 +210,7 @@ public static class JsonHelper
         }
         catch (Exception ex)
         {
-            _logger.LogCritical(ex, $"Error in ReadJsonFileAsync<T> {path}:");
+            _logger.LogCritical(ex, $"Error in ReadJsonFile<T> {path}:");
             return default;
         }
         finally
@@ -208,7 +218,10 @@ public static class JsonHelper
             if (lockTaken)
                 try
                 {
-                    fileLock.Release();
+                    fileLock.semaphore.Release();
+                    fileLock.usages--;
+                    if (fileLock.usages == 0)
+                        _fileLocks.TryRemove(path, out _);
                 }
                 catch (SemaphoreFullException ex)
                 {
@@ -223,8 +236,8 @@ public static class JsonHelper
     /// <typeparam name="T">The type of the object to deserialize.</typeparam>
     /// <param name="path">The file path to read the JSON content from.</param>
     /// <param name="typeInfo">The type information used for deserialization.</param>
-    /// <param name="cancellationToken">The cancellation token to use for asynchronous operations"></param>
-    /// <returns>The deserialized object, or default if an error occurs.</returns>
+    /// <param name="cancellationToken">Token used to request cancellation of the operation.</param>
+    /// <returns>The deserialized object, or default if the file does not exist or an error occurs.</returns>
     public static async Task<T?> ReadJsonFileAsync<T>(string path, JsonTypeInfo<T> typeInfo,
         CancellationToken cancellationToken = default)
     {
@@ -234,7 +247,8 @@ public static class JsonHelper
         try
         {
             // Attempt to acquire the per-path semaphore with the specified timeout.
-            lockTaken = await fileLock.WaitAsync(_retryDelay, cancellationToken);
+            fileLock.usages++;
+            lockTaken = await fileLock.semaphore.WaitAsync(_retryDelay, cancellationToken);
             if (!lockTaken)
             {
                 _logger.LogError($"Failed to acquire file lock for {path} within {_retryDelay}.");
@@ -258,7 +272,10 @@ public static class JsonHelper
             if (lockTaken)
                 try
                 {
-                    fileLock.Release();
+                    fileLock.semaphore.Release();
+                    fileLock.usages--;
+                    if (fileLock.usages == 0)
+                        _fileLocks.TryRemove(path, out _);
                 }
                 catch (SemaphoreFullException ex)
                 {
@@ -268,16 +285,17 @@ public static class JsonHelper
     }
 
     /// <summary>
-    ///     Returns a semaphore used to synchronize file access for the provided path.
+    ///     Returns the tracking entry used to synchronize file access for the provided path.
     /// </summary>
     /// <param name="path">A file path (can be relative or absolute) for which a lock is required.</param>
     /// <returns>
-    ///     A <see cref="SemaphoreSlim" /> instance that callers can await on to mutually-exclude access to the specified path.
+    ///     A tuple containing the <see cref="SemaphoreSlim" /> that callers must acquire to mutually-exclude access to
+    ///     the specified path and the current usage count used to track outstanding holders of the entry.
     /// </returns>
-    private static SemaphoreSlim GetFileLock(string path)
+    private static (SemaphoreSlim semaphore, int usages) GetFileLock(string path)
     {
         var fullPath = Path.GetFullPath(path);
-        return _fileLocks.GetOrAdd(fullPath, _ => new SemaphoreSlim(1, 1));
+        return _fileLocks.GetOrAdd(fullPath, _ => (new SemaphoreSlim(1, 1), 0));
     }
 
     /// <summary>
