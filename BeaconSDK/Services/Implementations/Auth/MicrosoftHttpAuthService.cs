@@ -68,7 +68,7 @@ public class MicrosoftHttpAuthService : IMicrosoftHttpAuthService
 
         while (_isListening)
         {
-            var context = await _httpListener.GetContextAsync(); // get te context 
+            var context = await _httpListener.GetContextAsync(); // get te context
             await HandleHttpRequestAsync(context, cancellationToken);
         }
     }
@@ -86,6 +86,8 @@ public class MicrosoftHttpAuthService : IMicrosoftHttpAuthService
             _progressReporter?.Report(EProgressKind.AUTH_LISTENER_CANCELLED, 0);
         _isListening = false;
         _httpListener.Stop();
+        _httpListener.Close();
+        _httpListener = null;
         return Task.CompletedTask;
     }
 
