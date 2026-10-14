@@ -82,32 +82,14 @@ public class JavaService : IJavaService
 
             var operatingSystem = OSHelper.GetOperatingSystem();
             var isArmBased = OSHelper.IsArmBased();
-            var osMirror = operatingSystem switch
+            if (!_mirrorConfig.Mirrors.TryGetValue(operatingSystem, out var osMirrors) && osMirrors == null)
             {
-                EOperatingSystem.WINDOWS => _mirrorConfig.Windows,
-                EOperatingSystem.LINUX => _mirrorConfig.Linux,
-                EOperatingSystem.MACOS => _mirrorConfig.Mac,
-                _ => null
-            };
-            if (osMirror == null)
+                _logger.LogWarning($"Failed to get java mirrors for {operatingSystem} OS.");
                 return null;
+            }
 
-            var javaMirror = majorVersion switch
-            {
-                7 => osMirror.Jdk7,
-                8 => osMirror.Jdk8,
-                16 => osMirror.Jdk16,
-                17 => osMirror.Jdk17,
-                21 => osMirror.Jdk21,
-                25 => osMirror.Jdk25,
-                _ => null
-            };
-
-            if (javaMirror == null)
-                return null;
-
-            var url = isArmBased ? javaMirror.Arm : javaMirror.X86_64;
-            if (string.IsNullOrEmpty(url))
+            var mirror = osMirrors.FirstOrDefault(x => x.Version == majorVersion && x.IsArm == isArmBased);
+            if (mirror == null)
             {
                 _logger.LogWarning(
                     $"No download URL found for Java {majorVersion} on {operatingSystem} OS {(isArmBased ? "arm" : "x64")}.");
@@ -118,13 +100,18 @@ public class JavaService : IJavaService
             try
             {
                 Directory.CreateDirectory(tempDir);
-                var extension = url.EndsWith(".zip") ? "zip" : "tar.gz";
+                var extension =  mirror.Url.EndsWith(".zip") ? "zip" : "tar.gz";
                 var zipFilePath = Path.Combine(tempDir, $"java_{majorVersion}.{extension}");
-                await _httpService.DownloadFileAsync(url, zipFilePath, null, progress, cancellationToken);
+                var downloadResult = await _httpService.DownloadFileAsync(mirror.Url, zipFilePath, mirror.Hash, progress, cancellationToken);
+                if (!downloadResult)
+                {
+                    _logger.LogError($"Failed to download Java '{majorVersion}'.");
+                    return null;
+                }
 
                 if (!File.Exists(zipFilePath))
                 {
-                    _logger.LogError($"Java download failed: {url}");
+                    _logger.LogError($"Java download failed: {mirror.Url}");
                     return null;
                 }
 
