@@ -20,26 +20,26 @@ It targets **.NET 10**, is trim/AOT friendly, and integrates with
 
 ## Features
 
-- **Microsoft authentication** — OAuth2 device code flow and browser redirect flow,
+- **Microsoft authentication** - OAuth2 device code flow and browser redirect flow,
   Xbox Live / XSTS token exchange, Minecraft access tokens, ownership checks, and
   profile retrieval.
-- **Account management** — `Account` model with encrypted access/refresh tokens at
+- **Account management** - `Account` model with encrypted access/refresh tokens at
   rest and login refresh support.
-- **Mojang skins & capes** — change, upload, reset skins and show/hide capes.
-- **Minecraft version manifests** — cached Mojang version manifest plus Fabric,
+- **Mojang skins & capes** - change, upload, reset skins and show/hide capes.
+- **Minecraft version manifests** - cached Mojang version manifest plus Fabric,
   Quilt, Forge and NeoForge loader manifests.
-- **Instance installation** — downloads and verifies the client jar, libraries,
+- **Instance installation** - downloads and verifies the client jar, libraries,
   assets, natives and logging config, with SHA-1 verification.
-- **Mod loader support** — Fabric, Quilt, Forge (early → modern) and NeoForge,
+- **Mod loader support** - Fabric, Quilt, Forge (early → modern) and NeoForge,
   including the legacy Forge compatibility libraries.
-- **Java management** — locates installed JVMs, inspects their version/architecture,
+- **Java management** - locates installed JVMs, inspects their version/architecture,
   and downloads the required JDK automatically.
-- **Launching** — builds JVM and game arguments and starts the game process, with
+- **Launching** - builds JVM and game arguments and starts the game process, with
   start/stop lifecycle and running-process tracking.
-- **Progress reporting** — a single `IProgressReporter` surfaces every stage to your UI.
-- **Logging** — `IBeaconLogger<T>` with a background writer loop, integrated with
+- **Progress reporting** - a single `IProgressReporter` surfaces every stage to your UI.
+- **Logging** - `IBeaconLogger<T>` with a background writer loop, integrated with
   the generic host.
-- **Resilient downloads** — gzip/TLS handling, parallel downloads and integrity checks.
+- **Resilient downloads** - gzip/TLS handling, parallel downloads and integrity checks.
 
 ---
 
@@ -75,9 +75,16 @@ using Tavstal.BeaconSDK;
 
 var hostBuilder = Host.CreateDefaultBuilder(args);
 hostBuilder.SetupLogger();
+var config = new BeaconConfiguration
+{
+    Auth = new AuthConfiguration
+    {
+        MicrosoftClientId = "your-azure-client-id",
+    }
+};
 hostBuilder = hostBuilder.ConfigureServices(services =>
 {
-    services.AddBeaconServices("keysDir", "myLauncher");
+    services.AddBeaconServices(config);
 });
 var host = hostBuilder.Build();
 await host.RunAsync();
@@ -91,33 +98,50 @@ instance:
 using Tavstal.BeaconSDK.Enums;
 using Tavstal.BeaconSDK.Helpers.Domain;
 using Tavstal.BeaconSDK.Instances;
-using Tavstal.BeaconSDK.Models.Endpoints;
-using Tavstal.BeaconSDK.Models.Installer;
+using Tavstal.BeaconSDK.Models.Config;
+using Tavstal.BeaconSDK.Models.Instance;
+using Tavstal.BeaconSDK.Models.Instance.Config;
+using Tavstal.BeaconSDK.Models.Logging;
 using Tavstal.BeaconSDK.Services.Abstractions;
 
-public class Launcher(IHttpService http, IManifestService manifests,
+public class Launcher(IManifestService manifests,
     IInstanceInstallService installer, IInstanceLaunchService launcher,
-    IJavaService java, IBeaconLogger<Launcher> log, IProgressReporter progress)
+    IJavaService java, IBeaconLogger<Launcher> log, BeaconConfiguration config, IProgressReporter progress)
 {
     public async Task RunAsync(string username, string mcVersion, CancellationToken ct)
     {
         // 1. Fetch the Minecraft version manifest
         var manifestPath = Path.Combine(Directory.GetCurrentDirectory(), "manifest.json");
-        await http.DownloadFileAsync(MicrosoftEndpoints.MinecraftManifestUrl, manifestPath, null, null, ct);
+        if (!File.Exists(manifestPath))
+        {
+            await manifests.DownloadMinecraftManifestAsync(manifestPath, null, ct);
+        }
         var manifest = await manifests.GetMinecraftManifestAsync(manifestPath, ct);
         var version = manifest!.Versions.First(v => v.Id == mcVersion);
 
         // 2. Describe the instance
+        var gameDir = Path.Combine(Directory.GetCurrentDirectory(), "game", "instances", mcVersion);
+        Directory.CreateDirectory(gameDir);
         var game = new GameDetails(javaPath: "", 1024, 4096, "", mcVersion, EMinecraftKind.VANILLA,
-            customVersion: null, customGameDirectory: null, preLaunchCommand: "",
+            customVersion: null, customGameDirectory: gameDir, preLaunchCommand: "",
             wrapperCommands: [], postExitCommand: "", environmentVariables: [], serverAddressToJoin: null);
         var paths = new PathDetails(assetsDir: "game/assets", cacheDir: "game/cache",
-            librariesDir: "game/libs", versionsDir: "game/versions", manifestPath, null, []);
+            librariesDir: "game/libs", versionsDir: "game/versions", []);
         var launcherDetails = new LauncherDetails("myLauncher", "1.0.0");
         var uuid = GameHelper.GetOfflinePlayerUUID(username);
         var client = new ClientDetails(null, username, uuid, isOffline: true);
 
-        var instance = new MinecraftInstance(mcVersion, version, game, paths, launcherDetails, client, log, null, progress);
+        var instanceConfig = new InstanceConfiguration
+        {
+            Version = version,
+            Game = game,
+            Path = paths,
+            Launcher = launcherDetails,
+            Client = client
+        };
+
+        var instance = new MinecraftInstance(mcVersion, config, instanceConfig,
+            new BeaconLogger<MinecraftInstance>(Microsoft.Extensions.Logging.LogLevel.Information), progress);
 
         // 3. Install, ensure Java, then launch
         if (!await installer.InstallAsync(instance, progress, ct)) return;
@@ -126,7 +150,7 @@ public class Launcher(IHttpService http, IManifestService manifests,
         await java.LocateJavaInstallationsAsync(Path.Combine("game", "java"), cancellationToken: ct);
         var javaPath = await java.GetJavaVersionAsync(major, ct)
             ?? await java.DownloadJavaVersionAsync(major, "game/java", "java-mirrors.json", null, ct);
-        instance.GameDetails.JavaPath = javaPath;
+        instance.Config.Game.JavaPath = javaPath;
 
         var process = await launcher.LaunchAsync(instance, progress, ct);
     }
@@ -153,7 +177,7 @@ A complete, runnable sample lives in
 | `IBeaconLogger<T>` | Structured logger used throughout the SDK |
 
 | Service | Purpose |
-| --- | --- |
+| --- | ---|
 | `IHttpService` | GET/POST, streaming, downloads, parallel downloads |
 | `IManifestService` | Mojang + mod loader manifests (cached) |
 | `IInstanceInstallService` | Downloads and verifies all instance files |
