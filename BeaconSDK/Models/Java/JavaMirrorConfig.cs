@@ -36,7 +36,7 @@ public class JavaMirrorConfig
                     {
                         Version = 17,
                         IsArm = false,
-                        Url = "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.9%2B9/OpenJDK17U-jdk_x86-32_windows_hotspot_17.0.9_9.zip"
+                        Url = "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.9%2B9.1/OpenJDK17U-jdk_x64_windows_hotspot_17.0.9_9.zip"
                     },
                     new JavaMirror
                     {
