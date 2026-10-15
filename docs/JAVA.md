@@ -67,9 +67,11 @@ var javaPath = await java.DownloadJavaVersionAsync(
 
 Notes:
 
-- Supported major versions include common JDKs used by Minecraft (check `JavaMirrorConfig` defaults for currently configured URLs).
-- The OS (Windows/Linux/macOS) and CPU architecture (x86_64/arm) are detected
-  automatically to pick the correct download.
+- The built-in `JavaMirrorConfig` ships Temurin builds for major versions
+  **8, 16, 17, 21 and 25**. Any other version returns `null` unless you add a
+  mirror entry for it.
+- The mirror is picked by OS **and** by `OSHelper.IsArmBased()`, so a machine whose
+  architecture has no entry for that version returns `null`.
 - Archives are `.zip` (Windows) or `.tar.gz` (Linux/macOS); both are extracted to
   `targetPath`.
 - On non-Windows platforms the extracted `bin/java` is marked executable.
@@ -80,17 +82,20 @@ Notes:
 ### Mirror configuration
 
 Download URLs come from a JSON mirror config. If `mirrorsPath` does not exist, a
-default `JavaMirrorConfig` is created and written there. It defines per-OS,
-per-architecture URLs for each supported major version:
+default `JavaMirrorConfig` is created and written there. Each `JavaMirror` entry
+declares a major version, whether it targets ARM (`IsArm`), a download `Url` and
+an optional `Hash` used for integrity verification:
 
 ```
 JavaMirrorConfig
-├── Windows ─ Is  / OsX86_64 / ... (Jdk7, Jdk8, Jdk16, Jdk17, Jdk21, Jdk25)
-├── Linux   ─ ...
-└── Mac     ─ ...
+└── Mirrors (per EOperatingSystem)
+    ├── Windows ─ 8, 16, 17, 21, 25 (x86_64)
+    ├── Linux   ─ 8, 16, 17, 21, 25 (x86_64)
+    └── Mac     ─ 8, 16 (x86_64); 17, 21, 25 (x86_64 + ARM)
 ```
 
-Edit this file to point at your own mirrors.
+Edit this file to point at your own mirrors or to add versions that are not
+built in.
 
 ---
 
