@@ -9,6 +9,7 @@ the NuGet package.
 - [Models](#models)
 - [Enums](#enums)
 - [Helpers](#helpers)
+- [Configuration](#configuration)
 - [Endpoints](#endpoints)
 
 ---
@@ -33,8 +34,11 @@ the NuGet package.
 
 ### `IHttpService`
 
-`CreateHttpClient`, `GetAsync`, `GetStringAsync` (with/without progress),
-`GetByteArrayAsync`, `GetStreamAsync`, `DownloadFileAsync`, `PostAsync`.
+`CreateHttpClient`, `GetStringAsync` (with/without progress), `GetByteArrayAsync`,
+`GetStreamAsync`, `DownloadFileAsync`, `ParallelDownloadFilesAsync`, `PostAsync`.
+
+Every read method reports failure through its return value instead of throwing:
+the `Get*` methods return `null`, `DownloadFileAsync` returns `false`.
 
 ### `IEncryptionService`
 
@@ -64,8 +68,12 @@ Cached Mojang and loader manifests: `GetMinecraftManifest[Async]`, `DownloadMine
 
 ### `ILibraryDownloadService`
 
-Resolves and downloads libraries and natives for an instance. Used internally by
-`IInstanceInstallService`.
+Downloads and prepares everything an instance needs: `DownloadVersionAsync`
+(version JSON and client jar), `DownloadAssetsAsync`, `DownloadMappingsAsync`
+(client mappings), `DownloadLoggingAsync` (logging config), `ExtractLaunchWrapperAsync`
+(the bundled launch wrapper) and `DownloadLibrariesAsync` (classpath, libraries and
+natives). Registered in DI and used by `InstanceInstallService`; useful when you
+need a subset of the install steps or want to control the classpath yourself.
 
 ### `IMojangSkinService`
 
@@ -113,10 +121,11 @@ The concrete implementation `MicrosoftHttpAuthService` exposes the constant
 
 | Type | Description |
 | --- | --- |
-| `MinecraftInstance` | Base instance. Constructor takes `(id, BeaconConfiguration, InstanceConfiguration, IBeaconLogger, IProgressReporter?)`. Key members: `Config`, `VersionData`, `MinecraftVersionMeta`, `ArgumentBuilder`, `InstallModdedAsync`, `GetVersionName`. |
-| `FabricInstance`, `QuiltInstance`, `NeoForgeInstance` | Modded instances with constructor `(id, BeaconConfiguration, InstanceConfiguration, IBeaconLogger, IProgressReporter?)`. |
-| `ForgeInstance` (static) | `GetForgeInstance(...)` returns the right Forge implementation. `GetLegacyLibraries(string mcVersion, string path = ...)`. |
-| `ForgeEarlyInstance`, `ForgeClassicInstance`, `ForgeLegacyInstance`, `ForgeModernInstance` | Forge implementations for each era. |
+| `MinecraftInstance` | Base instance. Constructor takes `(id, BeaconConfiguration, InstanceConfiguration, IBeaconLogger, IProgressReporter?)`. Key members: `Id`, `Config`, `VersionData`, `MinecraftVersionMeta`, `ArgumentBuilder`, `GetCombinedLibraries`, `InstallModdedAsync`, `GetVersionName`. |
+| `FabricInstance`, `QuiltInstance` | Modded instances with constructor `(id, BeaconConfiguration, InstanceConfiguration, IBeaconLogger, IProgressReporter?)`. |
+| `NeoForgeInstance` | Constructor `(id, BeaconConfiguration, InstanceConfiguration, IBeaconLogger, IProgressReporter?)`. Derives from `ForgeInstanceBase`. |
+| `ForgeInstance` (static) | `GetForgeInstance(...)` returns the right Forge implementation. `GetLegacyLibraries(string mcVersion, string path = "Tavstal.BeaconSDK.Assets.Fmllib.")` returns the resource names of the embedded legacy Forge compatibility jars for Minecraft 1.3 – 1.5, and an empty list for other versions. |
+| `ForgeEarlyInstance`, `ForgeClassicInstance`, `ForgeLegacyInstance`, `ForgeModernInstance` | Forge implementations for each era. `ForgeEarlyInstance` and `ForgeClassicInstance` take two extra leading arguments (`forgeVersionName`, `universalName` / `universalFormat`) before `id`; `ForgeLegacyInstance` takes one (`forgeVersionName`); `ForgeModernInstance` matches the base shape. |
 | `Forge/ForgeInstanceBase` | Shared Forge/NeoForge install logic. |
 
 ---
@@ -128,28 +137,29 @@ The concrete implementation `MicrosoftHttpAuthService` exposes the constant
 | Type | Notes |
 | --- | --- |
 | `IProgressReporter` | `Report(double)`, `Report(double, string, bool)`, `Report(EProgressKind, double)`, `ReportExpectedTask(int?)`, `ReportTaskCompleted()` |
-| `DownloadEntry` | `Url`, `Path`, `Sha1` |
+| `DownloadEntry` | `Url`, `Path`, `Sha1`, `Progress` (an `IProgress<double>` built from an optional `IProgressReporter`) |
 | `EProgressKind` | Progress-stage enum (see Enums) |
+| `LockEntry` | Semaphore plus reference count used by `LoggerHelper` and `JsonHelper` for file locking |
 
 `Tavstal.BeaconSDK.Models.Instance.Config`
 
 | Type | Notes |
 | --- | --- |
-| `GameDetails` | Java path, memory, JVM args, version, kind, custom version/dir, pre/post commands, wrappers, env vars, server |
+| `GameDetails` | Java path, memory (MB), JVM args, version, kind, custom version/dir, pre/post commands, wrappers, env vars, server |
 | `PathDetails` | Assets/cache/libraries/versions dirs, custom natives |
 | `LauncherDetails` | `LauncherName`, `LauncherVersion` |
 | `ClientDetails` | `AccessToken`, `DisplayName`, `UUID`, `ClientId`, `Xuid`, `IsOffline` |
-| `LaunchArg` | A launch argument with an associated rule index |
+| `LaunchArg` | A launch argument: `Arg` (text) and `Priority` (ordering weight) |
 
 `Tavstal.BeaconSDK.Models.Instance`
 
 | Type | Notes |
 | --- | --- |
-| `InstanceConfiguration` | Aggregates version, game, path, launcher and client config |
+| `InstanceConfiguration` | Aggregates version, game, path, launcher and client config, plus an optional `Resolution` |
 | `ModdedData` | `MainClass`, `Libraries` |
-| `ArgumentBuilder` | Builds JVM and game argument strings |
-| `VersionDetails` | Resolved vanilla/custom version paths |
-| `Resolution` | Window `Width`/`Height` |
+| `ArgumentBuilder` | Builds JVM and game argument strings. Adds `-Xms`/`-Xmx` from `GameDetails.MinMemory`/`MaxMemory` (MB) |
+| `VersionDetails` | Resolved vanilla/custom version paths, `GameDir` and `NativesDir` |
+| `Resolution` | Window size as `X` / `Y` (uint) |
 
 `Tavstal.BeaconSDK.Models.Accounts`
 
@@ -160,14 +170,20 @@ The concrete implementation `MicrosoftHttpAuthService` exposes the constant
 
 `Tavstal.BeaconSDK.Models.Java`
 
-`JavaVersion` (`Major`, `Version`, `Architecture`, `Path`), `JavaMirrorConfig`,
-`JavaMirrorJdks`, `JavaMirrorArchitecture`.
+`JavaVersion` (`Major`, `Version`, `Architecture`, `Path`), `JavaMirrorConfig`
+(`Mirrors`, keyed by `EOperatingSystem`), `JavaMirror` (`Version`, `IsArm`, `Url`,
+optional `Hash` for integrity verification).
 
 `Tavstal.BeaconSDK.Models.Logging`
 
-`IBeaconLogger` / `IBeaconLogger<T>`, `BeaconLogger` / `BeaconLogger<T>`,
-`BeaconLoggerExtensions` (`LogDebug`, `LogTrace`, `LogInformation`, `LogWarning`,
-`LogError`, `LogCritical`, `Log`), `LogEntry` (record).
+| Type | Notes |
+| --- | --- |
+| `IBeaconLogger` | `Log(LogLevel, LogEntry, Exception?, Func<LogEntry, Exception?, string>)`, `GetModuleName()`, `GetLogLevel()` |
+| `IBeaconLogger<T>` | Marker interface over `IBeaconLogger`, resolved by DI as a singleton |
+| `BeaconLogger` | Constructor `(string moduleName, LogLevel logLevel, bool printLogs = true, string? customLogFilePath = null)`. Console output is optional; entries are always handed to `LoggerHelper.EnqueueLog` with `customLogFilePath` |
+| `BeaconLogger<T>` | Constructor `(LogLevel logLevel, bool printLogs = true, string? customLogFilePath = null)`, plus `(BeaconConfiguration config)` which takes the log path from `config.AppLogFilePath` and defaults to `LogLevel.Debug` in DEBUG builds and `LogLevel.Information` otherwise. This is the constructor DI uses |
+| `BeaconLoggerExtensions` | `LogDebug`, `LogTrace`, `LogInformation`, `LogWarning`, `LogError`, `LogCritical`, `Log` (each with an optional leading `Exception`) |
+| `LogEntry` | Record `(string LogLevel, string ModuleName, string? Message)` |
 
 `Tavstal.BeaconSDK.Models.Microsoft`
 
@@ -208,12 +224,36 @@ user models under `.User` (`MojangProfile`, `Skin`, `Cape`, `OwnershipData`, …
 
 | Type | Notes |
 | --- | --- |
-| `GameHelper` (Domain) | `IsNewer`, `ParseVersionString`, `GetOfflinePlayerUUID` (and other helpers as available) |
-| `ForgeMapper` (Domain) | Maps Forge library/version data |
-| `FileSystemHelper` (IO) | Delete/move/compress, permissions, `CheckSHA1`/`CheckSHA256`, `GetFileHashAsync`, `GetFormattedSize`, `TempDir` |
-| `OSHelper` (Platform) | `GetOperatingSystem`, `IsWindows11`, `IsArmBased`, `Is64BitOperatingSystem`, `GetRamInBytes`, home/desktop/programs directories, `OpenUrl`, `GetPlatformLibraryExtension` |
-| `JsonHelper` (Serialization) | `ReadJsonFileAsync`, `WriteJsonFileAsync` |
-| `LoggerHelper` | `DefaultLogFilePath`, `StartTime`, `EnqueueLog`, `ProcessLogQueueAsync` |
+| `GameHelper` (Domain) | `isNewer(versionA, versionB)`, `ParseVersionString`, `GetOfflinePlayerUUID` |
+| `ForgeMapper` (Domain) | `Map`, `Interpolation`, `ToFullPath`, `HandleEmptyArg` for legacy Forge arguments |
+| `FileSystemHelper` (IO) | Delete/move/compress, permissions and free space, `MakeExecutable`/`MakeFileReadonly`/`MakeFileWritable`, `CheckSHA1`/`CheckSHA256`/`CheckByDigest`, `GetFileHashAsync`, `GetContentHash`, `GetFormattedSize`, `IsFileLocked`, `IsSafeToDelete`, `OpenFolderInFileExplorer`, `TempDir` |
+| `OSHelper` (Platform) | `GetOperatingSystem`, `IsWindows11`, `IsArmBased`, `Is64BitOperatingSystem`, `GetDedicatedGpuType`, `GetRamInBytes`, home/desktop/programs directories, `OpenUrl`, `GetPlatformLibraryExtension` |
+| `ProcessHelper` (Platform) | `Start(ProcessStartInfo, onDataReceived?, errorDataReceived?)` shared process start helper |
+| `JsonHelper` (Serialization) | `ReadJsonFile`/`ReadJsonFileAsync`, `WriteJsonFile`/`WriteJsonFileAsync` (all take a `JsonTypeInfo<T>`) |
+| `LoggerHelper` (`Tavstal.BeaconSDK.Helpers`) | `DefaultLogFilePath` (static, empty by default), `EnqueueLog(string entry, string? logFilePath = null)`, `ProcessLogQueueAsync(CancellationToken)`. Entries are buffered per target file and appended by the writer loop; an entry with no path and an empty `DefaultLogFilePath` is discarded. The writer appends with `File.AppendAllTextAsync`, so the target directory must already exist |
+
+---
+
+## Configuration
+
+`Tavstal.BeaconSDK.Models.Config`
+
+`BeaconConfiguration` is registered as a singleton by `AddBeaconServices`, so any
+SDK service can resolve it. `Auth` is the only required member.
+
+| Type | Notes |
+| --- | --- |
+| `BeaconConfiguration` | `Auth` (required), `DataProtection`, `Http`, `Endpoints`, `AppLogFilePath` (optional custom log file, consumed by the DI-created loggers, see the Logging table under [Models](#models)) |
+| `AuthConfiguration` | `MicrosoftClientId` (required, may be `null`/empty only if Microsoft login is unused), `DeviceCodePollInterval` (`TimeSpan`, defaults to 5 seconds; the SDK does not read it, pass it to `IMicrosoftDeviceAuthService.StartListeningAsync` yourself) |
+| `HttpConfig` | `Agent`, `AcceptHeader`, `Timeout`, `AutomaticDecompression`, `AllowAutoRedirect`, `EnableMultipleHttp2Connections`, `MaxParallelDownloads`, `BufferSize`, `TempFileSuffix`, `EnableSslProtocols` |
+| `DataProtectionConfig` | `KeysDirectory` (default `keysDir`), `ApplicationName` (default `myApplication`), `ProtectorPurpose` (default `BeaconSDK.Encryption.v1`), and the per-platform fallback material `WindowsEntropy`, `LinuxKey`, `MacKey` |
+| `EndpointConfig` | `Microsoft`, `Mojang`, `Fabric`, `Quilt`, `Forge`, `NeoForge` |
+
+Every configuration property carries a `JsonPropertyName` attribute, so the
+configuration types round-trip through `System.Text.Json` with your own context.
+The SDK's own source-generated contexts (`BeaconJsonContext`, `CoreJsonContext`,
+`GenericJsonContext`) cover accounts, Java mirrors, manifests and Mojang metadata,
+not `BeaconConfiguration`.
 
 ---
 
@@ -221,4 +261,14 @@ user models under `.User` (`MojangProfile`, `Skin`, `Cape`, `OwnershipData`, …
 
 `Tavstal.BeaconSDK.Models.Config.Endpoints`
 
-Endpoint URLs are configured via `BeaconConfiguration.Endpoints` types (`MicrosoftEndpointConfig`, `MojangEndpointConfig`, `FabricEndpointConfig`, `QuiltEndpointConfig`, `ForgeEndpointConfig`, `NeoForgeEndpointConfig`). Use their properties and helpers like `MicrosoftEndpointConfig.MakeMicrosoftAuthUrl(...)`.
+Endpoint URLs are configured via `BeaconConfiguration.Endpoints`. Placeholders such as
+`{0}` / `{1}` are filled with `string.Format` at request time.
+
+| Type | Properties |
+| --- | --- |
+| `MicrosoftEndpointConfig` | `AuthUrl`, `TokenUrl`, `DeviceUrl`, `DeviceTokenUrl`, `XboxAuthUrl`, `XboxXstsUrl`; helper `MakeMicrosoftAuthUrl(clientId, redirectUrl)` builds the browser-flow authorization URL |
+| `MojangEndpointConfig` | `AuthUrl`, `ProfileUrl`, `OwnershipUrl`, `MinecraftManifestUrl`, `MinecraftResourcesUrl`, `PlayerConfigUrl` |
+| `FabricEndpointConfig` | `VersionManifestUrl`, `LoaderJsonUrl`, `LoaderJarUrl` |
+| `QuiltEndpointConfig` | `VersionManifestUrl`, `LoaderJsonUrl`, `LoaderJarUrl` |
+| `ForgeEndpointConfig` | `VersionManifest`, `LoaderUniversalZipUrl`, `InstallerJarUrl` |
+| `NeoForgeEndpointConfig` | `VersionManifest`, `InstallerJarUrl` |
