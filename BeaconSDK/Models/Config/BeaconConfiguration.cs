@@ -30,4 +30,10 @@ public class BeaconConfiguration
     /// </summary>
     [JsonPropertyName("Endpoints")]
     public EndpointConfig Endpoints { get; set; } = new();
+
+    /// <summary>
+    ///     Gets or sets the custom file path used to persist SDK logs. When null, the default log location is used.
+    /// </summary>
+    [JsonPropertyName("AppLogFilePath")]
+    public string? AppLogFilePath { get; set; }
 }

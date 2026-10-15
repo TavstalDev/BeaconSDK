@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Tavstal.BeaconSDK.Helpers;
+using Tavstal.BeaconSDK.Models.Config;
 
 namespace Tavstal.BeaconSDK.Models.Logging;
 
@@ -93,14 +94,15 @@ public class BeaconLogger<T> : BeaconLogger, IBeaconLogger<T> where T : class
     ///     Initializes a new instance of the <see cref="BeaconLogger{T}" /> class with default settings.
     ///     Used by dependency injection to instantiate loggers without explicit parameter passing.
     /// </summary>
+    /// <param name="config">The Beacon SDK configuration.</param>
 #if DEBUG
-    public BeaconLogger()
-        : this(LogLevel.Debug)
+    public BeaconLogger(BeaconConfiguration config)
+        : this(LogLevel.Debug, customLogFilePath: config.AppLogFilePath)
     {
     }
 #else
-    public BeaconLogger()
-        : this(LogLevel.Information) { }
+    public BeaconLogger(BeaconConfiguration config)
+        : this(LogLevel.Information,  customLogFilePath: config.AppLogFilePath) { }
 #endif
 
     /// <summary>
