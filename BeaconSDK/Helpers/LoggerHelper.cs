@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Tavstal.BeaconSDK.Models;
 
 namespace Tavstal.BeaconSDK.Helpers;
 
@@ -8,7 +9,7 @@ namespace Tavstal.BeaconSDK.Helpers;
 public static class LoggerHelper
 {
     private static readonly ConcurrentDictionary<string, ConcurrentQueue<string>> _queues = new();
-    private static readonly ConcurrentDictionary<string, (SemaphoreSlim semaphore, int usages)> _fileLocks = new();
+    private static readonly ConcurrentDictionary<string, LockEntry> _fileLocks = new();
     private static readonly SemaphoreSlim _signal = new(0);
 
     /// <summary>
@@ -52,18 +53,18 @@ public static class LoggerHelper
                 if (!queue.TryDequeue(out var line))
                     continue;
 
-                var fileLock = _fileLocks.GetOrAdd(path, _ => (new SemaphoreSlim(1, 1), 0));
-                fileLock.usages++;
-                await fileLock.semaphore.WaitAsync(token);
+                var fileLock = _fileLocks.GetOrAdd(path, _ => new LockEntry());
+                fileLock.RefCount++;
+                await fileLock.Semaphore.WaitAsync(token);
                 try
                 {
                     await File.AppendAllTextAsync(path, line + Environment.NewLine, token);
                 }
                 finally
                 {
-                    fileLock.semaphore.Release();
-                    fileLock.usages--;
-                    if (fileLock.usages == 0)
+                    fileLock.Semaphore.Release();
+                    fileLock.RefCount--;
+                    if (fileLock.RefCount == 0)
                         _fileLocks.TryRemove(path, out _);
                 }
             }

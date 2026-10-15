@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using Microsoft.Extensions.Logging;
 using Tavstal.BeaconSDK.Helpers.IO;
+using Tavstal.BeaconSDK.Models;
 using Tavstal.BeaconSDK.Models.Logging;
 
 namespace Tavstal.BeaconSDK.Helpers.Serialization;
@@ -16,7 +17,7 @@ public static class JsonHelper
     private const int _maxRetries = 5;
     private static readonly IBeaconLogger _logger = new BeaconLogger(nameof(JsonHelper), LogLevel.Error);
 
-    private static readonly ConcurrentDictionary<string, (SemaphoreSlim semaphore, int usages)> _fileLocks =
+    private static readonly ConcurrentDictionary<string, LockEntry> _fileLocks =
         new(StringComparer.OrdinalIgnoreCase);
 
     private static readonly TimeSpan _retryDelay = TimeSpan.FromMilliseconds(1000);
@@ -38,8 +39,8 @@ public static class JsonHelper
 
         try
         {
-            fileLock.usages++;
-            lockTaken = fileLock.semaphore.Wait(_retryDelay);
+            fileLock.RefCount++;
+            lockTaken = fileLock.Semaphore.Wait(_retryDelay);
             if (!lockTaken)
             {
                 _logger.LogError($"Failed to acquire file lock for sync write to {path} within {_retryDelay}.");
@@ -83,9 +84,9 @@ public static class JsonHelper
             if (lockTaken)
                 try
                 {
-                    fileLock.semaphore.Release();
-                    fileLock.usages--;
-                    if (fileLock.usages == 0)
+                    fileLock.Semaphore.Release();
+                    fileLock.RefCount--;
+                    if (fileLock.RefCount == 0)
                         _fileLocks.TryRemove(path, out _);
                 }
                 catch (SemaphoreFullException ex)
@@ -117,8 +118,8 @@ public static class JsonHelper
         try
         {
             // Attempt to acquire the per-path semaphore with the specified timeout.
-            fileLock.usages++;
-            lockTaken = await fileLock.semaphore.WaitAsync(_retryDelay, cancellationToken);
+            fileLock.RefCount++;
+            lockTaken = await fileLock.Semaphore.WaitAsync(_retryDelay, cancellationToken);
             if (!lockTaken)
             {
                 _logger.LogError($"Failed to acquire file lock for {path} within {_retryDelay}.");
@@ -166,9 +167,9 @@ public static class JsonHelper
             if (lockTaken)
                 try
                 {
-                    fileLock.semaphore.Release();
-                    fileLock.usages--;
-                    if (fileLock.usages == 0)
+                    fileLock.Semaphore.Release();
+                    fileLock.RefCount--;
+                    if (fileLock.RefCount == 0)
                         _fileLocks.TryRemove(path, out _);
                 }
                 catch (SemaphoreFullException ex)
@@ -193,8 +194,8 @@ public static class JsonHelper
         try
         {
             // Attempt to acquire the per-path semaphore with the specified timeout.
-            fileLock.usages++;
-            lockTaken = fileLock.semaphore.Wait(_retryDelay);
+            fileLock.RefCount++;
+            lockTaken = fileLock.Semaphore.Wait(_retryDelay);
             if (!lockTaken)
             {
                 _logger.LogError($"Failed to acquire file lock for {path} within {_retryDelay}.");
@@ -218,9 +219,9 @@ public static class JsonHelper
             if (lockTaken)
                 try
                 {
-                    fileLock.semaphore.Release();
-                    fileLock.usages--;
-                    if (fileLock.usages == 0)
+                    fileLock.Semaphore.Release();
+                    fileLock.RefCount--;
+                    if (fileLock.RefCount == 0)
                         _fileLocks.TryRemove(path, out _);
                 }
                 catch (SemaphoreFullException ex)
@@ -247,8 +248,8 @@ public static class JsonHelper
         try
         {
             // Attempt to acquire the per-path semaphore with the specified timeout.
-            fileLock.usages++;
-            lockTaken = await fileLock.semaphore.WaitAsync(_retryDelay, cancellationToken);
+            fileLock.RefCount++;
+            lockTaken = await fileLock.Semaphore.WaitAsync(_retryDelay, cancellationToken);
             if (!lockTaken)
             {
                 _logger.LogError($"Failed to acquire file lock for {path} within {_retryDelay}.");
@@ -272,9 +273,9 @@ public static class JsonHelper
             if (lockTaken)
                 try
                 {
-                    fileLock.semaphore.Release();
-                    fileLock.usages--;
-                    if (fileLock.usages == 0)
+                    fileLock.Semaphore.Release();
+                    fileLock.RefCount--;
+                    if (fileLock.RefCount == 0)
                         _fileLocks.TryRemove(path, out _);
                 }
                 catch (SemaphoreFullException ex)
@@ -285,17 +286,17 @@ public static class JsonHelper
     }
 
     /// <summary>
-    ///     Returns the tracking entry used to synchronize file access for the provided path.
+    ///     Returns the <see cref="LockEntry" /> used to synchronize file access for the provided path.
     /// </summary>
     /// <param name="path">A file path (can be relative or absolute) for which a lock is required.</param>
     /// <returns>
-    ///     A tuple containing the <see cref="SemaphoreSlim" /> that callers must acquire to mutually-exclude access to
-    ///     the specified path and the current usage count used to track outstanding holders of the entry.
+    ///     The <see cref="LockEntry" /> associated with the normalized path. Callers must acquire its
+    ///     <see cref="LockEntry.Semaphore" /> to mutually-exclude access to the specified path.
     /// </returns>
-    private static (SemaphoreSlim semaphore, int usages) GetFileLock(string path)
+    private static LockEntry GetFileLock(string path)
     {
         var fullPath = Path.GetFullPath(path);
-        return _fileLocks.GetOrAdd(fullPath, _ => (new SemaphoreSlim(1, 1), 0));
+        return _fileLocks.GetOrAdd(fullPath, _ => new LockEntry());
     }
 
     /// <summary>
