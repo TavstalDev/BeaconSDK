@@ -91,15 +91,15 @@ Before you open a pull request, please check:
 
 This policy applies to pull requests from external contributors.
 
-- **AI-generated documentation** — accepted, as long as a human reviews it.
-- **AI-generated code** — not accepted. This means code written in bulk by an AI, like a whole
+- **AI-generated documentation** - accepted, as long as a human reviews it.
+- **AI-generated code** - not accepted. This means code written in bulk by an AI, like a whole
   method or file pasted from a chatbot.
-- **AI-suggested fixes** — these are in the gray zone. A suggestion is a small edit, like inline
+- **AI-suggested fixes** - these are in the gray zone. A suggestion is a small edit, like inline
   autocomplete or a short fix (up to roughly one method). A human must review it and test it before
   merging.
-- **Gray-zone disclosure** — if your pull request contains gray-zone fixes, mention it in the PR
+- **Gray-zone disclosure** - if your pull request contains gray-zone fixes, mention it in the PR
   description so reviewers know what to check closely.
-- **Testing** — gray-zone fixes are only mergeable when the full test suite passes. Please add a
+- **Testing** - gray-zone fixes are only mergeable when the full test suite passes. Please add a
   new test when it makes sense.
 
 ---
