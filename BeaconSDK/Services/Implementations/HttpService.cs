@@ -50,29 +50,6 @@ public class HttpService : IHttpService
     }
 
     /// <inheritdoc />
-    public async Task<HttpResponseMessage?> GetAsync(string url, CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            return await _httpClient.GetAsync(url, cancellationToken);
-        }
-        catch (OperationCanceledException)
-        {
-            throw;
-        }
-        catch (HttpRequestException ex)
-        {
-            _logger.LogError($"HTTP request to {url} failed with {ex.StatusCode}: {ex.Message}");
-            return null;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogCritical(ex, $"Failed to make GET request to {url}:");
-            return null;
-        }
-    }
-
-    /// <inheritdoc />
     public async Task<string?> GetStringAsync(string url, CancellationToken cancellationToken = default)
     {
         try
@@ -101,7 +78,7 @@ public class HttpService : IHttpService
     {
         try
         {
-            var response = await _httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            using var response = await _httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
             response.EnsureSuccessStatusCode();
 
             var contentLength = response.Content.Headers.ContentLength;
@@ -212,7 +189,7 @@ public class HttpService : IHttpService
                     return true;
             }
 
-            var response = await _httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            using var response = await _httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
             response.EnsureSuccessStatusCode();
 
             var contentLength = response.Content.Headers.ContentLength;

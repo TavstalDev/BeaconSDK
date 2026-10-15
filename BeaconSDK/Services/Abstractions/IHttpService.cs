@@ -17,17 +17,6 @@ public interface IHttpService
     HttpClient CreateHttpClient();
 
     /// <summary>
-    ///     Performs a GET request and returns the full response message.
-    /// </summary>
-    /// <param name="url">The request URL.</param>
-    /// <param name="cancellationToken">Cancellation token observed during the request.</param>
-    /// <returns>
-    ///     A task that resolves to the <see cref="HttpResponseMessage" /> if successful; otherwise, <see langword="null" />.
-    ///     Caller is responsible for disposing the returned response.
-    /// </returns>
-    Task<HttpResponseMessage?> GetAsync(string url, CancellationToken cancellationToken = default);
-
-    /// <summary>
     ///     Performs a GET request and returns the response content as a string.
     /// </summary>
     /// <param name="url">The request URL.</param>
