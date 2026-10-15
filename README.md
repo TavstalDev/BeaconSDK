@@ -180,6 +180,7 @@ A complete, runnable sample lives in
 | --- | ---|
 | `IHttpService` | GET/POST, streaming, downloads, parallel downloads |
 | `IManifestService` | Mojang + mod loader manifests (cached) |
+| `ILibraryDownloadService` | Version JSON, assets, mappings, libraries, natives |
 | `IInstanceInstallService` | Downloads and verifies all instance files |
 | `IInstanceLaunchService` | Builds arguments and starts/stops the game |
 | `IJavaService` | Discovers, inspects and downloads Java runtimes |

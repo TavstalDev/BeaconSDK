@@ -101,7 +101,16 @@ var instanceConfig = new InstanceConfiguration
 var instance = new MinecraftInstance(mcVersion, config, instanceConfig,
     new BeaconLogger<MinecraftInstance>(Microsoft.Extensions.Logging.LogLevel.Information), progress);
 
-await installer.InstallAsync(instance, progress, ct);
+if (!await installer.InstallAsync(instance, progress, ct))
+    return;
+
+// Installation resolves the Java version the Minecraft version requires
+var major = instance.MinecraftVersionMeta.JavaVersionMeta?.MajorVersion ?? 8;
+await java.LocateJavaInstallationsAsync(Path.Combine("game", "java"), cancellationToken: ct);
+var javaPath = await java.GetJavaVersionAsync(major, ct)
+    ?? await java.DownloadJavaVersionAsync(major, "game/java", "java-mirrors.json", null, ct);
+instance.Config.Game.JavaPath = javaPath;
+
 var process = await launcher.LaunchAsync(instance, progress, ct);
 ```
 
