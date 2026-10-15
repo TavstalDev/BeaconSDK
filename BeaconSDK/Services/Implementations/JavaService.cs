@@ -59,7 +59,7 @@ public class JavaService : IJavaService
 
     /// <inheritdoc />
     public async Task<string?> DownloadJavaVersionAsync(int majorVersion, string targetPath, string mirrorsPath,
-        Progress<double>? progress = null,
+        IProgress<double>? progress = null,
         CancellationToken cancellationToken = default)
     {
         try

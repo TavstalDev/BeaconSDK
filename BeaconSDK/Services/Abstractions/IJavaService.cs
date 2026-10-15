@@ -20,7 +20,7 @@ public interface IJavaService
     ///     otherwise, <see langword="null" /> if the operation fails or is canceled.
     /// </returns>
     Task<string?> DownloadJavaVersionAsync(int majorVersion, string targetPath, string mirrorsPath,
-        Progress<double>? progress = null, CancellationToken cancellationToken = default);
+        IProgress<double>? progress = null, CancellationToken cancellationToken = default);
 
     /// <summary>
     ///     Retrieves a Java version path for the requested major version.
