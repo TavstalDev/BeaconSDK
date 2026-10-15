@@ -9,8 +9,16 @@ sign-in UX options.
 
 ## Before you start
 
-Register an application in the Microsoft Azure portal as a public client and add the
-required redirect URI. Then pass its client ID via configuration:
+Register an application in the Microsoft Azure portal as a **public client** (the
+SDK sends no client secret) and add the redirect URI
+
+```
+http://localhost:43319/microsoft/authcallback
+```
+
+as a *Mobile and desktop applications* redirect. That path is built from
+`MicrosoftHttpAuthService.ListeningUrl` plus `/microsoft/authcallback`, so it must
+match what the SDK sends as `redirect_uri`. Then pass the client ID via configuration:
 
 ```csharp
 var config = new BeaconConfiguration
@@ -23,8 +31,11 @@ var config = new BeaconConfiguration
 services.AddBeaconServices(config);
 ```
 
-If you do not set a client ID, a built-in default is used. Sign in is not possible
-when the client ID is empty.
+There is **no built-in fallback client ID**. `AuthConfiguration.MicrosoftClientId`
+is a required property of your configuration: if it is empty or `null`, every
+sign-in path logs an error and moves the status to `EAuthStatus.FAILED` (and
+`OpenAuthenticationUrl` just logs an error without opening a browser). Leave it
+empty only when your launcher never uses Microsoft login, such as offline mode.
 
 Subscribe to status changes to update your UI:
 
@@ -70,8 +81,8 @@ await listenTask;
 
 ## Option 2: Device code flow
 
-This flow is ideal for headless or console scenarios. It shows a code and a URL the
-user opens on any device.
+This flow needs no browser on the host machine: it shows a code and a URL that the
+user opens on any other device. It suits consoles, smart TVs and headless servers.
 
 ```csharp
 var deviceCode = await microsoftAuth.CreateDeviceCodeAsync(ct);
@@ -83,9 +94,19 @@ Console.WriteLine($"Go to {deviceCode.VerificationUri} and enter {deviceCode.Use
 await deviceAuth.StartListeningAsync(deviceCode.DeviceCode, TimeSpan.FromSeconds(5), ct);
 ```
 
+`DeviceCodeResult` exposes `DeviceCode`, `UserCode`, `VerificationUri`,
+`ExpiresIn` and `Interval`. Microsoft returns a recommended poll interval, so you
+can pass `TimeSpan.FromSeconds(deviceCode.Interval)` instead of a fixed value.
+
+```csharp
+await deviceAuth.StartListeningAsync(
+    deviceCode.DeviceCode, config.Auth.DeviceCodePollInterval, ct);
+```
+
 `IMicrosoftDeviceAuthService.StartListeningAsync` polls
 `IMicrosoftAuthService.CheckDeviceCodeAsync` at the given interval and stops
-automatically once the status leaves `PENDING`/`NONE`.
+automatically once the status leaves `PENDING`/`NONE`. Calling it while a poll loop
+is already running is a no-op; use `StopListeningAsync` to cancel early.
 
 ---
 
@@ -108,7 +129,10 @@ you) as well as refresh:
 | `RefreshLoginAsync` | Refreshes an expired login from a refresh token |
 | `Reset` | Clears account and profile state |
 | `OpenAuthenticationUrl` | Opens the Microsoft auth URL in browser |
-| `SetClientId` | Not available; client ID is provided via `BeaconConfiguration.Auth.MicrosoftClientId` |
+
+The client ID is not part of the service surface; set it through
+`BeaconConfiguration.Auth.MicrosoftClientId` before calling
+`AddBeaconServices`.
 
 Refresh a saved login:
 
