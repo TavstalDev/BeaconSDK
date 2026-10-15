@@ -132,7 +132,7 @@ public class MicrosoftAuthService : IMicrosoftAuthService
             var requestContent = new FormUrlEncodedContent(requestParams);
 
             using var client = _httpService.CreateHttpClient();
-            var response = await client.PostAsync(_config.Endpoints.Microsoft.TokenUrl, requestContent, cancellationToken);
+            using var response = await client.PostAsync(_config.Endpoints.Microsoft.TokenUrl, requestContent, cancellationToken);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -219,7 +219,7 @@ public class MicrosoftAuthService : IMicrosoftAuthService
             var formContent = new FormUrlEncodedContent(parameters);
 
             using var client = _httpService.CreateHttpClient();
-            var response = await client.PostAsync(_config.Endpoints.Microsoft.DeviceTokenUrl, formContent,
+            using var response = await client.PostAsync(_config.Endpoints.Microsoft.DeviceTokenUrl, formContent,
                 cancellationToken);
 
             var responseString = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -268,7 +268,7 @@ public class MicrosoftAuthService : IMicrosoftAuthService
             );
 
             using var client = _httpService.CreateHttpClient();
-            var result = await client.PostAsync(_config.Endpoints.Microsoft.XboxAuthUrl, reqContent, cancellationToken);
+            using var result = await client.PostAsync(_config.Endpoints.Microsoft.XboxAuthUrl, reqContent, cancellationToken);
 
             var resultObj = JsonElement.Parse(await result.Content.ReadAsStringAsync(cancellationToken));
             if (!resultObj.TryGetProperty("Token", out var value))
@@ -311,7 +311,7 @@ public class MicrosoftAuthService : IMicrosoftAuthService
             );
 
             using var client = _httpService.CreateHttpClient();
-            var result = await client.PostAsync(_config.Endpoints.Microsoft.XboxXstsUrl, reqContent, cancellationToken);
+            using var result = await client.PostAsync(_config.Endpoints.Microsoft.XboxXstsUrl, reqContent, cancellationToken);
 
             var rawJson = await result.Content.ReadAsStringAsync(cancellationToken);
             var resultObj = JsonElement.Parse(rawJson);
@@ -386,7 +386,7 @@ public class MicrosoftAuthService : IMicrosoftAuthService
             );
 
             using var client = _httpService.CreateHttpClient();
-            var result = await client.PostAsync(_config.Endpoints.Mojang.AuthUrl, reqContent, cancellationToken);
+            using var result = await client.PostAsync(_config.Endpoints.Mojang.AuthUrl, reqContent, cancellationToken);
 
             var resultObj = JsonElement.Parse(await result.Content.ReadAsStringAsync(cancellationToken));
             if (!resultObj.TryGetProperty("access_token", out var minecraftToken))
@@ -426,7 +426,7 @@ public class MicrosoftAuthService : IMicrosoftAuthService
 
             using var client = _httpService.CreateHttpClient();
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", mcToken);
-            var result = await client.GetAsync(_config.Endpoints.Mojang.OwnershipUrl, cancellationToken);
+            using var result = await client.GetAsync(_config.Endpoints.Mojang.OwnershipUrl, cancellationToken);
 
             var ownershipData = JsonSerializer.Deserialize(await result.Content.ReadAsStringAsync(cancellationToken),
                 CoreJsonContext.Default.OwnershipData);
@@ -464,7 +464,7 @@ public class MicrosoftAuthService : IMicrosoftAuthService
 
             using var client = _httpService.CreateHttpClient();
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", mcToken);
-            var result = await client.GetAsync(_config.Endpoints.Mojang.ProfileUrl, cancellationToken);
+            using var result = await client.GetAsync(_config.Endpoints.Mojang.ProfileUrl, cancellationToken);
 
             _mojangProfile =
                 JsonSerializer.Deserialize(await result.Content.ReadAsStringAsync(cancellationToken),
@@ -524,7 +524,7 @@ public class MicrosoftAuthService : IMicrosoftAuthService
 
             using var client = _httpService.CreateHttpClient();
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", mcToken);
-            var result = await client.GetAsync(_config.Endpoints.Mojang.ProfileUrl, cancellationToken);
+            using var result = await client.GetAsync(_config.Endpoints.Mojang.ProfileUrl, cancellationToken);
 
             return JsonSerializer.Deserialize(await result.Content.ReadAsStringAsync(cancellationToken),
                 CoreJsonContext.Default.MojangProfile);
@@ -556,7 +556,7 @@ public class MicrosoftAuthService : IMicrosoftAuthService
             var requestContent = new FormUrlEncodedContent(requestParams);
 
             using var client = _httpService.CreateHttpClient();
-            var response = await client.PostAsync(_config.Endpoints.Microsoft.TokenUrl, requestContent, cancellationToken);
+            using var response = await client.PostAsync(_config.Endpoints.Microsoft.TokenUrl, requestContent, cancellationToken);
 
             if (!response.IsSuccessStatusCode)
             {

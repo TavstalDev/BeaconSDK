@@ -53,7 +53,7 @@ public class MojangSkinService : IMojangSkinService
 
             using var client = _httpService.CreateHttpClient();
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", mcToken);
-            var result = await client.PostAsync(endpoint, reqContent, cancellationToken);
+            using var result = await client.PostAsync(endpoint, reqContent, cancellationToken);
             if (!result.IsSuccessStatusCode)
             {
                 _logger.LogError($"Failed to change skin (HTTP {result.StatusCode}): " +
@@ -88,7 +88,7 @@ public class MojangSkinService : IMojangSkinService
 
             using var client = _httpService.CreateHttpClient();
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", mcToken);
-            var result = await client.PostAsync(endpoint, form, cancellationToken);
+            using var result = await client.PostAsync(endpoint, form, cancellationToken);
             if (!result.IsSuccessStatusCode)
             {
                 _logger.LogError($"Failed to upload skin (HTTP {result.StatusCode}): " +
@@ -115,7 +115,7 @@ public class MojangSkinService : IMojangSkinService
             var endpoint = $"{_config.Endpoints.Mojang.PlayerConfigUrl}/skins/active?uuid={playerId}";
             using var client = _httpService.CreateHttpClient();
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", mcToken);
-            var result = await client.DeleteAsync(endpoint, cancellationToken);
+            using var result = await client.DeleteAsync(endpoint, cancellationToken);
             if (!result.IsSuccessStatusCode)
             {
                 _logger.LogError($"Failed to reset skin (HTTP {result.StatusCode}): " +
@@ -149,7 +149,7 @@ public class MojangSkinService : IMojangSkinService
             );
             using var client = _httpService.CreateHttpClient();
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", mcToken);
-            var result = await client.PutAsync(endpoint, reqContent, cancellationToken);
+            using var result = await client.PutAsync(endpoint, reqContent, cancellationToken);
             if (!result.IsSuccessStatusCode)
             {
                 _logger.LogError($"Failed to show cape (HTTP {result.StatusCode}): " +
@@ -175,7 +175,7 @@ public class MojangSkinService : IMojangSkinService
             string endpoint = $"{_config.Endpoints.Mojang.PlayerConfigUrl}/capes/active";
             using var client = _httpService.CreateHttpClient();
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", mcToken);
-            var result = await client.DeleteAsync(endpoint, cancellationToken);
+            using var result = await client.DeleteAsync(endpoint, cancellationToken);
             if (!result.IsSuccessStatusCode)
             {
                 _logger.LogError($"Failed to hide cape (HTTP {result.StatusCode}): " +
