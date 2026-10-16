@@ -69,7 +69,7 @@ public class EncryptionService : IEncryptionService
             EOperatingSystem.WINDOWS => ApplyPrefix(PREFIX_V1_WIN, EncryptWin(plainBytes)),
             EOperatingSystem.LINUX => ApplyPrefix(PREFIX_V1_LINUX, EncryptLinux(plainBytes)),
             EOperatingSystem.MACOS => ApplyPrefix(PREFIX_V1_MAC, EncryptMac(plainBytes)),
-            _ => throw new Exception("Unsupported operating system.")
+            _ => throw new PlatformNotSupportedException()
         };
     }
 

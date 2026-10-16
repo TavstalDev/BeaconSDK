@@ -90,7 +90,7 @@ public class VersionMeta
             return ArgumentsNew.GetGameArgString();
         if (ArgumentsLegacy != null)
             return ArgumentsLegacy;
-        throw new Exception("Failed to get the game arguments");
+        throw new InvalidOperationException("Failed to get the game arguments");
     }
 
     /// <summary>
@@ -109,6 +109,6 @@ public class VersionMeta
                 "-Dminecraft.launcher.brand=${launcher_name}",
                 "-Dminecraft.launcher.version=${launcher_version}"
             ];
-        throw new Exception("Failed to get the game arguments");
+        throw new InvalidOperationException("Failed to get the game arguments");
     }
 }
