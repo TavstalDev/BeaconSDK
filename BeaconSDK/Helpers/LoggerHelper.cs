@@ -58,6 +58,9 @@ public static class LoggerHelper
                 await fileLock.Semaphore.WaitAsync(token);
                 try
                 {
+                    string directory = Path.GetDirectoryName(path) ?? string.Empty;
+                    if (!string.IsNullOrEmpty(directory))
+                        Directory.CreateDirectory(directory);
                     await File.AppendAllTextAsync(path, line + Environment.NewLine, token);
                 }
                 finally
