@@ -1,4 +1,3 @@
-using FluentAssertions;
 using Tavstal.BeaconSDK.Enums;
 using Tavstal.BeaconSDK.Helpers.Platform;
 using Tavstal.BeaconSDK.Models.MojangApi.Meta.Library;
@@ -25,13 +24,13 @@ public class ClassifierTests
         switch (OSHelper.GetOperatingSystem())
         {
             case EOperatingSystem.WINDOWS:
-                native.Should().BeSameAs(classifier.WindowsNatives);
+                Assert.Same(classifier.WindowsNatives, native);
                 break;
             case EOperatingSystem.MACOS:
-                native.Should().BeSameAs(classifier.OsxNatives);
+                Assert.Same(classifier.OsxNatives, native);
                 break;
             default:
-                native.Should().BeSameAs(classifier.LinuxNatives);
+                Assert.Same(classifier.LinuxNatives, native);
                 break;
         }
     }
@@ -42,7 +41,7 @@ public class ClassifierTests
         var classifier = CreateClassifier();
 
         if (OSHelper.GetOperatingSystem() == EOperatingSystem.UNKNOWN)
-            classifier.GetOsNative().Should().BeSameAs(classifier.LinuxNatives);
+            Assert.Same(classifier.LinuxNatives, classifier.GetOsNative());
         else
             Assert.Skip("Host OS is known; the UNKNOWN fallback branch cannot be exercised on this host.");
     }

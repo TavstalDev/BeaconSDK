@@ -1,4 +1,3 @@
-using FluentAssertions;
 using Tavstal.BeaconSDK.Enums;
 using Tavstal.BeaconSDK.Helpers.Platform;
 
@@ -10,7 +9,7 @@ public class OSHelperTests
     public void GetHomeDirectory_WindowsBranch_ReturnsUserProfile()
     {
         var result = OSHelper.GetHomeDirectory(EOperatingSystem.WINDOWS);
-        result.Should().Be(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
+        Assert.Equal(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), result);
     }
 
     [Fact(DisplayName = "GetHomeDirectory reads the HOME environment variable on non-Windows")]
@@ -21,7 +20,7 @@ public class OSHelperTests
         try
         {
             Environment.SetEnvironmentVariable("HOME", expected);
-            OSHelper.GetHomeDirectory(EOperatingSystem.LINUX).Should().Be(expected);
+            Assert.Equal(expected, OSHelper.GetHomeDirectory(EOperatingSystem.LINUX));
         }
         finally
         {
@@ -37,7 +36,7 @@ public class OSHelperTests
         try
         {
             Environment.SetEnvironmentVariable("XDG_DESKTOP_DIR", expected);
-            OSHelper.GetDesktopDirectory(EOperatingSystem.LINUX).Should().Be(expected);
+            Assert.Equal(expected, OSHelper.GetDesktopDirectory(EOperatingSystem.LINUX));
         }
         finally
         {
@@ -48,11 +47,11 @@ public class OSHelperTests
     [Fact(DisplayName = "GetProgramsDirectory returns Applications on macOS and local share applications on Linux")]
     public void GetProgramsDirectory_Macos_ReturnsApplications_Linux_ReturnsLocalShareApplications()
     {
-        OSHelper.GetProgramsDirectory(EOperatingSystem.MACOS).Should().Be("/Applications");
+        Assert.Equal("/Applications", OSHelper.GetProgramsDirectory(EOperatingSystem.MACOS));
 
         string expected = Path.Combine(OSHelper.GetHomeDirectory(EOperatingSystem.LINUX), ".local", "share",
             "applications");
-        OSHelper.GetProgramsDirectory(EOperatingSystem.LINUX).Should().Be(expected);
+        Assert.Equal(expected, OSHelper.GetProgramsDirectory(EOperatingSystem.LINUX));
     }
 
     [Theory(DisplayName = "GetPlatformLibraryExtension returns dll/so/dylib per OS")]
@@ -62,12 +61,12 @@ public class OSHelperTests
     public void GetPlatformLibraryExtension_ReturnsDllSoDylib_PerOs(EOperatingSystem os, string expected)
     {
         Assert.SkipUnless(OSHelper.GetOperatingSystem() == os, $"Host operating system is not {os}.");
-        OSHelper.GetPlatformLibraryExtension().Should().Be(expected);
+        Assert.Equal(expected, OSHelper.GetPlatformLibraryExtension());
     }
 
     [Fact(DisplayName = "GetOperatingSystem on the host is not unknown")]
     public void GetOperatingSystem_OnHost_IsNotUnknown()
     {
-        OSHelper.GetOperatingSystem().Should().NotBe(EOperatingSystem.UNKNOWN);
+        Assert.NotEqual(EOperatingSystem.UNKNOWN, OSHelper.GetOperatingSystem());
     }
 }

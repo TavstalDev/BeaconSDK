@@ -1,5 +1,4 @@
 using System.Text.Json;
-using FluentAssertions;
 using Tavstal.BeaconSDK.Enums;
 using Tavstal.BeaconSDK.Models.Accounts;
 using Tavstal.BeaconSDK.Models.Json;
@@ -25,10 +24,10 @@ public class JsonContextRoundTripTests
         var json = JsonSerializer.Serialize(account, BeaconJsonContext.Default.Account);
         var restored = JsonSerializer.Deserialize(json, BeaconJsonContext.Default.Account);
 
-        restored.Should().NotBeNull();
-        restored.Id.Should().Be("id-1");
-        restored.DisplayName.Should().Be("RoundTripper");
-        restored.Type.Should().Be(EAccountType.MICROSOFT);
+        Assert.NotNull(restored);
+        Assert.Equal("id-1", restored.Id);
+        Assert.Equal("RoundTripper", restored.DisplayName);
+        Assert.Equal(EAccountType.MICROSOFT, restored.Type);
     }
 
     [Fact(DisplayName = "VersionManifest round-trips via CoreJsonContext")]
@@ -45,10 +44,10 @@ public class JsonContextRoundTripTests
         var json = JsonSerializer.Serialize(manifest, CoreJsonContext.Default.VersionManifest);
         var restored = JsonSerializer.Deserialize(json, CoreJsonContext.Default.VersionManifest);
 
-        restored.Should().NotBeNull();
-        restored.Latest.Release.Should().Be("1.20.4");
-        restored.Latest.Snapshot.Should().Be("24w01a");
-        restored.Versions.Should().ContainSingle().Which.Id.Should().Be("1.20.4");
+        Assert.NotNull(restored);
+        Assert.Equal("1.20.4", restored.Latest.Release);
+        Assert.Equal("24w01a", restored.Latest.Snapshot);
+        Assert.Equal("1.20.4", Assert.Single(restored.Versions).Id);
     }
 
     [Fact(DisplayName = "List<Rule> round-trips via CoreJsonContext")]
@@ -63,11 +62,12 @@ public class JsonContextRoundTripTests
         var json = JsonSerializer.Serialize(rules, CoreJsonContext.Default.ListRule);
         var restored = JsonSerializer.Deserialize(json, CoreJsonContext.Default.ListRule);
 
-        restored.Should().NotBeNull().And.HaveCount(2);
-        restored[0].Action.Should().Be("allow");
-        restored[0].Os!.Name.Should().Be("linux");
-        restored[1].Action.Should().Be("disallow");
-        restored[1].Os!.Name.Should().Be("windows");
+        Assert.NotNull(restored);
+        Assert.Equal(2, restored.Count);
+        Assert.Equal("allow", restored[0].Action);
+        Assert.Equal("linux", restored[0].Os!.Name);
+        Assert.Equal("disallow", restored[1].Action);
+        Assert.Equal("windows", restored[1].Os!.Name);
     }
 
     [Fact(DisplayName = "DeviceCodeResult round-trips")]
@@ -78,8 +78,12 @@ public class JsonContextRoundTripTests
         var json = JsonSerializer.Serialize(result, CoreJsonContext.Default.DeviceCodeResult);
         var restored = JsonSerializer.Deserialize(json, CoreJsonContext.Default.DeviceCodeResult);
 
-        restored.Should().NotBeNull();
-        restored.Should().BeEquivalentTo(result);
+        Assert.NotNull(restored);
+        Assert.Equal(result.DeviceCode, restored.DeviceCode);
+        Assert.Equal(result.UserCode, restored.UserCode);
+        Assert.Equal(result.VerificationUri, restored.VerificationUri);
+        Assert.Equal(result.ExpiresIn, restored.ExpiresIn);
+        Assert.Equal(result.Interval, restored.Interval);
     }
 
     [Fact(DisplayName = "XboxTokenRequestBody serializes with expected property names")]
@@ -99,12 +103,12 @@ public class JsonContextRoundTripTests
 
         var json = JsonSerializer.Serialize(request, CoreJsonContext.Default.XboxTokenRequestBody);
 
-        json.Should().Contain("TokenType")
-            .And.Contain("RelyingParty")
-            .And.Contain("Properties")
-            .And.Contain("AuthMethod")
-            .And.Contain("SiteName")
-            .And.Contain("RpsTicket");
+        Assert.Contains("TokenType", json);
+        Assert.Contains("RelyingParty", json);
+        Assert.Contains("Properties", json);
+        Assert.Contains("AuthMethod", json);
+        Assert.Contains("SiteName", json);
+        Assert.Contains("RpsTicket", json);
     }
 
     [Fact(DisplayName = "Dictionary<string, string> round-trips via GenericJsonContext")]
@@ -119,6 +123,9 @@ public class JsonContextRoundTripTests
         var json = JsonSerializer.Serialize(dictionary, GenericJsonContext.Default.DictionaryStringString);
         var restored = JsonSerializer.Deserialize(json, GenericJsonContext.Default.DictionaryStringString);
 
-        restored.Should().NotBeNull().And.BeEquivalentTo(dictionary);
+        Assert.NotNull(restored);
+        Assert.Equal(dictionary.Count, restored.Count);
+        foreach (var pair in dictionary)
+            Assert.Equal(pair.Value, restored[pair.Key]);
     }
 }

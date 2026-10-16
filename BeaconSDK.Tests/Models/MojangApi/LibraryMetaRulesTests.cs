@@ -1,4 +1,3 @@
-using FluentAssertions;
 using Tavstal.BeaconSDK.Enums;
 using Tavstal.BeaconSDK.Helpers.Platform;
 using Tavstal.BeaconSDK.Models.MojangApi.Meta;
@@ -16,7 +15,7 @@ public class LibraryMetaRulesTests
     [Fact(DisplayName = "No rules returns true")]
     public void NoRules_ReturnsTrue()
     {
-        Meta().GetRulesResult().Should().BeTrue();
+        Assert.True(Meta().GetRulesResult());
     }
 
     [Fact(DisplayName = "Null rules returns true")]
@@ -24,33 +23,33 @@ public class LibraryMetaRulesTests
     {
         var meta = new LibraryMeta { Name = "lib", Downloads = new LibraryDownloads(), Rules = null };
 
-        meta.GetRulesResult().Should().BeTrue();
+        Assert.True(meta.GetRulesResult());
     }
 
     [Fact(DisplayName = "A rule with a null OS applies its action")]
     public void RuleWithNullOs_AppliesAction()
     {
-        Meta(new Rule { Action = "allow", Os = null }).GetRulesResult().Should().BeTrue();
-        Meta(new Rule { Action = "disallow", Os = null }).GetRulesResult().Should().BeFalse();
+        Assert.True(Meta(new Rule { Action = "allow", Os = null }).GetRulesResult());
+        Assert.False(Meta(new Rule { Action = "disallow", Os = null }).GetRulesResult());
     }
 
     [Fact(DisplayName = "A rule with a null OS name applies its action")]
     public void RuleWithNullOsName_AppliesAction()
     {
-        Meta(new Rule("allow", new RuleOs())).GetRulesResult().Should().BeTrue();
-        Meta(new Rule("disallow", new RuleOs())).GetRulesResult().Should().BeFalse();
+        Assert.True(Meta(new Rule("allow", new RuleOs())).GetRulesResult());
+        Assert.False(Meta(new Rule("disallow", new RuleOs())).GetRulesResult());
     }
 
     [Fact(DisplayName = "An allow rule with no OS returns true")]
     public void AllowRule_NoOs_ReturnsTrue()
     {
-        Meta(new Rule("allow", new RuleOs())).GetRulesResult().Should().BeTrue();
+        Assert.True(Meta(new Rule("allow", new RuleOs())).GetRulesResult());
     }
 
     [Fact(DisplayName = "A disallow rule with no OS returns false")]
     public void DisallowRule_NoOs_ReturnsFalse()
     {
-        Meta(new Rule("disallow", new RuleOs())).GetRulesResult().Should().BeFalse();
+        Assert.False(Meta(new Rule("disallow", new RuleOs())).GetRulesResult());
     }
 
     [Fact(DisplayName = "A Linux rule matches on a Linux host")]
@@ -59,7 +58,7 @@ public class LibraryMetaRulesTests
         Assert.SkipUnless(OSHelper.GetOperatingSystem() == EOperatingSystem.LINUX,
             "Host-pinned: assumes a Linux CI host.");
 
-        Meta(new Rule("allow", new RuleOs("linux"))).GetRulesResult().Should().BeTrue();
+        Assert.True(Meta(new Rule("allow", new RuleOs("linux"))).GetRulesResult());
     }
 
     [Fact(DisplayName = "A Windows rule is skipped on a Linux host")]
@@ -72,7 +71,7 @@ public class LibraryMetaRulesTests
             new Rule("allow", new RuleOs()),
             new Rule("disallow", new RuleOs("windows")));
 
-        meta.GetRulesResult().Should().BeTrue();
+        Assert.True(meta.GetRulesResult());
     }
 
     [Fact(DisplayName = "An osx rule only matches macOS")]
@@ -81,7 +80,7 @@ public class LibraryMetaRulesTests
         Assert.SkipUnless(OSHelper.GetOperatingSystem() != EOperatingSystem.MACOS,
             "Host-pinned: asserts a non-macOS host.");
 
-        Meta(new Rule("allow", new RuleOs("osx"))).GetRulesResult().Should().BeFalse();
+        Assert.False(Meta(new Rule("allow", new RuleOs("osx"))).GetRulesResult());
     }
 
     [Fact(DisplayName = "An x86 rule matches when the host is 32-bit")]
@@ -89,7 +88,7 @@ public class LibraryMetaRulesTests
     {
         Assert.SkipUnless(!OSHelper.Is64BitOperatingSystem(), "Host-pinned: requires a 32-bit host.");
 
-        Meta(new Rule("allow", new RuleOs("x86"))).GetRulesResult().Should().BeTrue();
+        Assert.True(Meta(new Rule("allow", new RuleOs("x86"))).GetRulesResult());
     }
 
     [Fact(DisplayName = "An x86 rule is skipped when the host is 64-bit")]
@@ -97,7 +96,7 @@ public class LibraryMetaRulesTests
     {
         Assert.SkipUnless(OSHelper.Is64BitOperatingSystem(), "Host-pinned: requires a 64-bit host.");
 
-        Meta(new Rule("allow", new RuleOs("x86"))).GetRulesResult().Should().BeFalse();
+        Assert.False(Meta(new Rule("allow", new RuleOs("x86"))).GetRulesResult());
     }
 
     [Fact(DisplayName = "The last matching rule wins, not the first")]
@@ -110,7 +109,7 @@ public class LibraryMetaRulesTests
             new Rule("allow", new RuleOs("linux")),
             new Rule("disallow", new RuleOs("linux")));
 
-        meta.GetRulesResult().Should().BeFalse();
+        Assert.False(meta.GetRulesResult());
     }
 
     [Fact(DisplayName = "Disallowed by default when no rule matches")]
@@ -123,6 +122,6 @@ public class LibraryMetaRulesTests
             new Rule("allow", new RuleOs("windows")),
             new Rule("allow", new RuleOs("osx")));
 
-        meta.GetRulesResult().Should().BeFalse();
+        Assert.False(meta.GetRulesResult());
     }
 }

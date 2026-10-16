@@ -1,7 +1,6 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
-using FluentAssertions;
 using Tavstal.BeaconSDK.Enums;
 using Tavstal.BeaconSDK.Services.Implementations.Auth;
 using Tavstal.BeaconSDK.Tests.Fakes;
@@ -53,8 +52,8 @@ public class MicrosoftHttpAuthServiceTests
             listening = (bool)ListeningField.GetValue(service)!;
         }
 
-        listening.Should().BeFalse();
-        listener.IsListening.Should().BeFalse();
+        Assert.False(listening);
+        Assert.False(listener.IsListening);
     }
 
     [Fact(DisplayName = "StartListening then Stop cleans up the listener")]
@@ -70,7 +69,7 @@ public class MicrosoftHttpAuthServiceTests
 
         await service.StopListeningAsync(true, TestContext.Current.CancellationToken);
 
-        ((bool)ListeningField.GetValue(service)!).Should().BeFalse();
-        listener.IsListening.Should().BeFalse();
+        Assert.False((bool)ListeningField.GetValue(service)!);
+        Assert.False(listener.IsListening);
     }
 }

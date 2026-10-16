@@ -1,4 +1,3 @@
-using FluentAssertions;
 using Tavstal.BeaconSDK.Helpers.Serialization;
 using Tavstal.BeaconSDK.Models.Accounts;
 
@@ -18,9 +17,13 @@ public class JsonHelperTests
         try
         {
             bool result = await JsonHelper.WriteJsonFileAsync(tempFile, skin, BeaconJsonContext.Default.AccountSkin, TestContext.Current.CancellationToken);
-            result.Should().BeTrue();
+            Assert.True(result);
             var readSkin = await JsonHelper.ReadJsonFileAsync(tempFile, BeaconJsonContext.Default.AccountSkin, TestContext.Current.CancellationToken);
-            readSkin.Should().BeEquivalentTo(skin);
+            Assert.NotNull(readSkin);
+            Assert.Equal(skin.Id, readSkin.Id);
+            Assert.Equal(skin.Model, readSkin.Model);
+            Assert.Equal(skin.CapeId, readSkin.CapeId);
+            Assert.Equal(skin.MojangId, readSkin.MojangId);
         }
         finally
         {
@@ -34,6 +37,6 @@ public class JsonHelperTests
     {
         string tempFile = Path.GetTempFileName();
         var result = await JsonHelper.ReadJsonFileAsync(tempFile, BeaconJsonContext.Default.AccountSkin, TestContext.Current.CancellationToken);
-        result.Should().BeNull();
+        Assert.Null(result);
     }
 }

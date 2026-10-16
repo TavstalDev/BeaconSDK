@@ -1,7 +1,6 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
-using FluentAssertions;
 using Tavstal.BeaconSDK.Enums;
 using Tavstal.BeaconSDK.Models.Config;
 using Tavstal.BeaconSDK.Services.Implementations.Auth;
@@ -48,10 +47,10 @@ public class MicrosoftAuthServiceTests
 
         var result = await service.CreateDeviceCodeAsync(cancellationToken: TestContext.Current.CancellationToken);
 
-        result.Should().NotBeNull();
-        result.DeviceCode.Should().Be("device-code-123");
-        result.Interval.Should().Be(5);
-        result.ExpiresIn.Should().Be(900);
+        Assert.NotNull(result);
+        Assert.Equal("device-code-123", result.DeviceCode);
+        Assert.Equal(5, result.Interval);
+        Assert.Equal(900, result.ExpiresIn);
     }
 
     [Fact(DisplayName = "Pending device code transitions to processing and raises OnAuthStatusChanged")]
@@ -65,7 +64,11 @@ public class MicrosoftAuthServiceTests
 
         await service.CheckDeviceCodeAsync("device-code-123", TestContext.Current.CancellationToken);
 
-        statuses.Should().ContainInOrder(EAuthStatus.PROCESSING, EAuthStatus.SUCCESS);
+        Assert.Contains(EAuthStatus.PROCESSING, statuses);
+        Assert.Contains(EAuthStatus.SUCCESS, statuses);
+        Assert.True(
+            statuses.IndexOf(EAuthStatus.PROCESSING) < statuses.IndexOf(EAuthStatus.SUCCESS),
+            "Expected PROCESSING to be raised before SUCCESS.");
     }
 
     [Fact(DisplayName = "Accepted device code calls the Xbox token endpoint")]
@@ -76,8 +79,8 @@ public class MicrosoftAuthServiceTests
 
         await service.CheckDeviceCodeAsync("device-code-123", TestContext.Current.CancellationToken);
 
-        service.AuthStatus.Should().Be(EAuthStatus.SUCCESS);
-        handler.Requests.Should().Contain(r => r.Url == _config.Endpoints.Microsoft.XboxAuthUrl);
+        Assert.Equal(EAuthStatus.SUCCESS, service.AuthStatus);
+        Assert.Contains(handler.Requests, r => r.Url == _config.Endpoints.Microsoft.XboxAuthUrl);
     }
 
     [Fact(DisplayName = "XboxTokenCallAsync parses the token and raises status")]
@@ -93,8 +96,8 @@ public class MicrosoftAuthServiceTests
 
         await service.XboxTokenCallAsync("token", "refresh", TestContext.Current.CancellationToken);
 
-        service.AuthStatus.Should().Be(EAuthStatus.SUCCESS);
-        service.Account.Should().NotBeNull();
+        Assert.Equal(EAuthStatus.SUCCESS, service.AuthStatus);
+        Assert.NotNull(service.Account);
     }
 
     [Fact(DisplayName = "MinecraftAccessCallAsync builds the identity token in XBL3.0 format")]
@@ -110,11 +113,11 @@ public class MicrosoftAuthServiceTests
             TestContext.Current.CancellationToken);
 
         var request = handler.Requests.Single(r => r.Url == _config.Endpoints.Mojang.AuthUrl);
-        request.Body.Should().NotBeNull();
+        Assert.NotNull(request.Body);
         using var document = JsonDocument.Parse(request.Body!);
-        document.RootElement.GetProperty("identityToken").GetString()
-            .Should().Be("XBL3.0 x=uhs-value;xsts-token");
-        document.RootElement.GetProperty("ensureLegacyEnabled").GetBoolean().Should().BeTrue();
+        Assert.Equal("XBL3.0 x=uhs-value;xsts-token",
+            document.RootElement.GetProperty("identityToken").GetString());
+        Assert.True(document.RootElement.GetProperty("ensureLegacyEnabled").GetBoolean());
     }
 
     [Theory(DisplayName = "Ownership detection accepts game/product Minecraft and Bedrock products")]
@@ -133,7 +136,7 @@ public class MicrosoftAuthServiceTests
         await service.CheckMinecraftOwnershipAsync("mc-token", "refresh", 3600,
             TestContext.Current.CancellationToken);
 
-        service.AuthStatus.Should().Be(EAuthStatus.SUCCESS);
+        Assert.Equal(EAuthStatus.SUCCESS, service.AuthStatus);
     }
 
     [Fact(DisplayName = "GetMinecraftProfileAsync builds the account with skins and active cape")]
@@ -145,12 +148,12 @@ public class MicrosoftAuthServiceTests
         await service.GetMinecraftProfileAsync("mc-token", "refresh-token", 3600,
             TestContext.Current.CancellationToken);
 
-        service.Account.Should().NotBeNull();
-        service.Account!.DisplayName.Should().Be("PlayerOne");
-        service.Account.Skins.Should().HaveCount(2);
-        service.Account.Skins[0].CapeId.Should().Be("cape-active");
-        service.Account.Skins[0].Model.Should().Be("classic");
-        Encoding.UTF8.GetString(service.Account.GetAccessToken(encryption)).Should().Be("mc-token");
+        Assert.NotNull(service.Account);
+        Assert.Equal("PlayerOne", service.Account!.DisplayName);
+        Assert.Equal(2, service.Account.Skins.Count);
+        Assert.Equal("cape-active", service.Account.Skins[0].CapeId);
+        Assert.Equal("classic", service.Account.Skins[0].Model);
+        Assert.Equal("mc-token", Encoding.UTF8.GetString(service.Account.GetAccessToken(encryption)));
     }
 
     [Fact(DisplayName = "RefreshLoginAsync success updates tokens through the encryption service")]
@@ -161,9 +164,9 @@ public class MicrosoftAuthServiceTests
 
         var result = await service.RefreshLoginAsync("refresh-token", TestContext.Current.CancellationToken);
 
-        result.Should().BeTrue();
-        service.AuthStatus.Should().Be(EAuthStatus.SUCCESS);
-        encryption.ReprotectCallCount.Should().BeGreaterThanOrEqualTo(2);
+        Assert.True(result);
+        Assert.Equal(EAuthStatus.SUCCESS, service.AuthStatus);
+        Assert.True(encryption.ReprotectCallCount >= 2);
     }
 
     [Fact(DisplayName = "Auth status transitions pending to processing to success in order")]
@@ -177,8 +180,12 @@ public class MicrosoftAuthServiceTests
 
         await service.CheckDeviceCodeAsync("device-code-123", TestContext.Current.CancellationToken);
 
-        statuses.Should().ContainInOrder(EAuthStatus.PROCESSING, EAuthStatus.SUCCESS);
-        statuses.Should().NotContain(EAuthStatus.FAILED);
+        Assert.Contains(EAuthStatus.PROCESSING, statuses);
+        Assert.Contains(EAuthStatus.SUCCESS, statuses);
+        Assert.True(
+            statuses.IndexOf(EAuthStatus.PROCESSING) < statuses.IndexOf(EAuthStatus.SUCCESS),
+            "Expected PROCESSING to be raised before SUCCESS.");
+        Assert.DoesNotContain(EAuthStatus.FAILED, statuses);
     }
 
     [Fact(DisplayName = "HTTP failure sets status to failed and raises the event")]
@@ -192,8 +199,8 @@ public class MicrosoftAuthServiceTests
 
         var result = await service.RefreshLoginAsync("refresh-token", TestContext.Current.CancellationToken);
 
-        result.Should().BeFalse();
-        service.AuthStatus.Should().Be(EAuthStatus.FAILED);
-        statuses.Should().Contain(EAuthStatus.FAILED);
+        Assert.False(result);
+        Assert.Equal(EAuthStatus.FAILED, service.AuthStatus);
+        Assert.Contains(EAuthStatus.FAILED, statuses);
     }
 }

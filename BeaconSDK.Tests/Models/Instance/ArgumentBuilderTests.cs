@@ -1,4 +1,3 @@
-using FluentAssertions;
 using Tavstal.BeaconSDK.Models.Instance;
 using Tavstal.BeaconSDK.Models.Instance.Config;
 using Tavstal.BeaconSDK.Models.MojangApi.Meta;
@@ -32,7 +31,7 @@ public class ArgumentBuilderTests
 
         var (jvmArgs, _) = builder.Build();
 
-        jvmArgs.Should().Contain("-XX:+UseG1GC");
+        Assert.Contains("-XX:+UseG1GC", jvmArgs);
     }
 
     [Fact(DisplayName = "Custom JVM args are not added when empty")]
@@ -42,7 +41,7 @@ public class ArgumentBuilderTests
 
         var (jvmArgs, _) = builder.Build();
 
-        jvmArgs.Should().NotContain("-XX:+UseG1GC");
+        Assert.DoesNotContain("-XX:+UseG1GC", jvmArgs);
     }
 
     [Fact(DisplayName = "Memory args default to -Xms512M and -Xmx2048M")]
@@ -52,7 +51,8 @@ public class ArgumentBuilderTests
 
         var (jvmArgs, _) = builder.Build();
 
-        jvmArgs.Should().Contain("-Xms512M").And.Contain("-Xmx2048M");
+        Assert.Contains("-Xms512M", jvmArgs);
+        Assert.Contains("-Xmx2048M", jvmArgs);
     }
 
     [Fact(DisplayName = "Max memory below 2048M is ignored")]
@@ -62,7 +62,8 @@ public class ArgumentBuilderTests
 
         var (jvmArgs, _) = builder.Build();
 
-        jvmArgs.Should().Contain("-Xmx2048M").And.NotContain("-Xmx1024M");
+        Assert.Contains("-Xmx2048M", jvmArgs);
+        Assert.DoesNotContain("-Xmx1024M", jvmArgs);
     }
 
     [Fact(DisplayName = "Min memory above 512M is applied")]
@@ -72,7 +73,7 @@ public class ArgumentBuilderTests
 
         var (jvmArgs, _) = builder.Build();
 
-        jvmArgs.Should().Contain("-Xms1024M");
+        Assert.Contains("-Xms1024M", jvmArgs);
     }
 
     [Fact(DisplayName = "Offline 1.16+ locks Microsoft API hosts to nope.invalid")]
@@ -87,7 +88,7 @@ public class ArgumentBuilderTests
 
         var (jvmArgs, _) = builder.Build();
 
-        jvmArgs.Should().Contain("https://nope.invalid");
+        Assert.Contains("https://nope.invalid", jvmArgs);
     }
 
     [Fact(DisplayName = "Build returns JVM args sorted by priority descending")]
@@ -99,8 +100,8 @@ public class ArgumentBuilderTests
 
         var (jvmArgs, _) = builder.Build();
 
-        jvmArgs.IndexOf("high-priority", StringComparison.Ordinal)
-            .Should().BeLessThan(jvmArgs.IndexOf("low-priority", StringComparison.Ordinal));
+        Assert.True(jvmArgs.IndexOf("high-priority", StringComparison.Ordinal)
+            < jvmArgs.IndexOf("low-priority", StringComparison.Ordinal));
     }
 
     [Fact(DisplayName = "Build inserts -cp fallback when no classpath arg is present")]
@@ -110,7 +111,7 @@ public class ArgumentBuilderTests
 
         var (jvmArgs, _) = builder.Build();
 
-        jvmArgs.Should().Contain("-cp");
+        Assert.Contains("-cp", jvmArgs);
     }
 
     [Fact(DisplayName = "Build does not insert -cp fallback when a classpath arg is present")]
@@ -122,7 +123,8 @@ public class ArgumentBuilderTests
 
         var (jvmArgs, _) = builder.Build();
 
-        jvmArgs.Should().Contain("-cp customPath").And.NotContain("${classpath}");
+        Assert.Contains("-cp customPath", jvmArgs);
+        Assert.DoesNotContain("${classpath}", jvmArgs);
     }
 
     [Fact(DisplayName = "Build quotes paths containing spaces")]
@@ -133,7 +135,7 @@ public class ArgumentBuilderTests
 
         var (jvmArgs, _) = builder.Build();
 
-        jvmArgs.Should().Contain($"-Djava.library.path=\"{nativesWithSpaces}\"");
+        Assert.Contains($"-Djava.library.path=\"{nativesWithSpaces}\"", jvmArgs);
     }
 
     [Fact(DisplayName = "Build substitutes classpath, user type, arch and token placeholders")]
@@ -144,8 +146,10 @@ public class ArgumentBuilderTests
 
         var (jvmArgs, gameArgs) = builder.Build();
 
-        jvmArgs.Should().NotContain("${").And.NotContain("${classpath}");
-        gameArgs.Should().Contain("msa").And.Contain("the-token");
+        Assert.DoesNotContain("${", jvmArgs);
+        Assert.DoesNotContain("${classpath}", jvmArgs);
+        Assert.Contains("msa", gameArgs);
+        Assert.Contains("the-token", gameArgs);
     }
 
     [Fact(DisplayName = "Build uses 'none' when the access token is empty")]
@@ -155,7 +159,7 @@ public class ArgumentBuilderTests
 
         var (_, gameArgs) = builder.Build();
 
-        gameArgs.Should().Contain("none");
+        Assert.Contains("none", gameArgs);
     }
 
     [Fact(DisplayName = "Build uses offline user type when the client is offline")]
@@ -165,7 +169,7 @@ public class ArgumentBuilderTests
 
         var (_, gameArgs) = builder.Build();
 
-        gameArgs.Should().Contain("offline");
+        Assert.Contains("offline", gameArgs);
     }
 
     [Fact(DisplayName = "AddClass deduplicates identical classpath entries")]
@@ -176,7 +180,7 @@ public class ArgumentBuilderTests
         builder.AddClass("/libs/a.jar");
         builder.AddClass("/libs/a.jar");
 
-        builder.ClassPath.Should().ContainSingle().Which.Should().Be("/libs/a.jar");
+        Assert.Equal("/libs/a.jar", Assert.Single(builder.ClassPath));
     }
 
     [Fact(DisplayName = "AddGameArgument deduplicates by value")]
@@ -188,7 +192,7 @@ public class ArgumentBuilderTests
 
         var (_, gameArgs) = builder.Build();
 
-        gameArgs.Split("custom-game-arg").Length.Should().Be(2);
+        Assert.Equal(2, gameArgs.Split("custom-game-arg").Length);
     }
 
     [Fact(DisplayName = "AddJvmArgument does not deduplicate")]
@@ -200,7 +204,7 @@ public class ArgumentBuilderTests
 
         var (jvmArgs, _) = builder.Build();
 
-        jvmArgs.Split("jvm-dup").Length.Should().Be(3);
+        Assert.Equal(3, jvmArgs.Split("jvm-dup").Length);
     }
 
     [Fact(DisplayName = "Build emits --width and --height when a resolution is set")]
@@ -210,7 +214,8 @@ public class ArgumentBuilderTests
 
         var (_, gameArgs) = builder.Build();
 
-        gameArgs.Should().Contain("--width 1920").And.Contain("--height 1080");
+        Assert.Contains("--width 1920", gameArgs);
+        Assert.Contains("--height 1080", gameArgs);
     }
 
     [Fact(DisplayName = "Build omits --width and --height when no resolution is set")]
@@ -220,7 +225,8 @@ public class ArgumentBuilderTests
 
         var (_, gameArgs) = builder.Build();
 
-        gameArgs.Should().NotContain("--width").And.NotContain("--height");
+        Assert.DoesNotContain("--width", gameArgs);
+        Assert.DoesNotContain("--height", gameArgs);
     }
 
     [Fact(DisplayName = "Build emits --quickPlayMultiplayer when a server address is set")]
@@ -231,7 +237,7 @@ public class ArgumentBuilderTests
 
         var (_, gameArgs) = builder.Build();
 
-        gameArgs.Should().Contain("--quickPlayMultiplayer play.example.com");
+        Assert.Contains("--quickPlayMultiplayer play.example.com", gameArgs);
     }
 
     [Fact(DisplayName = "Build throws when called twice due to duplicate classpath placeholder")]
@@ -240,9 +246,9 @@ public class ArgumentBuilderTests
         var builder = CreateBuilder();
         builder.Build();
 
-        var act = () => builder.Build();
+        Action act = () => builder.Build();
 
-        act.Should().Throw<ArgumentException>();
+        Assert.Throws<ArgumentException>(act);
     }
 
     [Fact(DisplayName = "UseClasspathFile writes an arg file and uses @ syntax")]
@@ -258,9 +264,9 @@ public class ArgumentBuilderTests
 
             var (jvmArgs, _) = builder.Build();
 
-            File.Exists(classpathFile).Should().BeTrue();
-            File.ReadAllText(classpathFile).Should().Contain("a.jar");
-            jvmArgs.Should().Contain($"@\"{classpathFile}\"");
+            Assert.True(File.Exists(classpathFile));
+            Assert.Contains("a.jar", File.ReadAllText(classpathFile));
+            Assert.Contains($"@\"{classpathFile}\"", jvmArgs);
         }
         finally
         {

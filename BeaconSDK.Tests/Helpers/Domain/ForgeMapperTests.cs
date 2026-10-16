@@ -1,4 +1,3 @@
-using FluentAssertions;
 using Tavstal.BeaconSDK.Helpers.Domain;
 
 namespace Tavstal.BeaconSDK.Tests.Helpers.Domain;
@@ -16,7 +15,7 @@ public class ForgeMapperTests
 
         var result = ForgeMapper.Interpolation("{name} ${version}", values, false);
 
-        result.Should().Be("Forge 1.0");
+        Assert.Equal("Forge 1.0", result);
     }
 
     [Fact(DisplayName = "Interpolation leaves unknown placeholders intact")]
@@ -26,7 +25,7 @@ public class ForgeMapperTests
 
         var result = ForgeMapper.Interpolation("prefix-{missing}-suffix", values, false);
 
-        result.Should().Be("prefix-{missing}-suffix");
+        Assert.Equal("prefix-{missing}-suffix", result);
     }
 
     [Fact(DisplayName = "Interpolation emits an empty string for a null value")]
@@ -36,25 +35,25 @@ public class ForgeMapperTests
 
         var result = ForgeMapper.Interpolation("a{k}b", values, false);
 
-        result.Should().Be("ab");
+        Assert.Equal("ab", result);
     }
 
     [Fact(DisplayName = "HandleEmptyArg quotes a value containing spaces")]
     public void HandleEmptyArg_QuotesValueContainingSpaces()
     {
-        ForgeMapper.HandleEmptyArg("k=v with space").Should().Be("k=\"v with space\"");
+        Assert.Equal("k=\"v with space\"", ForgeMapper.HandleEmptyArg("k=v with space"));
     }
 
     [Fact(DisplayName = "HandleEmptyArg quotes a bare argument containing spaces")]
     public void HandleEmptyArg_QuotesBareArgument_WithSpaces()
     {
-        ForgeMapper.HandleEmptyArg("hello world").Should().Be("\"hello world\"");
+        Assert.Equal("\"hello world\"", ForgeMapper.HandleEmptyArg("hello world"));
     }
 
     [Fact(DisplayName = "HandleEmptyArg truncates a value containing equals")]
     public void HandleEmptyArg_TruncatesValueContainingEquals()
     {
-        ForgeMapper.HandleEmptyArg("a=b c=d").Should().Be("a=\"b c\"");
+        Assert.Equal("a=\"b c\"", ForgeMapper.HandleEmptyArg("a=b c=d"));
     }
 
     [Fact(DisplayName = "ToFullPath expands group and @extension syntax")]
@@ -65,13 +64,14 @@ public class ForgeMapperTests
         var result = ForgeMapper.ToFullPath("[net.minecraftforge:forge:1.0.0@jar]", prePath);
 
         var expected = Path.Combine(prePath, "net", "minecraftforge", "forge", "1.0.0", "forge-1.0.0.jar");
-        result.Should().Be(expected);
+
+        Assert.Equal(expected, result);
     }
 
     [Fact(DisplayName = "ToFullPath strips surrounding quotes")]
     public void ToFullPath_StripsSurroundingQuotes()
     {
-        ForgeMapper.ToFullPath("'quoted value'", "").Should().Be("quoted value");
+        Assert.Equal("quoted value", ForgeMapper.ToFullPath("'quoted value'", ""));
     }
 
     [Fact(DisplayName = "Map skips path conversion with an empty pre-path")]
@@ -81,7 +81,7 @@ public class ForgeMapperTests
 
         var result = ForgeMapper.Map(args, new Dictionary<string, string?>(), "");
 
-        result.Should().ContainSingle().Which.Should().Be("[net.minecraftforge:forge:1.0.0@jar]");
+        Assert.Equal("[net.minecraftforge:forge:1.0.0@jar]", Assert.Single(result));
     }
 
     [Fact(DisplayName = "Map skips HandleEmptyArg when the argument is already quoted")]
@@ -91,6 +91,6 @@ public class ForgeMapperTests
 
         var result = ForgeMapper.Map(args, new Dictionary<string, string?>(), "");
 
-        result.Should().ContainSingle().Which.Should().Be("\"already quoted\"");
+        Assert.Equal("\"already quoted\"", Assert.Single(result));
     }
 }

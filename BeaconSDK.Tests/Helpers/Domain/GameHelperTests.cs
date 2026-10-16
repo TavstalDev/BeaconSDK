@@ -1,4 +1,3 @@
-using FluentAssertions;
 using Tavstal.BeaconSDK.Helpers.Domain;
 
 namespace Tavstal.BeaconSDK.Tests.Helpers.Domain;
@@ -12,7 +11,7 @@ public class GameHelperTests
     public void IsNewer_ReturnsTrue_WhenMajorVersionIsGreater(string versionA, string versionB)
     {
         bool result = GameHelper.isNewer(versionA, versionB);
-        result.Should().BeTrue();
+        Assert.True(result);
     }
 
     [Theory(DisplayName = "isNewer should return false when version A equals B")]
@@ -22,7 +21,7 @@ public class GameHelperTests
     public void IsNewer_ReturnsFalse_WhenVersionsAreEqual(string versionA, string versionB)
     {
         bool result = GameHelper.isNewer(versionA, versionB);
-        result.Should().BeFalse();
+        Assert.False(result);
     }
 
     [Theory(DisplayName = "isNewer should treat missing segments as zero (A vs B)")]
@@ -32,7 +31,7 @@ public class GameHelperTests
     public void IsNewer_TreatsMissingSegmentsAsZero(string versionA, string versionB)
     {
         bool result = GameHelper.isNewer(versionA, versionB);
-        result.Should().BeFalse();
+        Assert.False(result);
     }
 
     [Theory(DisplayName = "ParseVersionString('A') should parse into B segments")]
@@ -43,7 +42,7 @@ public class GameHelperTests
     public void ParseVersionString_SplitsOnDot_ParsesNumbers(string version, int count)
     {
         var result = GameHelper.ParseVersionString(version);
-        result.Should().HaveCount(count);
+        Assert.Equal(count, result.Length);
     }
 
     [Theory(DisplayName = "GetOfflinePlayerUUID('A') should return UUID B")]
@@ -53,6 +52,6 @@ public class GameHelperTests
     public void GetOfflinePlayerUUID_ReturnsKnownValue_ForKnownUsername(string username, string uuid)
     {
         var result = GameHelper.GetOfflinePlayerUUID(username);
-        result.Should().Be(uuid);
+        Assert.Equal(uuid, result);
     }
 }

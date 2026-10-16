@@ -1,4 +1,3 @@
-using FluentAssertions;
 using Tavstal.BeaconSDK.Enums;
 using Tavstal.BeaconSDK.Services.Implementations.Auth;
 using Tavstal.BeaconSDK.Tests.Fakes;
@@ -21,8 +20,8 @@ public class MicrosoftDeviceAuthServiceTests
 
         await service.StartListeningAsync("device-code", FastInterval, TestContext.Current.CancellationToken);
 
-        fake.CheckDeviceCodeCallCount.Should().Be(2);
-        fake.AuthStatus.Should().Be(EAuthStatus.SUCCESS);
+        Assert.Equal(2, fake.CheckDeviceCodeCallCount);
+        Assert.Equal(EAuthStatus.SUCCESS, fake.AuthStatus);
     }
 
     [Fact(DisplayName = "StartListening stops after success")]
@@ -37,8 +36,8 @@ public class MicrosoftDeviceAuthServiceTests
 
         await service.StartListeningAsync("device-code", FastInterval, TestContext.Current.CancellationToken);
 
-        fake.CheckDeviceCodeCallCount.Should().Be(1);
-        fake.AuthStatus.Should().Be(EAuthStatus.SUCCESS);
+        Assert.Equal(1, fake.CheckDeviceCodeCallCount);
+        Assert.Equal(EAuthStatus.SUCCESS, fake.AuthStatus);
     }
 
     [Fact(DisplayName = "StartListening stops on failed status")]
@@ -53,8 +52,8 @@ public class MicrosoftDeviceAuthServiceTests
 
         await service.StartListeningAsync("device-code", FastInterval, TestContext.Current.CancellationToken);
 
-        fake.CheckDeviceCodeCallCount.Should().Be(1);
-        fake.AuthStatus.Should().Be(EAuthStatus.FAILED);
+        Assert.Equal(1, fake.CheckDeviceCodeCallCount);
+        Assert.Equal(EAuthStatus.FAILED, fake.AuthStatus);
     }
 
     [Fact(DisplayName = "StartListening respects the cancellation token")]
@@ -76,7 +75,7 @@ public class MicrosoftDeviceAuthServiceTests
         await cts.CancelAsync();
 
         var act = async () => await task;
-        await act.Should().ThrowAsync<OperationCanceledException>();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(act);
     }
 
     [Fact(DisplayName = "A second StartListening call while running is a no-op")]
@@ -95,7 +94,7 @@ public class MicrosoftDeviceAuthServiceTests
         await second;
         await first;
 
-        fake.CheckDeviceCodeCallCount.Should().Be(3);
+        Assert.Equal(3, fake.CheckDeviceCodeCallCount);
     }
 
     [Fact(DisplayName = "StopListening prevents further polls")]
@@ -118,7 +117,7 @@ public class MicrosoftDeviceAuthServiceTests
 
         await Task.Delay(100, TestContext.Current.CancellationToken);
 
-        fake.CheckDeviceCodeCallCount.Should().Be(countAfterStop);
+        Assert.Equal(countAfterStop, fake.CheckDeviceCodeCallCount);
         await task;
     }
 }

@@ -1,4 +1,3 @@
-using FluentAssertions;
 using Tavstal.BeaconSDK.Helpers.IO;
 
 namespace Tavstal.BeaconSDK.Tests.Helpers.IO;
@@ -18,7 +17,7 @@ public class FileSystemHelperTests
     public void GetFormattedSize_ReturnsBinaryUnits(long size, string expected)
     {
         var result = FileSystemHelper.GetFormattedSize(size);
-        result.Should().Be(expected);
+        Assert.Equal(expected, result);
     }
 
     [Theory(DisplayName = "IsSafeToDelete rejects root, short paths and null/whitespace")]
@@ -29,7 +28,7 @@ public class FileSystemHelperTests
     public void IsSafeToDelete_RejectsRoot_AndShortPaths_AndNullWhitespace(string path)
     {
         var result = FileSystemHelper.IsSafeToDelete(path);
-        result.Should().BeFalse();
+        Assert.False(result);
     }
 
     [Theory(DisplayName = "GetContentHash returns a lowercase SHA1 hex digest")]
@@ -39,9 +38,10 @@ public class FileSystemHelperTests
     public void GetContentHash_ReturnsLowercaseSha1_Hex(string hash, string expected)
     {
         var result = FileSystemHelper.GetContentHash(hash);
-        result.Should().Be(expected);
+        Assert.NotNull(result);
+        Assert.Equal(expected, result);
         string lowercaseHash = result.ToLower();
-        lowercaseHash.Should().Be(expected);
+        Assert.Equal(expected, lowercaseHash);
     }
 
     [Theory(DisplayName = "CheckByDigest parses sha1 and sha256 digest formats")]
@@ -54,7 +54,7 @@ public class FileSystemHelperTests
         {
             File.WriteAllText(fileName, "test");
             var result = FileSystemHelper.CheckByDigest(fileName, digest);
-            result.Should().BeTrue();
+            Assert.True(result);
         }
         finally
         {
@@ -71,7 +71,7 @@ public class FileSystemHelperTests
         {
             await File.WriteAllTextAsync(fileName, "test", TestContext.Current.CancellationToken);
             var result = await FileSystemHelper.GetFileHashAsync(fileName);
-            result.Should().NotBeNullOrEmpty();
+            Assert.False(string.IsNullOrEmpty(result));
         }
         finally
         {
@@ -88,7 +88,7 @@ public class FileSystemHelperTests
         {
             await File.WriteAllTextAsync(fileName, "test", TestContext.Current.CancellationToken);
             var result = FileSystemHelper.CheckSHA1(fileName, string.Empty);
-            result.Should().BeTrue();
+            Assert.True(result);
         }
         finally
         {
@@ -105,7 +105,7 @@ public class FileSystemHelperTests
         {
             await File.WriteAllTextAsync(fileName, "test", TestContext.Current.CancellationToken);
             var result = FileSystemHelper.CheckSHA1(fileName, "A94a8fe5ccb19ba61c4c0873d391e987982fbbd3");
-            result.Should().BeFalse();
+            Assert.False(result);
         }
         finally
         {
@@ -125,7 +125,7 @@ public class FileSystemHelperTests
         {
             await File.WriteAllTextAsync(fileName, "test", TestContext.Current.CancellationToken);
             bool result = FileSystemHelper.CompressFile(fileName, compressedFileName, shouldDeleteSource);
-            result.Should().BeTrue();
+            Assert.True(result);
             output.WriteLine($"Does source exist? {File.Exists(fileName)}");
         }
         finally

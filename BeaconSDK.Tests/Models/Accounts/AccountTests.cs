@@ -1,5 +1,4 @@
 using System.Text.Json;
-using FluentAssertions;
 using Tavstal.BeaconSDK.Enums;
 using Tavstal.BeaconSDK.Models.Accounts;
 using Tavstal.BeaconSDK.Services.Implementations;
@@ -21,7 +20,7 @@ public class AccountTests
 
         account.SetAccessToken(plain, encryption);
 
-        account.GetAccessToken(encryption).Should().Equal(plain);
+        Assert.Equal(plain, account.GetAccessToken(encryption));
     }
 
     [Fact(DisplayName = "SetAccessToken uses Reprotect rather than Encrypt")]
@@ -32,8 +31,8 @@ public class AccountTests
 
         account.SetAccessToken("token"u8.ToArray(), encryption);
 
-        encryption.ReprotectCallCount.Should().Be(1);
-        encryption.EncryptCallCount.Should().Be(0);
+        Assert.Equal(1, encryption.ReprotectCallCount);
+        Assert.Equal(0, encryption.EncryptCallCount);
     }
 
     [Fact(DisplayName = "SetAccessToken leaves plaintext input unchanged when Reprotect fails")]
@@ -49,7 +48,7 @@ public class AccountTests
 
         account.SetAccessToken(plain, encryption);
 
-        account.EncryptedAccessToken.Should().Equal(plain);
+        Assert.Equal(plain, account.EncryptedAccessToken);
     }
 
     [Fact(DisplayName = "Token arrays are initialized to empty by the constructor")]
@@ -57,15 +56,15 @@ public class AccountTests
     {
         var account = new Account();
 
-        account.EncryptedAccessToken.Should().BeEmpty();
-        account.EncryptedRefreshToken.Should().BeEmpty();
+        Assert.Empty(account.EncryptedAccessToken);
+        Assert.Empty(account.EncryptedRefreshToken);
     }
 
     [Fact(DisplayName = "CanExpire is false for offline and true for Microsoft accounts")]
     public void CanExpire_FalseForOffline_TrueForMicrosoft()
     {
-        new Account { Type = EAccountType.OFFLINE }.CanExpire.Should().BeFalse();
-        new Account { Type = EAccountType.MICROSOFT }.CanExpire.Should().BeTrue();
+        Assert.False(new Account { Type = EAccountType.OFFLINE }.CanExpire);
+        Assert.True(new Account { Type = EAccountType.MICROSOFT }.CanExpire);
     }
 
     [Fact(DisplayName = "JSON round-trip via BeaconJsonContext preserves tokens and enum")]
@@ -85,8 +84,16 @@ public class AccountTests
         var json = JsonSerializer.Serialize(account, BeaconJsonContext.Default.Account);
         var restored = JsonSerializer.Deserialize(json, BeaconJsonContext.Default.Account);
 
-        restored.Should().NotBeNull();
-        restored.Should().BeEquivalentTo(account);
-        restored.Type.Should().Be(EAccountType.MICROSOFT);
+        Assert.NotNull(restored);
+        Assert.Equal(account.Id, restored.Id);
+        Assert.Equal(account.Uuid, restored.Uuid);
+        Assert.Equal(account.DisplayName, restored.DisplayName);
+        Assert.Equal(account.Type, restored.Type);
+        Assert.Equal(account.EncryptedAccessToken, restored.EncryptedAccessToken);
+        Assert.Equal(account.EncryptedRefreshToken, restored.EncryptedRefreshToken);
+        Assert.Equal(account.AccessTokenExpireDate, restored.AccessTokenExpireDate);
+        Assert.Equal(account.Skins, restored.Skins);
+        Assert.Equal(account.MojangProfile, restored.MojangProfile);
+        Assert.Equal(EAccountType.MICROSOFT, restored.Type);
     }
 }

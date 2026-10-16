@@ -1,5 +1,4 @@
 using System.Text.Json;
-using FluentAssertions;
 using Tavstal.BeaconSDK.Enums;
 using Tavstal.BeaconSDK.Helpers.Platform;
 using Tavstal.BeaconSDK.Models.Json;
@@ -17,13 +16,13 @@ public class ArgumentMetaRuleTests
     [Fact(DisplayName = "GetRuleResult returns non-JSON input verbatim")]
     public void GetRuleResult_NonJsonInput_ReturnsInputVerbatim()
     {
-        Meta().GetRuleResult("plain-value").Should().Be("plain-value");
+        Assert.Equal("plain-value", Meta().GetRuleResult("plain-value"));
     }
 
     [Fact(DisplayName = "GetRuleResult returns null for invalid JSON")]
     public void GetRuleResult_InvalidJson_ReturnsNull()
     {
-        Meta().GetRuleResult("{ this is not valid json }").Should().BeNull();
+        Assert.Null(Meta().GetRuleResult("{ this is not valid json }"));
     }
 
     [Fact(DisplayName = "GetRuleResult returns the joined value when rules are empty")]
@@ -31,7 +30,7 @@ public class ArgumentMetaRuleTests
     {
         var json = "{\"value\":\"the-value\",\"rules\":[{\"action\":\"allow\",\"os\":{\"name\":\"\"}}]}";
 
-        Meta().GetRuleResult(json).Should().Be("the-value");
+        Assert.Equal("the-value", Meta().GetRuleResult(json));
     }
 
     [Fact(DisplayName = "GetRuleResult joins array values with spaces")]
@@ -39,7 +38,7 @@ public class ArgumentMetaRuleTests
     {
         var json = "{\"value\":[\"a\",\"b\",\"c\"],\"rules\":[{\"action\":\"allow\"}]}";
 
-        Meta().GetRuleResult(json).Should().Be("a b c");
+        Assert.Equal("a b c", Meta().GetRuleResult(json));
     }
 
     [Fact(DisplayName = "GetRuleResult returns a string value as-is")]
@@ -47,7 +46,7 @@ public class ArgumentMetaRuleTests
     {
         var json = "{\"value\":\"-Dfoo=bar\",\"rules\":[{\"action\":\"allow\"}]}";
 
-        Meta().GetRuleResult(json).Should().Be("-Dfoo=bar");
+        Assert.Equal("-Dfoo=bar", Meta().GetRuleResult(json));
     }
 
     [Fact(DisplayName = "GetRuleResult returns null for a disallow rule")]
@@ -55,7 +54,7 @@ public class ArgumentMetaRuleTests
     {
         var json = "{\"value\":\"secret\",\"rules\":[{\"action\":\"disallow\"}]}";
 
-        Meta().GetRuleResult(json).Should().BeNull();
+        Assert.Null(Meta().GetRuleResult(json));
     }
 
     [Fact(DisplayName = "GetRuleResult deserializes rules via CoreJsonContext List<Rule>")]
@@ -66,13 +65,14 @@ public class ArgumentMetaRuleTests
 
         var json = "{\"value\":\"-Dfoo=bar\",\"rules\":[{\"action\":\"allow\",\"os\":{\"name\":\"linux\"}}]}";
 
-        Meta().GetRuleResult(json).Should().Be("-Dfoo=bar");
+        Assert.Equal("-Dfoo=bar", Meta().GetRuleResult(json));
 
         var listRuleJson = "[{\"action\":\"allow\",\"os\":{\"name\":\"linux\"}}]";
         var rules = JsonSerializer.Deserialize(listRuleJson, CoreJsonContext.Default.ListRule);
 
-        rules.Should().NotBeNull().And.ContainSingle();
-        rules[0].Action.Should().Be("allow");
-        rules[0].Os!.Name.Should().Be("linux");
+        Assert.NotNull(rules);
+        Assert.Single(rules);
+        Assert.Equal("allow", rules[0].Action);
+        Assert.Equal("linux", rules[0].Os!.Name);
     }
 }

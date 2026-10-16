@@ -1,6 +1,5 @@
 using System.Security.Cryptography;
 using System.Text;
-using FluentAssertions;
 using Microsoft.AspNetCore.DataProtection;
 using Tavstal.BeaconSDK.Enums;
 using Tavstal.BeaconSDK.Helpers.Platform;
@@ -41,7 +40,7 @@ public class EncryptionServiceTests
             config.DataProtection.KeysDirectory = keyDirectory;
             var withDp = new EncryptionService(new CapturingBeaconLogger<EncryptionService>(), config, DataProtectionProvider.Create(new DirectoryInfo(keyDirectory)));
 
-            PrefixOf(withDp.Encrypt("payload"u8.ToArray())).Should().Be("dpsv1:");
+            Assert.Equal("dpsv1:", PrefixOf(withDp.Encrypt("payload"u8.ToArray())));
         }
         finally
         {
@@ -52,13 +51,13 @@ public class EncryptionServiceTests
         switch (OSHelper.GetOperatingSystem())
         {
             case EOperatingSystem.LINUX:
-                PrefixOf(fallback.Encrypt("payload"u8.ToArray())).Should().Be("linv1:");
+                Assert.Equal("linv1:", PrefixOf(fallback.Encrypt("payload"u8.ToArray())));
                 break;
             case EOperatingSystem.MACOS:
-                PrefixOf(fallback.Encrypt("payload"u8.ToArray())).Should().Be("macv1:");
+                Assert.Equal("macv1:", PrefixOf(fallback.Encrypt("payload"u8.ToArray())));
                 break;
             case EOperatingSystem.WINDOWS:
-                PrefixOf(fallback.Encrypt("payload"u8.ToArray())).Should().Be("winv1:");
+                Assert.Equal("winv1:", PrefixOf(fallback.Encrypt("payload"u8.ToArray())));
                 break;
             default:
                 Assert.Skip("Host OS has no fallback encryption path.");
@@ -76,7 +75,7 @@ public class EncryptionServiceTests
 
             var cipher = service.Encrypt(plain);
 
-            service.Decrypt(cipher).Should().Equal(plain);
+            Assert.Equal(plain, service.Decrypt(cipher));
         }
         finally
         {
@@ -95,7 +94,7 @@ public class EncryptionServiceTests
 
         var cipher = service.Encrypt(plain);
 
-        service.Decrypt(cipher).Should().Equal(plain);
+        Assert.Equal(plain, service.Decrypt(cipher));
     }
 
     [Fact(DisplayName = "Decrypt passes input shorter than the prefix bytes through unchanged")]
@@ -104,7 +103,7 @@ public class EncryptionServiceTests
         var service = CreateFallback();
         var input = "123456"u8.ToArray();
 
-        service.Decrypt(input).Should().Equal(input);
+        Assert.Equal(input, service.Decrypt(input));
     }
 
     [Fact(DisplayName = "Decrypt throws CryptographicException on an unknown prefix")]
@@ -115,7 +114,7 @@ public class EncryptionServiceTests
 
         var act = () => service.Decrypt(input);
 
-        act.Should().Throw<CryptographicException>();
+        Assert.Throws<CryptographicException>(act);
     }
 
     [Fact(DisplayName = "Decrypt returns the input for an unknown prefix when ignoreUnknown is set")]
@@ -124,7 +123,7 @@ public class EncryptionServiceTests
         var service = CreateFallback();
         var input = "zzzzzzzzzz"u8.ToArray();
 
-        service.Decrypt(input, true).Should().Equal(input);
+        Assert.Equal(input, service.Decrypt(input, true));
     }
 
     [Fact(DisplayName = "Decrypt throws for the dp prefix when no provider is configured")]
@@ -135,7 +134,7 @@ public class EncryptionServiceTests
 
         var act = () => service.Decrypt(input);
 
-        act.Should().Throw<CryptographicException>();
+        Assert.Throws<CryptographicException>(act);
     }
 
     [Fact(DisplayName = "Encrypt round-trips an empty plaintext")]
@@ -146,7 +145,7 @@ public class EncryptionServiceTests
         {
             var cipher = service.Encrypt([]);
 
-            service.Decrypt(cipher).Should().BeEmpty();
+            Assert.Empty(service.Decrypt(cipher));
         }
         finally
         {
@@ -165,7 +164,7 @@ public class EncryptionServiceTests
             var first = service.Encrypt(plain);
             var second = service.Encrypt(plain);
 
-            first.Should().NotEqual(second);
+            Assert.NotEqual(second, first);
         }
         finally
         {
@@ -179,7 +178,7 @@ public class EncryptionServiceTests
         var service = CreateFallback();
         var input = "plain-and-unknown-format"u8.ToArray();
 
-        service.Reprotect(input).Should().Equal(input);
+        Assert.Equal(input, service.Reprotect(input));
     }
 
     [Fact(DisplayName = "Reprotect transforms encrypted input and round-trips")]
@@ -193,7 +192,7 @@ public class EncryptionServiceTests
 
             var reprotected = service.Reprotect(cipher);
 
-            service.Decrypt(reprotected).Should().Equal(plain);
+            Assert.Equal(plain, service.Decrypt(reprotected));
         }
         finally
         {
@@ -212,7 +211,7 @@ public class EncryptionServiceTests
 
             service.Decrypt(cipher);
 
-            cipher.Should().Equal(original);
+            Assert.Equal(original, cipher);
         }
         finally
         {
