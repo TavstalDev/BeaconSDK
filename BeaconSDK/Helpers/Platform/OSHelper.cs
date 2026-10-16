@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using Hardware.Info;
 using Microsoft.Extensions.Logging;
 using Tavstal.BeaconSDK.Enums;
 using Tavstal.BeaconSDK.Models.Logging;
@@ -16,14 +15,6 @@ public static class OSHelper
     private const int Windows11MajorVersion = 10;
     private const int Windows11MinimumBuild = 22000;
     private static readonly IBeaconLogger _logger = new BeaconLogger(nameof(OSHelper), LogLevel.Error);
-    private static readonly HardwareInfo _hardwareInfo = new();
-
-    private static readonly string[] NvidiaKeywords =
-        ["nvidia", "geforce", "quadro", "gtx", "rtx", "mx", "tesla", "h100"];
-
-    private static readonly string[] AmdKeywords = ["amd", "radeon", "vega", "rx", "r9", "r7", "r5"];
-    private static readonly string[] IntelKeywords = ["intel", "arc", "battlemage"];
-    private static readonly string[] AppleKeywords = ["apple", "m1", "m2", "m3"];
 
     /// <summary>
     ///     Determines the operating system type.
@@ -81,49 +72,6 @@ public static class OSHelper
     public static bool Is64BitOperatingSystem()
     {
         return Environment.Is64BitOperatingSystem;
-    }
-
-    /// <summary>
-    ///     Retrieves the type and description of the dedicated GPU available on the system.
-    /// </summary>
-    /// <returns>
-    ///     A tuple containing:
-    ///     <br />- A string representing the GPU type ("nvidia", "amd", "intel", or "apple") if detected.
-    ///     <br />- A string representing the GPU description.
-    ///     Returns <c>null</c> if no dedicated GPU is detected.
-    /// </returns>
-    public static (string, string)? GetDedicatedGpuType()
-    {
-        _hardwareInfo.RefreshVideoControllerList();
-        foreach (var gpu in _hardwareInfo.VideoControllerList)
-        {
-            var lowerName = gpu.Description.ToLowerInvariant();
-            if (NvidiaKeywords.Any(lowerName.Contains))
-                return ("nvidia", gpu.Description);
-
-            if (AmdKeywords.Any(lowerName.Contains))
-                return ("amd", gpu.Description);
-
-            if (IntelKeywords.Any(lowerName.Contains))
-                return ("intel", gpu.Description);
-
-            if (AppleKeywords.Any(lowerName.Contains))
-                return ("apple", gpu.Description);
-        }
-
-        return null;
-    }
-
-    /// <summary>
-    ///     Retrieves the total amount of physical RAM available on the system in bytes.
-    /// </summary>
-    /// <returns>
-    ///     A <see cref="ulong" /> value representing the total physical memory in bytes.
-    /// </returns>
-    public static ulong GetRamInBytes()
-    {
-        _hardwareInfo.RefreshMemoryStatus();
-        return _hardwareInfo.MemoryStatus.TotalPhysical;
     }
 
     /// <summary>

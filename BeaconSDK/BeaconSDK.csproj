@@ -18,7 +18,7 @@
         <Version>1.0.0</Version>
         <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
 
-        <PackageTags>api sdk client minecraft minecraft-launcher</PackageTags>
+        <PackageTags>api sdk client minecraft minecraft-launcher fabric forge neoforge quilt</PackageTags>
         <PackageProjectUrl>https://github.com/TavstalDev/BeaconSDK</PackageProjectUrl>
         <PackageReleaseNotes>https://github.com/TavstalDev/BeaconSDK/releases</PackageReleaseNotes>
         <RepositoryUrl>https://github.com/TavstalDev/BeaconSDK</RepositoryUrl>
@@ -45,7 +45,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Hardware.Info" Version="110.0.0.1"/>
         <PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="10.0.13" />
         <PackageReference Include="NbtLib" Version="1.0.1"/>
         <PackageReference Include="SharpZipLib" Version="1.4.2"/>
