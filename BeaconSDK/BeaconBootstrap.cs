@@ -50,8 +50,7 @@ public static class BeaconBootstrap
         services.AddSingleton(configuration);
         services.AddSingleton(typeof(IBeaconLogger<>), typeof(BeaconLogger<>));
         services.AddSingleton<IHttpService, HttpService>();
-        //var keyDir = Path.Combine(appDir, "keys");
-        //Directory.CreateDirectory(keyDir);
+
         services.AddDataProtection()
             .PersistKeysToFileSystem(new DirectoryInfo(configuration.DataProtection.KeysDirectory))
             .SetApplicationName(configuration.DataProtection.ApplicationName);
