@@ -30,13 +30,18 @@ public static class Program
             {
                 MicrosoftClientId = string.Empty, // Can be empty because this example does not use microsoft authentication
             },
+            DataProtection = new DataProtectionConfig
+            {
+                WindowsEntropy  = [.. "8AE1C425-241D-46A9-A8F8-6E8A68D2586C"u8],
+                LinuxKey        = [.. "5aEcj3cLUm5qYeCpptEaQoFCUTgZyEZw"u8],
+                MacKey          = [.. "MqcM2kVeroKpvh9z79t3KjtiTzCUKSRs"u8]
+            },
             AppLogFilePath = latestLog
         };
         hostBuilder = hostBuilder.ConfigureServices(services =>
         {
             services.AddBeaconServices(config);
             services.AddHostedService<ExampleVanillaWorker>();
-            //services.AddHostedService<ExampleFabricWorker>();
         });
         var host = hostBuilder.Build();
         await host.RunAsync();

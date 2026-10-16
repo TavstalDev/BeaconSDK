@@ -17,7 +17,7 @@ public class BeaconConfiguration
     ///     Gets or sets the data protection settings used to persist encryption keys and platform fallback keys.
     /// </summary>
     [JsonPropertyName("DataProtection")]
-    public DataProtectionConfig DataProtection { get; set; } = new();
+    public required DataProtectionConfig DataProtection { get; set; }
 
     /// <summary>
     ///     Gets or sets the HTTP client settings, such as user agent, timeout and download parallelism.

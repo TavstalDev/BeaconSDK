@@ -30,17 +30,17 @@ public class DataProtectionConfig
     ///     Gets or sets the optional entropy appended when protecting data with Windows DPAPI.
     /// </summary>
     [JsonPropertyName("WindowsEntropy")]
-    public byte[] WindowsEntropy { get; set; } = [.. "8AE1C425-241D-46A9-A8F8-6E8A68D2586C"u8];
+    public required byte[] WindowsEntropy { get; set; }
 
     /// <summary>
     ///     Gets or sets the AES key used by the fallback encryption when no data protection provider is configured on Linux.
     /// </summary>
     [JsonPropertyName("LinuxKey")]
-    public byte[] LinuxKey { get; set; } = [.. "5aEcj3cLUm5qYeCpptEaQoFCUTgZyEZw"u8];
+    public required byte[] LinuxKey { get; set; }
 
     /// <summary>
     ///     Gets or sets the AES key used by the fallback encryption when no data protection provider is configured on macOS.
     /// </summary>
     [JsonPropertyName("MacKey")]
-    public byte[] MacKey { get; set; } = [.. "MqcM2kVeroKpvh9z79t3KjtiTzCUKSRs"u8];
+    public required byte[] MacKey { get; set; }
 }

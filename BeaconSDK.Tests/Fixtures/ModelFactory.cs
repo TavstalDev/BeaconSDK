@@ -85,6 +85,12 @@ public static class ModelFactory
             Auth = new()
             {
                 MicrosoftClientId = Guid.NewGuid().ToString(),
+            },
+            DataProtection = new DataProtectionConfig
+            {
+                WindowsEntropy  = [.. "8AE1C425-241D-46A9-A8F8-6E8A68D2586C"u8],
+                LinuxKey        = [.. "5aEcj3cLUm5qYeCpptEaQoFCUTgZyEZw"u8],
+                MacKey          = [.. "MqcM2kVeroKpvh9z79t3KjtiTzCUKSRs"u8]
             }
         };
     }
