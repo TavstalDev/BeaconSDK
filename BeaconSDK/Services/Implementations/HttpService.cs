@@ -50,29 +50,6 @@ public class HttpService : IHttpService
     }
 
     /// <inheritdoc />
-    public async Task<string?> GetStringAsync(string url, CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            return await _httpClient.GetStringAsync(url, cancellationToken);
-        }
-        catch (OperationCanceledException)
-        {
-            throw;
-        }
-        catch (HttpRequestException ex)
-        {
-            _logger.LogError($"HTTP request to {url} failed with {ex.StatusCode}: {ex.Message}");
-            return null;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogCritical(ex, $"Failed to make GET request to {url}:");
-            return null;
-        }
-    }
-
-    /// <inheritdoc />
     public async Task<string?> GetStringAsync(string url, IProgress<double>? progress,
         CancellationToken cancellationToken = default)
     {
@@ -102,52 +79,6 @@ public class HttpService : IHttpService
             }
 
             return Encoding.UTF8.GetString(memoryStream.ToArray());
-        }
-        catch (OperationCanceledException)
-        {
-            throw;
-        }
-        catch (HttpRequestException ex)
-        {
-            _logger.LogError($"HTTP request to {url} failed with {ex.StatusCode}: {ex.Message}");
-            return null;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogCritical(ex, $"Failed to make GET request to {url}:");
-            return null;
-        }
-    }
-
-    /// <inheritdoc />
-    public async Task<byte[]?> GetByteArrayAsync(string url, CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            return await _httpClient.GetByteArrayAsync(url, cancellationToken);
-        }
-        catch (OperationCanceledException)
-        {
-            throw;
-        }
-        catch (HttpRequestException ex)
-        {
-            _logger.LogError($"HTTP request to {url} failed with {ex.StatusCode}: {ex.Message}");
-            return null;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogCritical(ex, $"Failed to make GET request to {url}:");
-            return null;
-        }
-    }
-
-    /// <inheritdoc />
-    public async Task<Stream?> GetStreamAsync(string url, CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            return await _httpClient.GetStreamAsync(url, cancellationToken);
         }
         catch (OperationCanceledException)
         {

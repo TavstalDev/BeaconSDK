@@ -17,16 +17,6 @@ public interface IHttpService
     HttpClient CreateHttpClient();
 
     /// <summary>
-    ///     Performs a GET request and returns the response content as a string.
-    /// </summary>
-    /// <param name="url">The request URL.</param>
-    /// <param name="cancellationToken">Cancellation token observed during the request.</param>
-    /// <returns>
-    ///     A task that resolves to the response content as a string if successful; otherwise, <see langword="null" />.
-    /// </returns>
-    Task<string?> GetStringAsync(string url, CancellationToken cancellationToken = default);
-
-    /// <summary>
     ///     Performs a GET request and returns the response content as a string with progress tracking.
     /// </summary>
     /// <param name="url">The request URL.</param>
@@ -39,26 +29,6 @@ public interface IHttpService
     /// </returns>
     Task<string?> GetStringAsync(string url, IProgress<double>? progress,
         CancellationToken cancellationToken = default);
-
-    /// <summary>
-    ///     Performs a GET request and returns the response content as a byte array.
-    /// </summary>
-    /// <param name="url">The request URL.</param>
-    /// <param name="cancellationToken">Cancellation token observed during the request.</param>
-    /// <returns>
-    ///     A task that resolves to the response content as bytes if successful; otherwise, <see langword="null" />.
-    /// </returns>
-    Task<byte[]?> GetByteArrayAsync(string url, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    ///     Performs a GET request and returns the response content as a stream.
-    /// </summary>
-    /// <param name="url">The request URL.</param>
-    /// <param name="cancellationToken">Cancellation token observed during the request.</param>
-    /// <returns>
-    ///     A task that resolves to the response content stream if successful; otherwise, <see langword="null" />.
-    /// </returns>
-    Task<Stream?> GetStreamAsync(string url, CancellationToken cancellationToken = default);
 
     /// <summary>
     ///     Downloads a file from the specified URL and saves it to the target path with progress tracking.
