@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
+using Tavstal.BeaconSDK.Models.Logging;
 
-namespace Tavstal.BeaconSDK.Models.Logging;
+namespace Tavstal.BeaconSDK.Services.Abstractions;
 
 /// <summary>
 ///     Provides a custom logging abstraction for modules that emit structured log entries.
@@ -27,13 +28,13 @@ public interface IBeaconLogger
     ///     Gets the name of the module or component associated with this logger.
     /// </summary>
     /// <returns>The logger's module name.</returns>
-    string GetModuleName();
+    string ModuleName { get; }
 
     /// <summary>
     ///     Gets the minimum log level supported by this logger.
     /// </summary>
     /// <returns>The current log level threshold.</returns>
-    LogLevel GetLogLevel();
+    LogLevel LogLevel { get; }
 }
 
 /// <summary>

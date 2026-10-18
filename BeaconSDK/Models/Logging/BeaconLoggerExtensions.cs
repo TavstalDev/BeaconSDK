@@ -1,5 +1,6 @@
 using System.Text;
 using Microsoft.Extensions.Logging;
+using Tavstal.BeaconSDK.Services.Abstractions;
 
 namespace Tavstal.BeaconSDK.Models.Logging;
 
@@ -292,8 +293,7 @@ public static class BeaconLoggerExtensions
             ArgumentNullException.ThrowIfNull(logger);
 
             var formattedMessage = message != null ? string.Format(EscapeFormatString(message), args) : null;
-            logger.Log(logLevel,
-                new LogEntry(logLevel.ToString("G").ToUpper(), logger.GetModuleName(), formattedMessage), exception,
+            logger.Log(logLevel, new LogEntry(logLevel.ToString("G").ToUpper(), logger.ModuleName, formattedMessage), exception,
                 _messageFormatter);
         }
     }
