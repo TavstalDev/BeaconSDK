@@ -46,7 +46,6 @@ using Microsoft.Extensions.Hosting;
 using Tavstal.BeaconSDK;
 
 var hostBuilder = Host.CreateDefaultBuilder(args);
-hostBuilder.SetupLogger();
 var config = new BeaconConfiguration
 {
     Auth = new AuthConfiguration

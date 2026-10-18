@@ -37,8 +37,8 @@ It targets **.NET 10**, is trim/AOT friendly, and integrates with
 - **Launching** - builds JVM and game arguments and starts the game process, with
   start/stop lifecycle and running-process tracking.
 - **Progress reporting** - a single `IProgressReporter` surfaces every stage to your UI.
-- **Logging** - `IBeaconLogger<T>` with a background writer loop, integrated with
-  the generic host.
+- **Logging** - `IBeaconLogger<T>` writes to the console or to your host's `ILogger<T>`,
+  and `ILogWriter` persists entries through a hosted background writer.
 - **Resilient downloads** - gzip/TLS handling, parallel downloads and integrity checks.
 
 ---
@@ -66,7 +66,7 @@ Or add the package reference directly:
 
 ## Quickstart
 
-Register the SDK services on a host and start the logger:
+Register the SDK services on a host:
 
 ```csharp
 using Microsoft.Extensions.DependencyInjection;
@@ -74,12 +74,16 @@ using Microsoft.Extensions.Hosting;
 using Tavstal.BeaconSDK;
 
 var hostBuilder = Host.CreateDefaultBuilder(args);
-hostBuilder.SetupLogger();
 var config = new BeaconConfiguration
 {
     Auth = new AuthConfiguration
     {
         MicrosoftClientId = "your-azure-client-id",
+    },
+    Logging = new LoggingConfig
+    {
+        LogLevel = LogLevel.Information,
+        DefaultLogFilePath = Path.Combine("logs", "latest.log") // optional, null keeps logging on the console
     }
 };
 hostBuilder = hostBuilder.ConfigureServices(services =>
@@ -89,6 +93,9 @@ hostBuilder = hostBuilder.ConfigureServices(services =>
 var host = hostBuilder.Build();
 await host.RunAsync();
 ```
+
+The log writer is registered as a hosted service, so starting the host begins flushing
+entries to `Logging.DefaultLogFilePath`.
 
 `AddBeaconServices` registers every service (HTTP, encryption, manifests, install,
 launch, Java and authentication). Inject what you need, then install and launch an
@@ -168,13 +175,14 @@ A complete, runnable sample lives in
 
 | Type | Purpose |
 | --- | --- |
-| `BeaconBootstrap.AddBeaconServices` | Registers all SDK services in DI |
-| `BeaconBootstrap.SetupLogger` | Starts the background log writer |
+| `BeaconBootstrap.AddBeaconServices` | Registers all SDK services in DI, including the hosted log writer |
 | `MinecraftInstance` | Describes an instance (version, paths, memory, client) |
 | `FabricInstance`, `QuiltInstance`, `NeoForgeInstance`, `ForgeInstance` | Mod loader installers |
 | `GameDetails` / `PathDetails` / `LauncherDetails` / `ClientDetails` | Instance configuration |
 | `IProgressReporter` | Receives progress/status updates |
 | `IBeaconLogger<T>` | Structured logger used throughout the SDK |
+| `ILogWriter` | Queues log lines for asynchronous file writing |
+| `LoggingConfig` | Log level, console vs `ILogger<T>` routing, default log file |
 
 | Service | Purpose |
 | --- | ---|
