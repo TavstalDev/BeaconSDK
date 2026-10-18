@@ -1,3 +1,5 @@
+using System.Net.Security;
+using System.Security.Authentication;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -25,7 +27,9 @@ public static class BeaconBootstrap
     ///     The <see cref="LogWriter" /> is registered as a singleton, as an <see cref="ILogWriter" />, and as a hosted
     ///     service, so entries are only written to disk while the host is running.
     ///     A named <see cref="HttpClient" /> called "default" is also registered, pre-configured with the user agent,
-    ///     accept header and timeout from <see cref="Tavstal.BeaconSDK.Models.Config.HttpConfig" />.
+    ///     accept header and timeout from <see cref="Tavstal.BeaconSDK.Models.Config.HttpConfig" />, and a primary
+    ///     <see cref="SocketsHttpHandler" /> built from the configured SSL protocols, automatic decompression, redirect
+    ///     and HTTP/2 settings.
     /// </remarks>
     /// <param name="services">The service collection to add the services to.</param>
     /// <param name="configuration">The Beacon SDK configuration providing endpoint, HTTP, authentication and data protection settings.</param>
@@ -43,11 +47,25 @@ public static class BeaconBootstrap
 
         services.AddSingleton(typeof(IBeaconLogger<>), typeof(BeaconLogger<>));
         services.AddHttpClient("default", client =>
-        {
-            client.DefaultRequestHeaders.UserAgent.ParseAdd(configuration.Http.Agent);
-            client.DefaultRequestHeaders.Accept.ParseAdd(configuration.Http.AcceptHeader);
-            client.Timeout = configuration.Http.Timeout;
-        });
+            {
+                client.DefaultRequestHeaders.UserAgent.ParseAdd(configuration.Http.Agent);
+                client.DefaultRequestHeaders.Accept.ParseAdd(configuration.Http.AcceptHeader);
+                client.Timeout = configuration.Http.Timeout;
+            })
+            .ConfigurePrimaryHttpMessageHandler(() =>
+            {
+                var sockets = new SocketsHttpHandler
+                {
+                    AutomaticDecompression = configuration.Http.AutomaticDecompression,
+                    AllowAutoRedirect = configuration.Http.AllowAutoRedirect,
+                    EnableMultipleHttp2Connections = configuration.Http.EnableMultipleHttp2Connections
+                };
+
+                if (configuration.Http.UseTls12Protocol)
+                    sockets.SslOptions = new SslClientAuthenticationOptions { EnabledSslProtocols = SslProtocols.Tls12 };
+
+                return sockets;
+            });
         services.AddSingleton<IHttpService, HttpService>();
 
         services.AddDataProtection()

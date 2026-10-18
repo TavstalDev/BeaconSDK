@@ -19,8 +19,8 @@ public class HttpConfig
     ///     Gets or sets a value indicating whether TLS 1.2 is enforced on HTTP connections.
     ///     When <see langword="false" />, the system default SSL protocols are used. Defaults to <see langword="true" />.
     /// </summary>
-    [JsonPropertyName("EnableSslProtocols")]
-    public bool EnableSslProtocols { get; set; } = true;
+    [JsonPropertyName("UseTls12Protocol")]
+    public bool UseTls12Protocol { get; set; } = true;
 
     /// <summary>
     ///     Gets or sets the decompression methods enabled on the HTTP handler. Defaults to GZip and Deflate.
