@@ -29,8 +29,9 @@ documentation and a symbols package.
 
 ## Set up the host
 
-BeaconSDK plugs into the generic host. Register the services with
-`AddBeaconServices` and start the background log writer with `SetupLogger`:
+BeaconSDK plugs into the generic host. Register the services with `AddBeaconServices`;
+the log writer is registered as a hosted service, so starting the host is enough to
+begin flushing log entries to disk:
 
 ```csharp
 using Microsoft.Extensions.DependencyInjection;
@@ -38,8 +39,6 @@ using Microsoft.Extensions.Hosting;
 using Tavstal.BeaconSDK;
 
 var hostBuilder = Host.CreateDefaultBuilder(args);
-
-hostBuilder.SetupLogger(); // starts the background log writer loop
 
 var config = new BeaconConfiguration
 {
@@ -51,6 +50,11 @@ var config = new BeaconConfiguration
     {
         KeysDirectory = "keys",
         ApplicationName = "myLauncher"
+    },
+    Logging = new LoggingConfig
+    {
+        LogLevel = LogLevel.Information,
+        DefaultLogFilePath = Path.Combine(logsDir, "latest.log")
     }
 };
 
@@ -72,7 +76,7 @@ inject anywhere:
 - `IJavaService`
 - `IMicrosoftAuthService`, `IMicrosoftDeviceAuthService`, `IMicrosoftHttpAuthService`
 - `IMojangSkinService`
-- `IBeaconLogger<T>`
+- `IBeaconLogger<T>`, `ILogWriter`
 
 ### Data protection
 
@@ -157,22 +161,30 @@ public class MyService(IBeaconLogger<MyService> logger)
 ```
 
 `AddBeaconServices` registers `IBeaconLogger<>` as a singleton whose `BeaconLogger<T>`
-is built from your `BeaconConfiguration`. Log entries are printed to the console by
-default; to also persist them, set `BeaconConfiguration.AppLogFilePath` and create the
-target directory yourself (the SDK appends to the file, it does not create folders):
+is built from your `BeaconConfiguration.Logging`. Entries below
+`LoggingConfig.LogLevel` are discarded; the rest are printed to the console and, when
+`LoggingConfig.DefaultLogFilePath` is set, appended to that file. Parent directories
+are created as needed, so unlike previous versions you no longer have to create the
+target folder yourself:
 
 ```csharp
 var logsDir = Path.Combine(Directory.GetCurrentDirectory(), "logs");
-Directory.CreateDirectory(logsDir);
 
 var config = new BeaconConfiguration
 {
     Auth = new AuthConfiguration { MicrosoftClientId = "your-azure-client-id" },
-    AppLogFilePath = Path.Combine(logsDir, "latest.log")
+    Logging = new LoggingConfig
+    {
+        LogLevel = LogLevel.Information,
+        DefaultLogFilePath = Path.Combine(logsDir, "latest.log")
+    }
 };
 ```
 
-Loggers you construct yourself take the same path explicitly:
+Leaving `DefaultLogFilePath` null (the default) keeps everything on the console and
+discards file output.
+
+Loggers you construct yourself take the same options explicitly:
 
 ```csharp
 // custom file for this logger only
@@ -180,22 +192,46 @@ var logger = new BeaconLogger<MyService>(LogLevel.Information, customLogFilePath
 
 // console only, nothing written to disk
 var consoleLogger = new BeaconLogger<MyService>(LogLevel.Debug, printLogs: true, customLogFilePath: null);
-
-// mirrors the DEBUG/RELEASE default level of the DI logger
-var configLogger = new BeaconLogger<MyService>(config);
 ```
 
-Use `BeaconBootstrap.SetupLogger()` once at startup so queued log messages are
-flushed by the background writer loop; it is idempotent and exposes the running task
-through `BeaconBootstrap.LoggerTask`.
+### Forwarding to Microsoft.Extensions.Logging
 
-`LoggerHelper.DefaultLogFilePath` is the fallback target for loggers created without an
-explicit path. While it is empty (the default) those entries are discarded and only the
-console output remains:
+Set `LoggingConfig.EnableCustomLogger` to `false` to have `BeaconLogger<T>` hand its
+output to the `ILogger<T>` your host already registered, instead of writing to the
+console. This lets a host-wide logging setup (Serilog, console providers, OpenTelemetry)
+capture SDK output:
 
 ```csharp
-LoggerHelper.DefaultLogFilePath = Path.Combine(appDataDir, "beacon.log");
+var config = new BeaconConfiguration
+{
+    Auth = new AuthConfiguration { MicrosoftClientId = "your-azure-client-id" },
+    Logging = new LoggingConfig
+    {
+        EnableCustomLogger = false,
+        LogLevel = LogLevel.Debug
+    }
+};
 ```
+
+`AddBeaconServices` registers a `NullLogger<>` fallback for `ILogger<>`, so this works
+even when the host never called `AddLogging()`. File logging via
+`LoggingConfig.DefaultLogFilePath` is unaffected either way.
+
+### Writing to the log file yourself
+
+Inject `ILogWriter` and call `EnqueueLog`. It returns immediately; the hosted
+`LogWriter` drains the queue on a background loop. Passing no path uses
+`LoggingConfig.DefaultLogFilePath`, and an entry with no resolvable path is dropped:
+
+```csharp
+public class MyService(ILogWriter logWriter)
+{
+    public void DoWork() => logWriter.EnqueueLog("raw line");
+}
+```
+
+Entries are only written while the host is running, because the writer is a hosted
+service. Rotate the file yourself at startup, before `AddBeaconServices`.
 
 ### Log rotation
 
