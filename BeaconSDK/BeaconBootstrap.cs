@@ -1,7 +1,5 @@
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Tavstal.BeaconSDK.Helpers;
 using Tavstal.BeaconSDK.Models.Config;
 using Tavstal.BeaconSDK.Models.Logging;
 using Tavstal.BeaconSDK.Services.Abstractions;
@@ -17,37 +15,24 @@ namespace Tavstal.BeaconSDK;
 public static class BeaconBootstrap
 {
     /// <summary>
-    ///     Gets the task running the background log writer loop.
-    ///     The task is created by <see cref="SetupLogger" /> and is <see cref="Task.CompletedTask" /> until then.
-    /// </summary>
-    public static Task LoggerTask { get; private set; } = Task.CompletedTask;
-
-    /// <summary>
-    ///     Starts the background log writer loop used by <see cref="LoggerHelper" />.
-    ///     Calling this method more than once has no effect, the existing loop is kept.
-    /// </summary>
-    /// <param name="hostBuilder">The host builder that is being configured.</param>
-    /// <param name="cancellationToken">Cancellation token used to stop the background log writer.</param>
-    /// <returns>The same <paramref name="hostBuilder" /> instance to allow chaining.</returns>
-    public static IHostBuilder SetupLogger(this IHostBuilder hostBuilder, CancellationToken cancellationToken = default)
-    {
-        if (LoggerTask != Task.CompletedTask)
-            return hostBuilder;
-        LoggerTask = Task.Run(() => LoggerHelper.ProcessLogQueueAsync(cancellationToken), cancellationToken);
-        return hostBuilder;
-    }
-
-    /// <summary>
     ///     Registers the Beacon SDK services in the dependency injection container.
     ///     This includes the SDK's own services, data protection, and the Minecraft and launcher services.
     ///     The supplied <paramref name="configuration" /> is registered as a singleton so SDK services can resolve it.
     /// </summary>
+    /// <remarks>
+    ///     The <see cref="LogWriter" /> is registered as a singleton, as an <see cref="ILogWriter" />, and as a hosted
+    ///     service, so entries are only written to disk while the host is running.
+    /// </remarks>
     /// <param name="services">The service collection to add the services to.</param>
     /// <param name="configuration">The Beacon SDK configuration providing endpoint, HTTP, authentication and data protection settings.</param>
     /// <returns>The same <paramref name="services" /> instance to allow chaining.</returns>
     public static IServiceCollection AddBeaconServices(this IServiceCollection services, BeaconConfiguration configuration)
     {
         services.AddSingleton(configuration);
+        services.AddSingleton<LogWriter>();
+        services.AddSingleton<ILogWriter>(sp => sp.GetRequiredService<LogWriter>());
+        services.AddHostedService(sp => sp.GetRequiredService<LogWriter>());
+
         services.AddSingleton(typeof(IBeaconLogger<>), typeof(BeaconLogger<>));
         services.AddSingleton<IHttpService, HttpService>();
 
