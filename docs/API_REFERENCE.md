@@ -22,7 +22,7 @@ the NuGet package.
 
 | Member | Description |
 | --- | --- |
-| `IServiceCollection AddBeaconServices(this IServiceCollection, BeaconConfiguration configuration)` | Registers all SDK services. Also registers the `LogWriter` as a singleton, as `ILogWriter` and as a hosted service, and a `NullLogger<>` fallback for `ILogger<>` |
+| `IServiceCollection AddBeaconServices(this IServiceCollection, BeaconConfiguration configuration)` | Registers all SDK services. Also registers the `LogWriter` as a singleton, as `ILogWriter` and as a hosted service, a `NullLogger<>` fallback for `ILogger<>`, and a named `HttpClient` called `default` (via `AddHttpClient`) configured with the HTTP agent, accept header, timeout and handler settings |
 
 `SetupLogger` and `BeaconBootstrap.LoggerTask` have been removed. The log writer is a
 hosted service, so `host.RunAsync()` is all that is needed to start it.
@@ -35,11 +35,16 @@ hosted service, so `host.RunAsync()` is all that is needed to start it.
 
 ### `IHttpService`
 
-`CreateHttpClient`, `GetStringAsync` (with/without progress), `GetByteArrayAsync`,
-`GetStreamAsync`, `DownloadFileAsync`, `ParallelDownloadFilesAsync`, `PostAsync`.
+`GetStringAsync` (with progress), `DownloadFileAsync`, `ParallelDownloadFilesAsync`.
 
-Every read method reports failure through its return value instead of throwing:
-the `Get*` methods return `null`, `DownloadFileAsync` returns `false`.
+Failures are reported through return values instead of exceptions: `GetStringAsync`
+returns `null` and `DownloadFileAsync` returns `false`. GET requests retry on
+`429 Too Many Requests` and `408 Request Timeout` (up to three attempts with a
+three-second delay between them).
+
+The implementation takes an `IHttpClientFactory` and resolves its client from the
+named `default` client registered by `AddBeaconServices`; clients are no longer
+created by `IHttpService` itself.
 
 ### `IEncryptionService`
 
@@ -113,6 +118,10 @@ The concrete implementation `MicrosoftHttpAuthService` exposes the constant
 `InstanceInstallService`, `InstanceLaunchService`, `JavaService`,
 `MojangSkinService`, `MicrosoftAuthService`, `MicrosoftDeviceAuthService`,
 `MicrosoftHttpAuthService`, `BeaconLogger`, `BeaconLogger<T>`, `LogWriter`.
+
+`HttpService`, `MojangSkinService` and `MicrosoftAuthService` take an
+`IHttpClientFactory` and create their clients through the named `default` client,
+so all outbound HTTP requests share the configuration applied by `AddBeaconServices`.
 
 ---
 

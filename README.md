@@ -39,7 +39,9 @@ It targets **.NET 10**, is trim/AOT friendly, and integrates with
 - **Progress reporting** - a single `IProgressReporter` surfaces every stage to your UI.
 - **Logging** - `IBeaconLogger<T>` writes to the console or to your host's `ILogger<T>`,
   and `ILogWriter` persists entries through a hosted background writer.
-- **Resilient downloads** - gzip/TLS handling, parallel downloads and integrity checks.
+- **Resilient downloads** - gzip/deflate and TLS handling, automatic retries on
+  throttling, parallel downloads and integrity checks, all through a shared named
+  `HttpClient`.
 
 ---
 
@@ -175,7 +177,7 @@ A complete, runnable sample lives in
 
 | Type | Purpose |
 | --- | --- |
-| `BeaconBootstrap.AddBeaconServices` | Registers all SDK services in DI, including the hosted log writer |
+| `BeaconBootstrap.AddBeaconServices` | Registers all SDK services in DI, including the hosted log writer and the named `default` `HttpClient` |
 | `MinecraftInstance` | Describes an instance (version, paths, memory, client) |
 | `FabricInstance`, `QuiltInstance`, `NeoForgeInstance`, `ForgeInstance` | Mod loader installers |
 | `GameDetails` / `PathDetails` / `LauncherDetails` / `ClientDetails` | Instance configuration |
@@ -186,7 +188,7 @@ A complete, runnable sample lives in
 
 | Service | Purpose |
 | --- | ---|
-| `IHttpService` | GET/POST, streaming, downloads, parallel downloads |
+| `IHttpService` | GET, streaming, downloads, parallel downloads (named `default` `HttpClient`) |
 | `IManifestService` | Mojang + mod loader manifests (cached) |
 | `ILibraryDownloadService` | Version JSON, assets, mappings, libraries, natives |
 | `IInstanceInstallService` | Downloads and verifies all instance files |

@@ -20,7 +20,8 @@ management and launching, so you can focus on your launcher's UI and features.
 - Java runtime discovery, inspection and automatic download
 - Argument building and process launch/stop lifecycle
 - `IProgressReporter` for progress updates and `IBeaconLogger<T>` for logging
-- Dependency injection integration via `Microsoft.Extensions.Hosting`
+- Dependency injection integration via `Microsoft.Extensions.Hosting`, including a named
+  `default` `HttpClient` (via `IHttpClientFactory`) shared by all outbound requests
 
 ---
 

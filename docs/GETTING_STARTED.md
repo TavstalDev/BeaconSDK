@@ -91,10 +91,19 @@ prefer the DI-registered provider that `AddBeaconServices` sets up for you.
 
 ### HTTP and endpoints
 
-`BeaconConfiguration.Http` (`HttpConfig`) tunes the `HttpClient` the SDK uses:
-`Agent`, `AcceptHeader`, `Timeout`, `AutomaticDecompression`, `AllowAutoRedirect`,
-`EnableMultipleHttp2Connections`, `MaxParallelDownloads`, `BufferSize`, `TempFileSuffix`
-and `EnableSslProtocols`.
+`AddBeaconServices` registers a named `HttpClient` called `default` through
+`Microsoft.Extensions.Http`. It is configured from `BeaconConfiguration.Http`
+(`HttpConfig`) with `Agent` (the user agent), `AcceptHeader` and `Timeout`, and its
+primary handler applies `AutomaticDecompression`, `AllowAutoRedirect`,
+`EnableMultipleHttp2Connections` and `EnableSslProtocols`. `HttpService`,
+`MicrosoftAuthService` and `MojangSkinService` obtain their clients from
+`IHttpClientFactory` using this name, so changing those values affects every
+outbound request. GET requests retry on `429 Too Many Requests` and
+`408 Request Timeout`.
+
+The download pipeline also reads `MaxParallelDownloads`, `BufferSize` and
+`TempFileSuffix` from `HttpConfig` to control how many files are fetched at once and
+how they are buffered and written to disk.
 
 `BeaconConfiguration.Endpoints` (`EndpointConfig`) holds the base URLs for Microsoft, Mojang,
 Fabric, Quilt, Forge and NeoForge, in case you need to point the SDK at mirrors or proxies.
