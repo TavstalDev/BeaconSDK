@@ -22,7 +22,7 @@ public class MicrosoftAuthServiceTests
         CreateService()
     {
         var handler = new StubHttpMessageHandler();
-        var http = new FakeHttpService(handler);
+        var http = new FakeHttpClientFactory(handler);
         var encryption = new RecordingEncryptionService();
         var service = new MicrosoftAuthService(new CapturingBeaconLogger<MicrosoftAuthService>(), http, encryption, ModelFactory.CreateAppConfiguration());
         return (service, handler, encryption);
