@@ -1,5 +1,4 @@
-using System.Net.Security;
-using System.Security.Authentication;
+using System.Net;
 using System.Text;
 using Tavstal.BeaconSDK.Helpers.IO;
 using Tavstal.BeaconSDK.Models;
@@ -21,32 +20,15 @@ public class HttpService : IHttpService
     ///     Initializes a new instance of the <see cref="HttpService" /> class.
     /// </summary>
     /// <param name="logger">Logger instance used to record diagnostic and error messages for HTTP operations.</param>
-    /// <param name="config">The Beacon SDK configuration providing HTTP settings such as agent, headers, timeout and buffer sizes.</param>
-    public HttpService(IBeaconLogger<HttpService> logger, BeaconConfiguration config)
+    /// <param name="httpFactory">
+    ///     The HTTP client factory used to create the pre-configured <see cref="HttpClient" /> named "default".
+    /// </param>
+    /// <param name="config">The Beacon SDK configuration providing HTTP settings such as buffer sizes and download limits.</param>
+    public HttpService(IBeaconLogger<HttpService> logger, IHttpClientFactory httpFactory, BeaconConfiguration config)
     {
         _logger = logger;
         _config = config;
-        _httpClient = CreateHttpClient();
-    }
-
-    /// <inheritdoc />
-    public HttpClient CreateHttpClient()
-    {
-        var sslOptions = _config.Http.EnableSslProtocols ? new SslClientAuthenticationOptions { EnabledSslProtocols = SslProtocols.Tls12 } : new SslClientAuthenticationOptions();
-
-        var handler = new SocketsHttpHandler
-        {
-            SslOptions = sslOptions,
-            AutomaticDecompression = _config.Http.AutomaticDecompression,
-            AllowAutoRedirect = _config.Http.AllowAutoRedirect
-        };
-        handler.EnableMultipleHttp2Connections = _config.Http.EnableMultipleHttp2Connections;
-        var client = new HttpClient(handler);
-
-        client.DefaultRequestHeaders.Accept.ParseAdd(_config.Http.AcceptHeader);
-        client.DefaultRequestHeaders.UserAgent.ParseAdd(_config.Http.Agent);
-        client.Timeout = _config.Http.Timeout;
-        return client;
+        _httpClient = httpFactory.CreateClient("default");
     }
 
     /// <inheritdoc />
@@ -55,7 +37,8 @@ public class HttpService : IHttpService
     {
         try
         {
-            using var response = await _httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            using var response = await GetAsync(url, cancellationToken: cancellationToken);
+            ArgumentNullException.ThrowIfNull(response);
             response.EnsureSuccessStatusCode();
 
             var contentLength = response.Content.Headers.ContentLength;
@@ -120,7 +103,8 @@ public class HttpService : IHttpService
                     return true;
             }
 
-            using var response = await _httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            using var response = await GetAsync(url, cancellationToken: cancellationToken);
+            ArgumentNullException.ThrowIfNull(response);
             response.EnsureSuccessStatusCode();
 
             var contentLength = response.Content.Headers.ContentLength;
@@ -215,27 +199,32 @@ public class HttpService : IHttpService
         await Task.WhenAll(downloadTasks);
     }
 
-    /// <inheritdoc />
-    public async Task<HttpResponseMessage?> PostAsync(string url, HttpContent? content,
-        CancellationToken cancellationToken = default)
+    private async Task<HttpResponseMessage> GetAsync(string url, int retries = 3, CancellationToken cancellationToken = default)
     {
-        try
+        int currentRetry = 0;
+        HttpResponseMessage? response = null;
+        while (currentRetry < retries)
         {
-            return await _httpClient.PostAsync(url, content, cancellationToken);
+            try
+            {
+                response = await _httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+                break;
+            }
+            catch (HttpRequestException ex)
+            {
+                if (ex.StatusCode == HttpStatusCode.TooManyRequests || ex.StatusCode == HttpStatusCode.RequestTimeout)
+                {
+                    await Task.Delay(3000, cancellationToken); // wait 3 seconds
+                    continue;
+                }
+                throw;
+            }
+            finally
+            {
+                currentRetry++;
+            }
         }
-        catch (OperationCanceledException)
-        {
-            throw;
-        }
-        catch (HttpRequestException ex)
-        {
-            _logger.LogError($"HTTP request to {url} failed with {ex.StatusCode}: {ex.Message}");
-            return null;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogCritical(ex, $"Failed to make POST request to {url}:");
-            return null;
-        }
+        ArgumentNullException.ThrowIfNull(response);
+        return response;
     }
 }
