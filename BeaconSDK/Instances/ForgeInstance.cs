@@ -2,7 +2,6 @@ using Tavstal.BeaconSDK.Instances.Forge;
 using Tavstal.BeaconSDK.Models;
 using Tavstal.BeaconSDK.Models.Config;
 using Tavstal.BeaconSDK.Models.Instance;
-using Tavstal.BeaconSDK.Models.Logging;
 using Tavstal.BeaconSDK.Services.Abstractions;
 
 namespace Tavstal.BeaconSDK.Instances;

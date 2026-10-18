@@ -3,7 +3,6 @@ using Tavstal.BeaconSDK.Models;
 using Tavstal.BeaconSDK.Models.Config;
 using Tavstal.BeaconSDK.Models.Instance;
 using Tavstal.BeaconSDK.Models.Instance.Config;
-using Tavstal.BeaconSDK.Models.Logging;
 using Tavstal.BeaconSDK.Models.MojangApi.Meta;
 using Tavstal.BeaconSDK.Services.Abstractions;
 
