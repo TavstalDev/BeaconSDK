@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Tavstal.BeaconSDK.Models.Config;
-using Tavstal.BeaconSDK.Models.Logging;
 using Tavstal.BeaconSDK.Services.Abstractions;
 using Tavstal.BeaconSDK.Services.Abstractions.Auth;
 using Tavstal.BeaconSDK.Services.Implementations;
@@ -32,6 +34,10 @@ public static class BeaconBootstrap
         services.AddSingleton<LogWriter>();
         services.AddSingleton<ILogWriter>(sp => sp.GetRequiredService<LogWriter>());
         services.AddHostedService(sp => sp.GetRequiredService<LogWriter>());
+
+        // BeaconLogger<T> optionally forwards to ILogger<T>. Registering the open generic lets the
+        // container satisfy that constructor even when the host never called AddLogging().
+        services.TryAdd(ServiceDescriptor.Singleton(typeof(ILogger<>), typeof(NullLogger<>)));
 
         services.AddSingleton(typeof(IBeaconLogger<>), typeof(BeaconLogger<>));
         services.AddSingleton<IHttpService, HttpService>();
