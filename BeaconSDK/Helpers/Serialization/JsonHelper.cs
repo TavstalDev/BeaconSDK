@@ -6,6 +6,8 @@ using Microsoft.Extensions.Logging;
 using Tavstal.BeaconSDK.Helpers.IO;
 using Tavstal.BeaconSDK.Models;
 using Tavstal.BeaconSDK.Models.Logging;
+using Tavstal.BeaconSDK.Services.Abstractions;
+using Tavstal.BeaconSDK.Services.Implementations;
 
 namespace Tavstal.BeaconSDK.Helpers.Serialization;
 

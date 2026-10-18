@@ -3,6 +3,9 @@ using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
 using Tavstal.BeaconSDK.Enums;
 using Tavstal.BeaconSDK.Models.Logging;
+using Tavstal.BeaconSDK.Services.Abstractions;
+using Tavstal.BeaconSDK.Services.Implementations;
+
 // ReSharper disable UnusedMember.Global
 
 namespace Tavstal.BeaconSDK.Helpers.Platform;

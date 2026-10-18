@@ -9,6 +9,7 @@ using Tavstal.BeaconSDK.Models.Instance;
 using Tavstal.BeaconSDK.Models.Logging;
 using Tavstal.BeaconSDK.Models.ModLoaders.Forge;
 using Tavstal.BeaconSDK.Models.ModLoaders.Forge.Modern;
+using Tavstal.BeaconSDK.Services.Abstractions;
 
 namespace Tavstal.BeaconSDK.Instances.Forge;
 

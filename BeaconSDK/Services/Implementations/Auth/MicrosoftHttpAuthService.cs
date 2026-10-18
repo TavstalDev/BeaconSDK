@@ -3,6 +3,7 @@ using System.Text;
 using Tavstal.BeaconSDK.Enums;
 using Tavstal.BeaconSDK.Models;
 using Tavstal.BeaconSDK.Models.Logging;
+using Tavstal.BeaconSDK.Services.Abstractions;
 using Tavstal.BeaconSDK.Services.Abstractions.Auth;
 
 namespace Tavstal.BeaconSDK.Services.Implementations.Auth;
