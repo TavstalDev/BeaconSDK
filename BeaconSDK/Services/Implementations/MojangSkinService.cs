@@ -13,7 +13,7 @@ namespace Tavstal.BeaconSDK.Services.Implementations;
 /// <inheritdoc />
 public class MojangSkinService : IMojangSkinService
 {
-    private readonly IHttpService _httpService;
+    private readonly IHttpClientFactory _httpFactory;
     private readonly IBeaconLogger _logger;
     private readonly BeaconConfiguration _config;
 
@@ -24,15 +24,15 @@ public class MojangSkinService : IMojangSkinService
     ///     The logger instance used for recording diagnostic information, warnings, and errors related to
     ///     Mojang skin and cape API operations.
     /// </param>
-    /// <param name="httpService">
-    ///     The HTTP service instance used for making authenticated requests to the Microsoft/Mojang
-    ///     player configuration API endpoints.
+    /// <param name="httpFactory">
+    ///     The HTTP client factory used to create the pre-configured <see cref="HttpClient" /> named "default" for
+    ///     authenticated requests to the Microsoft/Mojang player configuration API endpoints.
     /// </param>
     /// <param name="config">The Beacon SDK configuration providing the Mojang player configuration endpoint URLs.</param>
-    public MojangSkinService(IBeaconLogger<MojangSkinService> logger, IHttpService httpService, BeaconConfiguration config)
+    public MojangSkinService(IBeaconLogger<MojangSkinService> logger, IHttpClientFactory httpFactory, BeaconConfiguration config)
     {
         _logger = logger;
-        _httpService = httpService;
+        _httpFactory = httpFactory;
         _config = config;
     }
 
@@ -51,7 +51,7 @@ public class MojangSkinService : IMojangSkinService
                 "application/json"
             );
 
-            using var client = _httpService.CreateHttpClient();
+            using var client = _httpFactory.CreateClient("default");
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", mcToken);
             using var result = await client.PostAsync(endpoint, reqContent, cancellationToken);
             if (!result.IsSuccessStatusCode)
@@ -86,7 +86,7 @@ public class MojangSkinService : IMojangSkinService
             fileContent.Headers.ContentType = new MediaTypeHeaderValue("image/png");
             form.Add(fileContent, "file", Path.GetFileName(skinPath));
 
-            using var client = _httpService.CreateHttpClient();
+            using var client = _httpFactory.CreateClient("default");
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", mcToken);
             using var result = await client.PostAsync(endpoint, form, cancellationToken);
             if (!result.IsSuccessStatusCode)
@@ -113,7 +113,7 @@ public class MojangSkinService : IMojangSkinService
         try
         {
             var endpoint = $"{_config.Endpoints.Mojang.PlayerConfigUrl}/skins/active?uuid={playerId}";
-            using var client = _httpService.CreateHttpClient();
+            using var client = _httpFactory.CreateClient("default");
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", mcToken);
             using var result = await client.DeleteAsync(endpoint, cancellationToken);
             if (!result.IsSuccessStatusCode)
@@ -147,7 +147,7 @@ public class MojangSkinService : IMojangSkinService
                 Encoding.UTF8,
                 "application/json"
             );
-            using var client = _httpService.CreateHttpClient();
+            using var client = _httpFactory.CreateClient("default");
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", mcToken);
             using var result = await client.PutAsync(endpoint, reqContent, cancellationToken);
             if (!result.IsSuccessStatusCode)
@@ -173,7 +173,7 @@ public class MojangSkinService : IMojangSkinService
         try
         {
             string endpoint = $"{_config.Endpoints.Mojang.PlayerConfigUrl}/capes/active";
-            using var client = _httpService.CreateHttpClient();
+            using var client = _httpFactory.CreateClient("default");
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", mcToken);
             using var result = await client.DeleteAsync(endpoint, cancellationToken);
             if (!result.IsSuccessStatusCode)

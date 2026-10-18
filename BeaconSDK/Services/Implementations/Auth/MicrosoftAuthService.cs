@@ -20,7 +20,7 @@ namespace Tavstal.BeaconSDK.Services.Implementations.Auth;
 public class MicrosoftAuthService : IMicrosoftAuthService
 {
     private readonly IEncryptionService _encryptionService;
-    private readonly IHttpService _httpService;
+    private readonly IHttpClientFactory _httpFactory;
     private readonly IBeaconLogger _logger;
     private readonly BeaconConfiguration _config;
 
@@ -36,17 +36,21 @@ public class MicrosoftAuthService : IMicrosoftAuthService
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="MicrosoftAuthService" /> class with the
-    ///     logger, HTTP service, encryption service and configuration used to perform Microsoft authentication requests.
+    ///     logger, HTTP client factory, encryption service and configuration used to perform Microsoft authentication
+    ///     requests.
     /// </summary>
     /// <param name="logger">Logger used for diagnostics and error reporting.</param>
-    /// <param name="httpService">HTTP service used to create configured <see cref="HttpClient" /> instances.</param>
+    /// <param name="httpFactory">
+    ///     The HTTP client factory used to create the pre-configured <see cref="HttpClient" /> named "default" for the
+    ///     authentication requests.
+    /// </param>
     /// <param name="encryptionService">Encryption service used to store and reprotect account tokens.</param>
     /// <param name="config">The Beacon SDK configuration providing the Microsoft client ID and authentication endpoint URLs.</param>
-    public MicrosoftAuthService(IBeaconLogger<MicrosoftAuthService> logger, IHttpService httpService,
+    public MicrosoftAuthService(IBeaconLogger<MicrosoftAuthService> logger, IHttpClientFactory httpFactory,
         IEncryptionService encryptionService, BeaconConfiguration config)
     {
         _logger = logger;
-        _httpService = httpService;
+        _httpFactory = httpFactory;
         _encryptionService = encryptionService;
         _config = config;
     }
@@ -131,7 +135,7 @@ public class MicrosoftAuthService : IMicrosoftAuthService
             };
             var requestContent = new FormUrlEncodedContent(requestParams);
 
-            using var client = _httpService.CreateHttpClient();
+            using var client = _httpFactory.CreateClient("default");
             using var response = await client.PostAsync(_config.Endpoints.Microsoft.TokenUrl, requestContent, cancellationToken);
 
             if (!response.IsSuccessStatusCode)
@@ -188,7 +192,7 @@ public class MicrosoftAuthService : IMicrosoftAuthService
 
             var formContent = new FormUrlEncodedContent(parameters);
 
-            using var client = _httpService.CreateHttpClient();
+            using var client = _httpFactory.CreateClient("default");
             var result = await client.PostAsync(_config.Endpoints.Microsoft.DeviceUrl, formContent, cancellationToken);
 
             var rawJson = await result.Content.ReadAsStringAsync(cancellationToken);
@@ -218,7 +222,7 @@ public class MicrosoftAuthService : IMicrosoftAuthService
 
             var formContent = new FormUrlEncodedContent(parameters);
 
-            using var client = _httpService.CreateHttpClient();
+            using var client = _httpFactory.CreateClient("default");
             using var response = await client.PostAsync(_config.Endpoints.Microsoft.DeviceTokenUrl, formContent,
                 cancellationToken);
 
@@ -267,7 +271,7 @@ public class MicrosoftAuthService : IMicrosoftAuthService
                 "application/json"
             );
 
-            using var client = _httpService.CreateHttpClient();
+            using var client = _httpFactory.CreateClient("default");
             using var result = await client.PostAsync(_config.Endpoints.Microsoft.XboxAuthUrl, reqContent, cancellationToken);
 
             var resultObj = JsonElement.Parse(await result.Content.ReadAsStringAsync(cancellationToken));
@@ -310,7 +314,7 @@ public class MicrosoftAuthService : IMicrosoftAuthService
                 "application/json"
             );
 
-            using var client = _httpService.CreateHttpClient();
+            using var client = _httpFactory.CreateClient("default");
             using var result = await client.PostAsync(_config.Endpoints.Microsoft.XboxXstsUrl, reqContent, cancellationToken);
 
             var rawJson = await result.Content.ReadAsStringAsync(cancellationToken);
@@ -385,7 +389,7 @@ public class MicrosoftAuthService : IMicrosoftAuthService
                 "application/json"
             );
 
-            using var client = _httpService.CreateHttpClient();
+            using var client = _httpFactory.CreateClient("default");
             using var result = await client.PostAsync(_config.Endpoints.Mojang.AuthUrl, reqContent, cancellationToken);
 
             var resultObj = JsonElement.Parse(await result.Content.ReadAsStringAsync(cancellationToken));
@@ -424,7 +428,7 @@ public class MicrosoftAuthService : IMicrosoftAuthService
         {
             _progressReporter?.Report(EProgressKind.AUTH_MINECRAFT_OWNERSHIP, 0);
 
-            using var client = _httpService.CreateHttpClient();
+            using var client = _httpFactory.CreateClient("default");
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", mcToken);
             using var result = await client.GetAsync(_config.Endpoints.Mojang.OwnershipUrl, cancellationToken);
 
@@ -462,7 +466,7 @@ public class MicrosoftAuthService : IMicrosoftAuthService
         {
             _progressReporter?.Report(EProgressKind.AUTH_MINECRAFT_PROFILE, 0);
 
-            using var client = _httpService.CreateHttpClient();
+            using var client = _httpFactory.CreateClient("default");
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", mcToken);
             using var result = await client.GetAsync(_config.Endpoints.Mojang.ProfileUrl, cancellationToken);
 
@@ -522,7 +526,7 @@ public class MicrosoftAuthService : IMicrosoftAuthService
         {
             _progressReporter?.Report(EProgressKind.AUTH_MINECRAFT_PROFILE, 0);
 
-            using var client = _httpService.CreateHttpClient();
+            using var client = _httpFactory.CreateClient("default");
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", mcToken);
             using var result = await client.GetAsync(_config.Endpoints.Mojang.ProfileUrl, cancellationToken);
 
@@ -555,7 +559,7 @@ public class MicrosoftAuthService : IMicrosoftAuthService
             };
             var requestContent = new FormUrlEncodedContent(requestParams);
 
-            using var client = _httpService.CreateHttpClient();
+            using var client = _httpFactory.CreateClient("default");
             using var response = await client.PostAsync(_config.Endpoints.Microsoft.TokenUrl, requestContent, cancellationToken);
 
             if (!response.IsSuccessStatusCode)

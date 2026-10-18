@@ -24,6 +24,8 @@ public static class BeaconBootstrap
     /// <remarks>
     ///     The <see cref="LogWriter" /> is registered as a singleton, as an <see cref="ILogWriter" />, and as a hosted
     ///     service, so entries are only written to disk while the host is running.
+    ///     A named <see cref="HttpClient" /> called "default" is also registered, pre-configured with the user agent,
+    ///     accept header and timeout from <see cref="Tavstal.BeaconSDK.Models.Config.HttpConfig" />.
     /// </remarks>
     /// <param name="services">The service collection to add the services to.</param>
     /// <param name="configuration">The Beacon SDK configuration providing endpoint, HTTP, authentication and data protection settings.</param>
@@ -40,6 +42,12 @@ public static class BeaconBootstrap
         services.TryAdd(ServiceDescriptor.Singleton(typeof(ILogger<>), typeof(NullLogger<>)));
 
         services.AddSingleton(typeof(IBeaconLogger<>), typeof(BeaconLogger<>));
+        services.AddHttpClient("default", client =>
+        {
+            client.DefaultRequestHeaders.UserAgent.ParseAdd(configuration.Http.Agent);
+            client.DefaultRequestHeaders.Accept.ParseAdd(configuration.Http.AcceptHeader);
+            client.Timeout = configuration.Http.Timeout;
+        });
         services.AddSingleton<IHttpService, HttpService>();
 
         services.AddDataProtection()
