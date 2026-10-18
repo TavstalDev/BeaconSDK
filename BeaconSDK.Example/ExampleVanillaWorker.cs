@@ -8,7 +8,9 @@ using Tavstal.BeaconSDK.Models.Instance;
 using Tavstal.BeaconSDK.Models.Instance.Config;
 using Tavstal.BeaconSDK.Models.Logging;
 using Tavstal.BeaconSDK.Services.Abstractions;
+using Tavstal.BeaconSDK.Services.Implementations;
 
+// ReSharper disable UnusedMember.Global
 // ReSharper disable ClassNeverInstantiated.Global
 
 namespace Tavstal.BeaconSDK.Example;
@@ -144,7 +146,7 @@ public class ExampleVanillaWorker : IHostedService, IProgressReporter
           Client = clientDetails
         };
 
-        var instance = new MinecraftInstance(minecraftVersion, _appConfiguration, config, new BeaconLogger<MinecraftInstance>(_logger.GetLogLevel()), this);
+        var instance = new MinecraftInstance(minecraftVersion, _appConfiguration, config, new BeaconLogger<MinecraftInstance>(_logger.LogLevel), this);
         var installResult = await _instanceInstallService.InstallAsync(instance, this, cts);
         if (!installResult)
         {
@@ -213,7 +215,7 @@ public class ExampleVanillaWorker : IHostedService, IProgressReporter
 
     public Task StopAsync(CancellationToken cts)
     {
-        _logger.LogInformation("Example worker stopped");
+        _logger.LogInformation($"{nameof(ExampleVanillaWorker)} has stopped");
         return Task.CompletedTask;
     }
 

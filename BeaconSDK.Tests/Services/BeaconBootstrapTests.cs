@@ -1,5 +1,4 @@
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Tavstal.BeaconSDK.Models.Logging;
 using Tavstal.BeaconSDK.Services.Abstractions;
 using Tavstal.BeaconSDK.Services.Abstractions.Auth;
@@ -81,20 +80,5 @@ public class BeaconBootstrapTests : IDisposable
             provider.GetRequiredService<IEncryptionService>());
         Assert.Same(provider.GetRequiredService<IMicrosoftAuthService>(),
             provider.GetRequiredService<IMicrosoftAuthService>());
-    }
-
-    [Fact(DisplayName = "SetupLogger second call is a no-op")]
-    public void SetupLogger_SecondCall_IsNoOp()
-    {
-        var builder = new HostBuilder();
-        using var cts = new CancellationTokenSource();
-
-        builder.SetupLogger(cts.Token);
-        var first = BeaconBootstrap.LoggerTask;
-
-        builder.SetupLogger(cts.Token);
-
-        Assert.Same(first, BeaconBootstrap.LoggerTask);
-        cts.Cancel();
     }
 }

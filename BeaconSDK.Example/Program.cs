@@ -10,7 +10,6 @@ public static class Program
     public static async Task Main(string[] args)
     {
         var hostBuilder = Host.CreateDefaultBuilder(args);
-        hostBuilder.SetupLogger();
 
         var appLogsDir = Path.Combine(Directory.GetCurrentDirectory(), "logs");
         Directory.CreateDirectory(appLogsDir);
@@ -36,7 +35,10 @@ public static class Program
                 LinuxKey        = [.. "5aEcj3cLUm5qYeCpptEaQoFCUTgZyEZw"u8],
                 MacKey          = [.. "MqcM2kVeroKpvh9z79t3KjtiTzCUKSRs"u8]
             },
-            AppLogFilePath = latestLog
+            Logging = new LoggingConfig
+            {
+                DefaultLogFilePath = latestLog
+            }
         };
         hostBuilder = hostBuilder.ConfigureServices(services =>
         {

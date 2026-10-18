@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Tavstal.BeaconSDK.Models.Logging;
+using Tavstal.BeaconSDK.Services.Abstractions;
 
 namespace Tavstal.BeaconSDK.Tests.Fakes;
 
@@ -21,13 +22,7 @@ public sealed class CapturingBeaconLogger<T> : IBeaconLogger<T> where T : class
         Exceptions.Add(exception);
     }
 
-    public string GetModuleName()
-    {
-        return typeof(T).Name;
-    }
+    public string ModuleName => typeof(T).Name;
 
-    public LogLevel GetLogLevel()
-    {
-        return LogLevel.Trace;
-    }
+    public LogLevel LogLevel => LogLevel.Trace;
 }
