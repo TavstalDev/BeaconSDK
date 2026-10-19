@@ -41,7 +41,7 @@ It targets **.NET 10**, is trim/AOT friendly, and integrates with
   and `ILogWriter` persists entries through a hosted background writer.
 - **Resilient downloads** - gzip/deflate and TLS handling, automatic retries on
   throttling, parallel downloads and integrity checks, all through a shared named
-  `HttpClient`.
+  `default` `HttpClient` (via `IHttpClientFactory`).
 
 ---
 
@@ -74,6 +74,7 @@ Register the SDK services on a host:
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Tavstal.BeaconSDK;
+using Tavstal.BeaconSDK.Models.Config;
 
 var hostBuilder = Host.CreateDefaultBuilder(args);
 var config = new BeaconConfiguration

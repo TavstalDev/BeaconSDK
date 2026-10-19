@@ -1,8 +1,12 @@
 # BeaconSDK
 
-BeaconSDK is a .NET 10 library for building Minecraft launchers. It handles
-Microsoft authentication, game file installation, mod loaders, Java runtime
-management and launching, so you can focus on your launcher's UI and features.
+BeaconSDK is a .NET library for building Minecraft launchers. It handles the parts
+that are tedious to get right: Microsoft/Xbox authentication, downloading and
+verifying game files, installing mod loaders, managing Java runtimes and launching
+the game with a correct argument list.
+
+It targets **.NET 10**, is trim/AOT friendly, and integrates with
+`Microsoft.Extensions.DependencyInjection` and `Microsoft.Extensions.Hosting`.
 
 - Full source and issue tracker: <https://github.com/TavstalDev/BeaconSDK>
 - License: MIT
@@ -11,17 +15,35 @@ management and launching, so you can focus on your launcher's UI and features.
 
 ## Features
 
-- Microsoft OAuth2 authentication (device code flow and browser redirect)
-- Xbox Live / XSTS token exchange and Minecraft access tokens
-- Mojang profile retrieval, plus skin and cape management
-- Mojang version manifest with Fabric, Quilt, Forge and NeoForge loader manifests
-- Instance installation with SHA-1 verification for jars and libraries
-- Vanilla plus Fabric, Quilt, Forge (early → modern) and NeoForge instances
-- Java runtime discovery, inspection and automatic download
-- Argument building and process launch/stop lifecycle
-- `IProgressReporter` for progress updates and `IBeaconLogger<T>` for logging
-- Dependency injection integration via `Microsoft.Extensions.Hosting`, including a named
-  `default` `HttpClient` (via `IHttpClientFactory`) shared by all outbound requests
+- **Microsoft authentication** - OAuth2 device code flow and browser redirect flow,
+  Xbox Live / XSTS token exchange, Minecraft access tokens, ownership checks, and
+  profile retrieval.
+- **Account management** - `Account` model with encrypted access/refresh tokens at
+  rest and login refresh support.
+- **Mojang skins & capes** - change, upload, reset skins and show/hide capes.
+- **Minecraft version manifests** - cached Mojang version manifest plus Fabric,
+  Quilt, Forge and NeoForge loader manifests.
+- **Instance installation** - downloads and verifies the client jar, libraries,
+  assets, natives and logging config, with SHA-1 verification.
+- **Mod loader support** - Fabric, Quilt, Forge (early → modern) and NeoForge,
+  including the legacy Forge compatibility libraries.
+- **Java management** - locates installed JVMs, inspects their version/architecture,
+  and downloads the required JDK automatically.
+- **Launching** - builds JVM and game arguments and starts the game process, with
+  start/stop lifecycle and running-process tracking.
+- **Progress reporting** - a single `IProgressReporter` surfaces every stage to your UI.
+- **Logging** - `IBeaconLogger<T>` writes to the console or to your host's `ILogger<T>`,
+  and `ILogWriter` persists entries through a hosted background writer.
+- **Resilient downloads** - gzip/deflate and TLS handling, automatic retries on
+  throttling, parallel downloads and integrity checks, all through a shared named
+  `default` `HttpClient` (via `IHttpClientFactory`).
+
+---
+
+## Requirements
+
+- The [.NET 10](https://dotnet.microsoft.com/download/dotnet/10.0) SDK or runtime
+- A Microsoft Azure application registration (client ID) if you use Microsoft login
 
 ---
 
@@ -31,20 +53,23 @@ management and launching, so you can focus on your launcher's UI and features.
 dotnet add package BeaconSDK
 ```
 
+Or add the package reference directly:
+
 ```xml
 <PackageReference Include="BeaconSDK" Version="1.0.0" />
 ```
-
-Requires the **.NET 10** SDK or runtime.
 
 ---
 
 ## Quickstart
 
+Register the SDK services on a host:
+
 ```csharp
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Tavstal.BeaconSDK;
+using Tavstal.BeaconSDK.Models.Config;
 
 var hostBuilder = Host.CreateDefaultBuilder(args);
 var config = new BeaconConfiguration
@@ -52,6 +77,11 @@ var config = new BeaconConfiguration
     Auth = new AuthConfiguration
     {
         MicrosoftClientId = "your-azure-client-id",
+    },
+    Logging = new LoggingConfig
+    {
+        LogLevel = LogLevel.Information,
+        DefaultLogFilePath = Path.Combine("logs", "latest.log") // optional, null keeps logging on the console
     }
 };
 hostBuilder = hostBuilder.ConfigureServices(services =>
@@ -62,7 +92,12 @@ var host = hostBuilder.Build();
 await host.RunAsync();
 ```
 
-Resolve the services you need and install a vanilla instance:
+The log writer is registered as a hosted service, so starting the host begins flushing
+entries to `Logging.DefaultLogFilePath`.
+
+`AddBeaconServices` registers every service (HTTP, encryption, manifests, install,
+launch, Java and authentication). Inject what you need, then install and launch an
+instance:
 
 ```csharp
 using Tavstal.BeaconSDK.Enums;
@@ -74,48 +109,93 @@ using Tavstal.BeaconSDK.Models.Instance.Config;
 using Tavstal.BeaconSDK.Models.Logging;
 using Tavstal.BeaconSDK.Services.Abstractions;
 
-var manifestPath = Path.Combine(Directory.GetCurrentDirectory(), "manifest.json");
-if (!File.Exists(manifestPath))
+public class Launcher(IManifestService manifests,
+    IInstanceInstallService installer, IInstanceLaunchService launcher,
+    IJavaService java, IBeaconLogger<Launcher> log, BeaconConfiguration config, IProgressReporter progress)
 {
-    await manifests.DownloadMinecraftManifestAsync(manifestPath, null, ct);
+    public async Task RunAsync(string username, string mcVersion, CancellationToken ct)
+    {
+        // 1. Fetch the Minecraft version manifest
+        var manifestPath = Path.Combine(Directory.GetCurrentDirectory(), "manifest.json");
+        if (!File.Exists(manifestPath))
+        {
+            await manifests.DownloadMinecraftManifestAsync(manifestPath, null, ct);
+        }
+        var manifest = await manifests.GetMinecraftManifestAsync(manifestPath, ct);
+        var version = manifest!.Versions.First(v => v.Id == mcVersion);
+
+        // 2. Describe the instance
+        var gameDir = Path.Combine(Directory.GetCurrentDirectory(), "game", "instances", mcVersion);
+        Directory.CreateDirectory(gameDir);
+        var game = new GameDetails(javaPath: "", 1024, 4096, "", mcVersion, EMinecraftKind.VANILLA,
+            customVersion: null, customGameDirectory: gameDir, preLaunchCommand: "",
+            wrapperCommands: [], postExitCommand: "", environmentVariables: [], serverAddressToJoin: null);
+        var paths = new PathDetails(assetsDir: "game/assets", cacheDir: "game/cache",
+            librariesDir: "game/libs", versionsDir: "game/versions", []);
+        var launcherDetails = new LauncherDetails("myLauncher", "1.0.0");
+        var uuid = GameHelper.GetOfflinePlayerUUID(username);
+        var client = new ClientDetails(null, username, uuid, isOffline: true);
+
+        var instanceConfig = new InstanceConfiguration
+        {
+            Version = version,
+            Game = game,
+            Path = paths,
+            Launcher = launcherDetails,
+            Client = client
+        };
+
+        var instance = new MinecraftInstance(mcVersion, config, instanceConfig,
+            new BeaconLogger<MinecraftInstance>(Microsoft.Extensions.Logging.LogLevel.Information), progress);
+
+        // 3. Install, ensure Java, then launch
+        if (!await installer.InstallAsync(instance, progress, ct)) return;
+
+        var major = instance.MinecraftVersionMeta.JavaVersionMeta?.MajorVersion ?? 8;
+        await java.LocateJavaInstallationsAsync(Path.Combine("game", "java"), cancellationToken: ct);
+        var javaPath = await java.GetJavaVersionAsync(major, ct)
+            ?? await java.DownloadJavaVersionAsync(major, "game/java", "java-mirrors.json", null, ct);
+        instance.Config.Game.JavaPath = javaPath;
+
+        var process = await launcher.LaunchAsync(instance, progress, ct);
+    }
 }
-var manifest = await manifests.GetMinecraftManifestAsync(manifestPath, ct);
-var version = manifest!.Versions.First(v => v.Id == mcVersion);
-
-var gameDir = Path.Combine(Directory.GetCurrentDirectory(), "game", "instances", mcVersion);
-Directory.CreateDirectory(gameDir);
-var game = new GameDetails("", 1024, 4096, "", mcVersion, EMinecraftKind.VANILLA,
-    null, gameDir, "", [], "", [], null);
-var paths = new PathDetails("game/assets", "game/cache", "game/libs", "game/versions", []);
-var launcherDetails = new LauncherDetails("myLauncher", "1.0.0");
-var client = new ClientDetails(null, username, GameHelper.GetOfflinePlayerUUID(username), true);
-
-var instanceConfig = new InstanceConfiguration
-{
-    Version = version,
-    Game = game,
-    Path = paths,
-    Launcher = launcherDetails,
-    Client = client
-};
-var instance = new MinecraftInstance(mcVersion, config, instanceConfig,
-    new BeaconLogger<MinecraftInstance>(Microsoft.Extensions.Logging.LogLevel.Information), progress);
-
-if (!await installer.InstallAsync(instance, progress, ct))
-    return;
-
-// Installation resolves the Java version the Minecraft version requires
-var major = instance.MinecraftVersionMeta.JavaVersionMeta?.MajorVersion ?? 8;
-await java.LocateJavaInstallationsAsync(Path.Combine("game", "java"), cancellationToken: ct);
-var javaPath = await java.GetJavaVersionAsync(major, ct)
-    ?? await java.DownloadJavaVersionAsync(major, "game/java", "java-mirrors.json", null, ct);
-instance.Config.Game.JavaPath = javaPath;
-
-var process = await launcher.LaunchAsync(instance, progress, ct);
 ```
 
-For a complete, runnable example, see the
-[`BeaconSDK.Example`](https://github.com/TavstalDev/BeaconSDK/tree/master/BeaconSDK.Example) project.
+A complete, runnable sample lives in
+[`BeaconSDK.Example`](https://github.com/TavstalDev/BeaconSDK/tree/master/BeaconSDK.Example).
+For modded instances, construct a `FabricInstance`, `QuiltInstance`,
+`ForgeInstance.GetForgeInstance(...)` or `NeoForgeInstance` and pass it to the same
+services.
+
+---
+
+## Core concepts
+
+| Type                                                                   | Purpose                                                                                                |
+|------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------|
+| `BeaconBootstrap.AddBeaconServices`                                    | Registers all SDK services in DI, including the hosted log writer and the named `default` `HttpClient` |
+| `MinecraftInstance`                                                    | Describes an instance (version, paths, memory, client)                                                 |
+| `FabricInstance`, `QuiltInstance`, `NeoForgeInstance`, `ForgeInstance` | Mod loader installers                                                                                  |
+| `GameDetails` / `PathDetails` / `LauncherDetails` / `ClientDetails`    | Instance configuration                                                                                 |
+| `IProgressReporter`                                                    | Receives progress/status updates                                                                       |
+| `IBeaconLogger<T>`                                                     | Structured logger used throughout the SDK                                                              |
+| `ILogWriter`                                                           | Queues log lines for asynchronous file writing                                                         |
+| `LoggingConfig`                                                        | Log level, console vs `ILogger<T>` routing, default log file                                           |
+
+| Service                       | Purpose                                                                      |
+|-------------------------------|------------------------------------------------------------------------------|
+| `IHttpService`                | GET, streaming, downloads, parallel downloads (named `default` `HttpClient`) |
+| `IManifestService`            | Mojang + mod loader manifests (cached)                                       |
+| `ILibraryDownloadService`     | Version JSON, assets, mappings, libraries, natives                           |
+| `IInstanceInstallService`     | Downloads and verifies all instance files                                    |
+| `IInstanceLaunchService`      | Builds arguments and starts/stops the game                                   |
+| `IJavaService`                | Discovers, inspects and downloads Java runtimes                              |
+| `IMicrosoftAuthService`       | Microsoft/Xbox/Minecraft authentication                                      |
+| `IMicrosoftDeviceAuthService` | Device code polling loop                                                     |
+| `IMicrosoftHttpAuthService`   | OAuth2 redirect callback listener                                            |
+| `IMojangSkinService`          | Skin and cape management                                                     |
+| `IEncryptionService`          | Token encryption/decryption                                                  |
 
 ---
 
