@@ -36,4 +36,10 @@ public class BeaconConfiguration
     /// </summary>
     [JsonPropertyName("Logging")]
     public LoggingConfig Logging { get; set; } = new();
+
+    /// <summary>
+    ///     Gets or sets the download locations of support files such as the launch wrapper and the legacy Forge libraries.
+    /// </summary>
+    [JsonPropertyName("Libraries")]
+    public LibrariesConfig Libraries { get; set; } = new();
 }
