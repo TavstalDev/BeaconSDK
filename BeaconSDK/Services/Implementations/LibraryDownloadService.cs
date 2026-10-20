@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using System.IO.Compression;
-using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization.Metadata;
@@ -32,7 +31,7 @@ public class LibraryDownloadService : ILibraryDownloadService
     /// </summary>
     /// <param name="logger">Logger used to record diagnostics and errors during library download operations.</param>
     /// <param name="httpService">HTTP service used to download files and fetch remote content.</param>
-    /// <param name="config">The Beacon SDK configuration providing endpoint and HTTP settings used while downloading.</param>
+    /// <param name="config">The Beacon SDK configuration providing endpoint, HTTP and library download settings.</param>
     public LibraryDownloadService(IBeaconLogger<LibraryDownloadService> logger, IHttpService httpService, BeaconConfiguration config)
     {
         _logger = logger;
@@ -350,23 +349,24 @@ public class LibraryDownloadService : ILibraryDownloadService
 
         const string targetAssetName = "launchWrapper-1.0.jar";
         var targetFile = Path.Combine(targetDir, targetAssetName);
-        var assembly = Assembly.GetExecutingAssembly();
-        await using var stream = assembly.GetManifestResourceStream("Tavstal.BeaconSDK.Assets.launchWrapper-1.0.jar");
-        if (stream == null)
-            throw new Exception(
-                "Failed to find embedded resource: Tavstal.BeaconSDK.Assets.launchWrapper-1.0.jar");
+
+        if (string.IsNullOrEmpty(_config.Libraries.LaunchWrapper.Url))
+            return null;
 
         if (File.Exists(targetFile))
         {
             var existingHash = await FileSystemHelper.GetFileHashAsync(targetFile);
-            var expectedHash = await FileSystemHelper.GetFileHashAsync(stream);
-            if (existingHash == expectedHash && expectedHash != null)
+            if (existingHash == _config.Libraries.LaunchWrapper.Sha1 && !string.IsNullOrWhiteSpace(_config.Libraries.LaunchWrapper.Sha1))
                 return targetFile;
             FileSystemHelper.DeleteFile(targetFile);
         }
 
-        await using var fileStream = new FileStream(targetFile, FileMode.Create, FileAccess.Write);
-        await stream.CopyToAsync(fileStream, cancellationToken);
+        if (!await _httpService.DownloadFileAsync(_config.Libraries.LaunchWrapper.Url, targetFile,
+                _config.Libraries.LaunchWrapper.Sha1, null, cancellationToken))
+        {
+            _logger.LogError("Failed to download launchWrapper.");
+            return null;
+        }
         return targetFile;
     }
 

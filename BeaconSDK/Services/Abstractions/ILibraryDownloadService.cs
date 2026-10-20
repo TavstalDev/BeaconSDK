@@ -65,12 +65,14 @@ public interface ILibraryDownloadService
         IProgressReporter? progressReporter = null, CancellationToken cancellationToken = default);
 
     /// <summary>
-    ///     Extracts the bundled launch wrapper into the specified libraries directory.
+    ///     Downloads the launch wrapper into the specified libraries directory, reusing an existing copy
+    ///     when its SHA1 matches the configured one.
     /// </summary>
-    /// <param name="libsDir">The libraries directory where the launch wrapper should be extracted.</param>
+    /// <param name="libsDir">The libraries directory where the launch wrapper should be placed.</param>
     /// <param name="cancellationToken">Cancellation token observed during the operation.</param>
     /// <returns>
-    ///     A task that resolves to the path of the extracted launch wrapper if successful; otherwise, <see langword="null" />.
+    ///     A task that resolves to the path of the launch wrapper if successful; otherwise, <see langword="null" />
+    ///     (including when <see cref="Tavstal.BeaconSDK.Models.Config.LibrariesConfig.LaunchWrapper" /> has no URL configured).
     /// </returns>
     Task<string?> ExtractLaunchWrapperAsync(string libsDir, CancellationToken cancellationToken = default);
 
