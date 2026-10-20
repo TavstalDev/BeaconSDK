@@ -126,9 +126,10 @@ public interface IManifestService
     Task<List<IModManifest>?> GetForgeManifestAsync(string manifestPath, CancellationToken cancellationToken = default);
 
     /// <summary>
-    ///     Downloads the latest Forge mod loader manifest to the specified path and caches it.
+    ///     Downloads the Forge maven metadata XML from the configured endpoint, converts it into a
+    ///     manifest list, saves it as JSON at the specified path and caches it.
     /// </summary>
-    /// <param name="manifestPath">The local path where the downloaded manifest will be saved.</param>
+    /// <param name="manifestPath">The local path where the generated JSON manifest will be saved.</param>
     /// <param name="progress">
     ///     Optional progress reporter that receives the download percentage (0-100).
     /// </param>
@@ -158,9 +159,10 @@ public interface IManifestService
     Task<List<IModManifest>?> GetNeoForgeManifestAsync(string manifestPath, CancellationToken cancellationToken = default);
 
     /// <summary>
-    ///     Downloads the latest NeoForge mod loader manifest to the specified path and caches it.
+    ///     Downloads the NeoForge maven metadata XML from the configured endpoint, converts it into a
+    ///     manifest list, saves it as JSON at the specified path and caches it.
     /// </summary>
-    /// <param name="manifestPath">The local path where the downloaded manifest will be saved.</param>
+    /// <param name="manifestPath">The local path where the generated JSON manifest will be saved.</param>
     /// <param name="progress">
     ///     Optional progress reporter that receives the download percentage (0-100).
     /// </param>
