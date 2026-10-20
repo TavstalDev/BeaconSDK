@@ -176,13 +176,13 @@ public class InstanceLaunchService : IInstanceLaunchService
                     return;
                 _logger.LogDebug($"[JVM Process Output] {e.Data}");
             };
-#endif
             process.ErrorDataReceived += (_, e) =>
             {
                 if (string.IsNullOrEmpty(e.Data))
                     return;
                 _logger.LogError($"[JVM Process Error] {e.Data}");
             };
+#endif
             process.Exited += (sender, e) =>
             {
                 _runningProcesses.TryRemove(instance.Id, out _);
