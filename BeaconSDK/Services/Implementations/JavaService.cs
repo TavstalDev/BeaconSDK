@@ -58,7 +58,7 @@ public class JavaService : IJavaService
     }
 
     /// <inheritdoc />
-    public async Task<string?> DownloadJavaVersionAsync(int majorVersion, string targetPath, string mirrorsPath,
+    public async Task<string?> DownloadJavaVersionAsync(int majorVersion, string targetDir, string mirrorsPath,
         IProgress<double>? progress = null,
         CancellationToken cancellationToken = default)
     {
@@ -115,22 +115,34 @@ public class JavaService : IJavaService
                     return null;
                 }
 
+                string tempExtractDir = Path.Combine(targetDir, $".{majorVersion}tmp");
                 if (extension == "tar.gz")
                 {
                     await using Stream inStream = File.OpenRead(zipFilePath);
                     await using Stream gzipStream = new GZipInputStream(inStream);
                     using var tarArchive = TarArchive.CreateInputTarArchive(gzipStream, Encoding.UTF8);
-                    tarArchive.ExtractContents(targetPath);
+                    tarArchive.ExtractContents(tempExtractDir);
                 }
                 else
                 {
-                    await ZipFile.ExtractToDirectoryAsync(zipFilePath, targetPath, cancellationToken);
+                    await ZipFile.ExtractToDirectoryAsync(zipFilePath, tempExtractDir, cancellationToken);
                 }
+
+                string finalDir = Path.Combine(targetDir, $"jdk{majorVersion}");
+                Directory.CreateDirectory(finalDir);
+
+                string sourceDir = tempExtractDir;
+                string[] subDirs = Directory.GetDirectories(tempExtractDir, "*", SearchOption.TopDirectoryOnly);
+                if (subDirs.Length == 1)
+                    sourceDir = subDirs[0];
+                FileSystemHelper.MoveDirectory(sourceDir, finalDir, true);
+                FileSystemHelper.DeleteDirectory(tempExtractDir);
+
 
                 string javaExecutablePath;
                 if (OSHelper.GetOperatingSystem() != EOperatingSystem.WINDOWS)
                 {
-                    javaExecutablePath = Path.Combine(targetPath, "bin", "java");
+                    javaExecutablePath = Path.Combine(finalDir, "bin", "java");
                     if (!File.Exists(javaExecutablePath))
                     {
                         _logger.LogWarning($"Failed to get java executable from: {javaExecutablePath}");
@@ -142,7 +154,7 @@ public class JavaService : IJavaService
                 }
                 else
                 {
-                    javaExecutablePath = Path.Combine(targetPath, "bin", "javaw.exe");
+                    javaExecutablePath = Path.Combine(finalDir, "bin", "javaw.exe");
                     if (!File.Exists(javaExecutablePath))
                     {
                         _logger.LogWarning($"Failed to get java executable from: {javaExecutablePath}");
