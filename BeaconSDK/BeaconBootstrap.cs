@@ -65,7 +65,8 @@ public static class BeaconBootstrap
                     sockets.SslOptions = new SslClientAuthenticationOptions { EnabledSslProtocols = SslProtocols.Tls12 };
 
                 return sockets;
-            });
+            })
+            .RemoveAllLoggers();
         services.AddSingleton<IHttpService, HttpService>();
 
         services.AddDataProtection()
