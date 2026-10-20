@@ -211,4 +211,5 @@ are tracked in a thread-safe collection keyed by instance id.
 See the [`BeaconSDK.Example`](https://github.com/TavstalDev/BeaconSDK/tree/master/BeaconSDK.Example)
 project for complete interactive samples: `ExampleVanillaWorker` fetches the manifest,
 installs a vanilla instance, ensures Java and launches the game, and
-`ExampleFabricWorker` does the same for a Fabric instance.
+`ExampleFabricWorker`, `ExampleQuiltWorker`, `ExampleForgeWorker` and
+`ExampleNeoForgeWorker` do the same for the respective loader instances.

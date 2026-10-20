@@ -16,7 +16,8 @@ await java.LocateJavaInstallationsAsync(instanceJavaDir: "game/java", cancellati
 
 Scan order:
 
-1. `instanceJavaDir` (if provided), so SDK-downloaded runtimes are found first.
+1. `instanceJavaDir` (if provided) and its direct subdirectories, so SDK-downloaded
+   runtimes stored in `jdk{major}` subfolders are found first.
 2. Platform defaults:
 
    | Platform | Directories |
@@ -59,7 +60,7 @@ var progress = new Progress<double>(p => Console.WriteLine($"Downloading Java {p
 
 var javaPath = await java.DownloadJavaVersionAsync(
     majorVersion: 21,
-    targetPath: "game/java",
+    targetDir: "game/java",
     mirrorsPath: "java-mirrors.json",
     progress: progress,
     cancellationToken: ct);
@@ -67,17 +68,18 @@ var javaPath = await java.DownloadJavaVersionAsync(
 
 Notes:
 
-- The built-in `JavaMirrorConfig` ships Temurin builds for major versions
-  **8, 16, 17, 21 and 25**. Any other version returns `null` unless you add a
-  mirror entry for it.
+- The built-in `JavaMirrorConfig` ships Java 7 (Azul Zulu) plus Temurin builds for
+  major versions **7, 8, 16, 17, 21 and 25**. Any other version returns `null`
+  unless you add a mirror entry for it.
 - The mirror is picked by OS **and** by `OSHelper.IsArmBased()`, so a machine whose
   architecture has no entry for that version returns `null`.
-- Archives are `.zip` (Windows) or `.tar.gz` (Linux/macOS); both are extracted to
-  `targetPath`.
+- Archives are `.zip` (Windows) or `.tar.gz` (Linux/macOS); both are extracted to a
+  temporary directory and then moved to `targetDir/jdk{majorVersion}`, so a partial
+  extraction never leaves a broken runtime behind.
 - On non-Windows platforms the extracted `bin/java` is marked executable.
 - On success the method returns the path to `javaw.exe` (Windows) or `bin/java`
-  (Linux/macOS); it returns `null` if the version is unsupported, no URL is
-  configured or the download fails.
+  (Linux/macOS) inside that `jdk{majorVersion}` directory; it returns `null` if the
+  version is unsupported, no URL is configured or the download fails.
 
 ### Mirror configuration
 
@@ -89,9 +91,9 @@ an optional `Hash` used for integrity verification:
 ```
 JavaMirrorConfig
 └── Mirrors (per EOperatingSystem)
-    ├── Windows ─ 8, 16, 17, 21, 25 (x86_64)
-    ├── Linux   ─ 8, 16, 17, 21, 25 (x86_64)
-    └── Mac     ─ 8, 16 (x86_64); 17, 21, 25 (x86_64 + ARM)
+    ├── Windows ─ 7, 8, 16, 17, 21, 25 (x86_64)
+    ├── Linux   ─ 7, 8, 16, 17, 21, 25 (x86_64)
+    └── Mac     ─ 7, 8, 16 (x86_64); 17, 21, 25 (x86_64 + ARM)
 ```
 
 Edit this file to point at your own mirrors or to add versions that are not

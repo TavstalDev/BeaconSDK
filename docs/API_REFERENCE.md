@@ -22,7 +22,7 @@ the NuGet package.
 
 | Member | Description |
 | --- | --- |
-| `IServiceCollection AddBeaconServices(this IServiceCollection, BeaconConfiguration configuration)` | Registers all SDK services. Also registers the `LogWriter` as a singleton, as `ILogWriter` and as a hosted service, a `NullLogger<>` fallback for `ILogger<>`, and a named `HttpClient` called `default` (via `AddHttpClient`) configured with the HTTP agent, accept header, timeout and handler settings |
+| `IServiceCollection AddBeaconServices(this IServiceCollection, BeaconConfiguration configuration)` | Registers all SDK services. Also registers the `LogWriter` as a singleton, as `ILogWriter` and as a hosted service, a `NullLogger<>` fallback for `ILogger<>`, and a named `HttpClient` called `default` (via `AddHttpClient`) configured with the HTTP agent, accept header, timeout and handler settings; the factory's default loggers are stripped (`.RemoveAllLoggers()`) |
 
 `SetupLogger` and `BeaconBootstrap.LoggerTask` have been removed. The log writer is a
 hosted service, so `host.RunAsync()` is all that is needed to start it.
@@ -57,6 +57,8 @@ data protection is unavailable.
 Cached Mojang and loader manifests: `GetMinecraftManifest[Async]`, `DownloadMinecraftManifestAsync`,
 `GetFabricManifest[Async]`, `DownloadFabricManifestAsync`, `GetQuiltManifest[Async]`, `DownloadQuiltManifestAsync`,
 `GetForgeManifest[Async]`, `DownloadForgeManifestAsync`, `GetNeoForgeManifest[Async]`, `DownloadNeoForgeManifestAsync`.
+The Forge and NeoForge downloads fetch the maven-metadata XML from the configured
+endpoint and convert it into a local JSON manifest.
 
 ### `IInstanceInstallService`
 

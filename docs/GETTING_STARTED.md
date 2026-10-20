@@ -129,7 +129,7 @@ game/
 │   ├── vanilla/<mcVersion>/
 │   └── fabric/<mcVersion>-<loaderVersion>/
 ├── instances/    # per-instance game directories
-└── java/         # auto-downloaded Java runtimes
+└── java/         # auto-downloaded Java runtimes (java/jdk<major>/)
 ```
 
 You point the SDK at these paths through `PathDetails` and
