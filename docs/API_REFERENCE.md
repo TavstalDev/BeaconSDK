@@ -77,7 +77,7 @@ Cached Mojang and loader manifests: `GetMinecraftManifest[Async]`, `DownloadMine
 Downloads and prepares everything an instance needs: `DownloadVersionAsync`
 (version JSON and client jar), `DownloadAssetsAsync`, `DownloadMappingsAsync`
 (client mappings), `DownloadLoggingAsync` (logging config), `ExtractLaunchWrapperAsync`
-(the bundled launch wrapper) and `DownloadLibrariesAsync` (classpath, libraries and
+(the launch wrapper downloaded from `LibrariesConfig.LaunchWrapper`) and `DownloadLibrariesAsync` (classpath, libraries and
 natives). Registered in DI and used by `InstanceInstallService`; useful when you
 need a subset of the install steps or want to control the classpath yourself.
 
@@ -134,7 +134,7 @@ so all outbound HTTP requests share the configuration applied by `AddBeaconServi
 | `MinecraftInstance` | Base instance. Constructor takes `(id, BeaconConfiguration, InstanceConfiguration, IBeaconLogger, IProgressReporter?)`. Key members: `Id`, `Config`, `VersionData`, `MinecraftVersionMeta`, `ArgumentBuilder`, `GetCombinedLibraries`, `InstallModdedAsync`, `GetVersionName`. |
 | `FabricInstance`, `QuiltInstance` | Modded instances with constructor `(id, BeaconConfiguration, InstanceConfiguration, IBeaconLogger, IProgressReporter?)`. |
 | `NeoForgeInstance` | Constructor `(id, BeaconConfiguration, InstanceConfiguration, IBeaconLogger, IProgressReporter?)`. Derives from `ForgeInstanceBase`. |
-| `ForgeInstance` (static) | `GetForgeInstance(...)` returns the right Forge implementation. `GetLegacyLibraries(string mcVersion, string path = "Tavstal.BeaconSDK.Assets.Fmllib.")` returns the resource names of the embedded legacy Forge compatibility jars for Minecraft 1.3 – 1.5, and an empty list for other versions. |
+| `ForgeInstance` (static) | `GetForgeInstance(...)` returns the right Forge implementation. `GetLegacyLibraries(string mcVersion)` returns the file names of the legacy Forge compatibility libraries for Minecraft 1.3 – 1.5 (an empty list for other versions); each name is a key of `BeaconConfiguration.Libraries.Forge`, which provides the download URL. |
 | `ForgeEarlyInstance`, `ForgeClassicInstance`, `ForgeLegacyInstance`, `ForgeModernInstance` | Forge implementations for each era. `ForgeEarlyInstance` and `ForgeClassicInstance` take two extra leading arguments (`forgeVersionName`, `universalName` / `universalFormat`) before `id`; `ForgeLegacyInstance` takes one (`forgeVersionName`); `ForgeModernInstance` matches the base shape. |
 | `Forge/ForgeInstanceBase` | Shared Forge/NeoForge install logic. |
 
@@ -148,6 +148,7 @@ so all outbound HTTP requests share the configuration applied by `AddBeaconServi
 | --- | --- |
 | `IProgressReporter` | `Report(double)`, `Report(double, string, bool)`, `Report(EProgressKind, double)`, `ReportExpectedTask(int?)`, `ReportTaskCompleted()` |
 | `DownloadEntry` | `Url`, `Path`, `Sha1`, `Progress` (an `IProgress<double>` built from an optional `IProgressReporter`) |
+| `FileEntry` | A configured remote file: `Url` (download location; an empty value disables the download) and optional `Sha1` used to verify an existing local copy |
 | `EProgressKind` | Progress-stage enum (see Enums) |
 | `LockEntry` | Semaphore plus reference count used by `LogWriter` and `JsonHelper` for file locking |
 
@@ -259,10 +260,11 @@ SDK service can resolve it. `Auth` is the only required member.
 
 | Type | Notes |
 | --- | --- |
-| `BeaconConfiguration` | `Auth` (required), `DataProtection`, `Http`, `Endpoints`, `Logging` |
+| `BeaconConfiguration` | `Auth` (required), `DataProtection`, `Http`, `Endpoints`, `Logging`, `Libraries` |
+| `LibrariesConfig` | `LaunchWrapper` (a `FileEntry` for the launch wrapper jar), `Forge` (a `Dictionary<string, FileEntry>` of legacy Forge libraries keyed by file name) |
 | `LoggingConfig` | `LogLevel` (default `Information`) sets the minimum level for DI-created loggers; `EnableCustomLogger` (default `true`) keeps output on the console, set it to `false` to forward to the host's `ILogger<T>` instead; `DefaultLogFilePath` (default `null`) is the file entries are appended to, and `null` disables file logging |
 | `AuthConfiguration` | `MicrosoftClientId` (required, may be `null`/empty only if Microsoft login is unused), `DeviceCodePollInterval` (`TimeSpan`, defaults to 5 seconds; the SDK does not read it, pass it to `IMicrosoftDeviceAuthService.StartListeningAsync` yourself) |
-| `HttpConfig` | `Agent`, `AcceptHeader`, `Timeout`, `AutomaticDecompression`, `AllowAutoRedirect`, `EnableMultipleHttp2Connections`, `MaxParallelDownloads`, `BufferSize`, `TempFileSuffix`, `EnableSslProtocols` |
+| `HttpConfig` | `Agent`, `AcceptHeader`, `Timeout`, `AutomaticDecompression`, `AllowAutoRedirect`, `EnableMultipleHttp2Connections`, `MaxParallelDownloads`, `BufferSize`, `TempFileSuffix`, `UseTls12Protocol` |
 | `DataProtectionConfig` | `KeysDirectory` (default `keysDir`), `ApplicationName` (default `myApplication`), `ProtectorPurpose` (default `BeaconSDK.Encryption.v1`), and the per-platform fallback material `WindowsEntropy`, `LinuxKey`, `MacKey` |
 | `EndpointConfig` | `Microsoft`, `Mojang`, `Fabric`, `Quilt`, `Forge`, `NeoForge` |
 

@@ -133,7 +133,8 @@ Installation downloads and verifies:
 - the client mappings,
 - libraries and native libraries (`.so`, `.dll`, `.dylib`),
 - the logging configuration,
-- the bundled launch wrapper, extracted into the libraries directory,
+- the launch wrapper, downloaded into the libraries directory from
+  `BeaconConfiguration.Libraries.LaunchWrapper`,
 - the mod loader (installer, libraries and processors for modded instances),
 - plus any files listed in `PathDetails.CustomNativeFiles`, which are copied into the
   natives directory.
@@ -189,7 +190,7 @@ classpath and natives, and starts the process. A few details worth knowing:
   output into a fresh one;
 - the access token of online instances is masked (`*****`) before arguments or process
   output are written to the log;
-- for Vanilla, Fabric and Quilt the bundled launch wrapper is used, so the game
+- for Vanilla, Fabric and Quilt the launch wrapper is used, so the game
   arguments are written to the process' standard input instead of the command line.
 
 ### Managing running instances

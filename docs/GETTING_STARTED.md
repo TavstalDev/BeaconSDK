@@ -95,7 +95,7 @@ prefer the DI-registered provider that `AddBeaconServices` sets up for you.
 `Microsoft.Extensions.Http`. It is configured from `BeaconConfiguration.Http`
 (`HttpConfig`) with `Agent` (the user agent), `AcceptHeader` and `Timeout`, and its
 primary handler applies `AutomaticDecompression`, `AllowAutoRedirect`,
-`EnableMultipleHttp2Connections` and `EnableSslProtocols`. `HttpService`,
+`EnableMultipleHttp2Connections` and, when `UseTls12Protocol` is enabled, TLS 1.2. `HttpService`,
 `MicrosoftAuthService` and `MojangSkinService` obtain their clients from
 `IHttpClientFactory` using this name, so changing those values affects every
 outbound request. GET requests retry on `429 Too Many Requests` and
@@ -108,6 +108,12 @@ how they are buffered and written to disk.
 `BeaconConfiguration.Endpoints` (`EndpointConfig`) holds the base URLs for Microsoft, Mojang,
 Fabric, Quilt, Forge and NeoForge, in case you need to point the SDK at mirrors or proxies.
 
+`BeaconConfiguration.Libraries` (`LibrariesConfig`) holds the download locations of support
+files that are not bundled in the assembly: `LaunchWrapper` (the launch wrapper jar used by
+vanilla, Fabric and Quilt) and `Forge` (the legacy Forge support libraries keyed by file name,
+matching the values returned by `ForgeInstance.GetLegacyLibraries`). Point them at your own
+mirror to install without reaching GitHub.
+
 ---
 
 ## Directory layout
@@ -118,7 +124,7 @@ The SDK writes everything under paths you provide. A typical layout looks like t
 game/
 ├── assets/       # downloaded assets (objects, indexes)
 ├── cache/        # cached manifests and metadata
-├── libs/         # libraries, natives and the extracted launch wrapper
+├── libs/         # libraries, natives and the downloaded launch wrapper
 ├── versions/     # vanilla and modded version files
 │   ├── vanilla/<mcVersion>/
 │   └── fabric/<mcVersion>-<loaderVersion>/
