@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 </details>
 
-## [1.0.0] - 2026-10-20
+## [0.1.0] - 2026-10-20
 <details>
 <summary>Initial release</summary>
 
@@ -79,5 +79,5 @@ superseded along the way are omitted.
 </details>
 
 
-[unreleased]: https://github.com/TavstalDev/BeaconSDK/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/TavstalDev/BeaconSDK/releases/tag/v1.0.0
+[unreleased]: https://github.com/TavstalDev/BeaconSDK/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/TavstalDev/BeaconSDK/releases/tag/v0.1.0

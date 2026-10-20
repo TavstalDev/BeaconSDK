@@ -19,7 +19,7 @@ dotnet add package BeaconSDK
 ```
 
 ```xml
-<PackageReference Include="BeaconSDK" Version="1.0.0" />
+<PackageReference Include="BeaconSDK" Version="0.1.0" />
 ```
 
 The package targets `net10.0`, is trimmable/AOT compatible, and ships XML

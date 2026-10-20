@@ -13,7 +13,7 @@ public class HttpConfig
     ///     Gets or sets the value of the <c>User-Agent</c> header sent with every request.
     /// </summary>
     [JsonPropertyName("Agent")]
-    public string Agent { get; set; } = "BeaconSDK/1.0.0 (+https://github.com/TavstalDev/BeaconSDK)";
+    public string Agent { get; set; } = "BeaconSDK/0.1.0 (+https://github.com/TavstalDev/BeaconSDK)";
 
     /// <summary>
     ///     Gets or sets a value indicating whether TLS 1.2 is enforced on HTTP connections.
