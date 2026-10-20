@@ -1,4 +1,6 @@
 using System.Text.Json;
+using System.Xml.Linq;
+using Tavstal.BeaconSDK.Helpers.IO;
 using Tavstal.BeaconSDK.Helpers.Serialization;
 using Tavstal.BeaconSDK.Models.Config;
 using Tavstal.BeaconSDK.Models.Logging;
@@ -184,12 +186,44 @@ public class ManifestService : IManifestService
     /// <inheritdoc />
     public async Task<List<IModManifest>?> DownloadForgeManifestAsync(string manifestPath, IProgress<double>? progress = null, CancellationToken cancellationToken = default)
     {
-        var result = await _httpService.DownloadFileAsync(_config.Endpoints.Forge.VersionManifest, manifestPath, null, progress, cancellationToken);
+        string tempPath = manifestPath + ".tmp";
+        var result = await _httpService.DownloadFileAsync(_config.Endpoints.Forge.VersionManifest, tempPath, null, progress, cancellationToken);
         if (!result)
         {
             _logger.LogError("Failed to download forge manifest.");
             return null;
         }
+
+        string fileContent = await File.ReadAllTextAsync(tempPath, cancellationToken);
+        XDocument doc = XDocument.Parse(fileContent);
+        XElement? metadata = doc.Element("metadata");
+        if (metadata == null)
+        {
+            _logger.LogError("Forge manifest metadata not found in the XML.");
+            return null;
+        }
+
+        var versions = metadata
+            .Element("versioning")
+            ?.Element("versions")
+            ?.Elements("version")
+            .Select(v => v.Value);
+        if (versions == null)
+        {
+            _logger.LogError("Forge manifest versions not found in the XML.");
+            return null;
+        }
+
+        List<ForgeManifest> manifest = [];
+        foreach (var version in versions)
+        {
+            var splittedVersion = version.Split('-');
+            manifest.Add(new ForgeManifest(splittedVersion[1], splittedVersion[0]));
+        }
+
+        await JsonHelper.WriteJsonFileAsync(manifestPath, manifest, CoreJsonContext.Default.ListForgeManifest, cancellationToken);
+        FileSystemHelper.DeleteFile(tempPath);
+
         // Invalidate cache
         _forgeManifest = null;
         return await GetForgeManifestAsync(manifestPath, cancellationToken);
@@ -224,12 +258,46 @@ public class ManifestService : IManifestService
     /// <inheritdoc />
     public async Task<List<IModManifest>?> DownloadNeoForgeManifestAsync(string manifestPath, IProgress<double>? progress = null, CancellationToken cancellationToken = default)
     {
-        var result = await _httpService.DownloadFileAsync(_config.Endpoints.NeoForge.VersionManifest, manifestPath, null, progress, cancellationToken);
+        string tempPath = manifestPath + ".tmp";
+        var result = await _httpService.DownloadFileAsync(_config.Endpoints.NeoForge.VersionManifest, tempPath, null, progress, cancellationToken);
         if (!result)
         {
             _logger.LogError("Failed to download neoforge manifest.");
             return null;
         }
+
+        string fileContent = await File.ReadAllTextAsync(tempPath, cancellationToken);
+        XDocument doc = XDocument.Parse(fileContent);
+        XElement? metadata = doc.Element("metadata");
+        if (metadata == null)
+        {
+            _logger.LogError("NeoForge manifest metadata not found in the XML.");
+            return null;
+        }
+
+        var versions = metadata
+            .Element("versioning")
+            ?.Element("versions")
+            ?.Elements("version")
+            .Select(v => v.Value);
+        if (versions == null)
+        {
+            _logger.LogError("NeoForge manifest versions not found in the XML.");
+            return null;
+        }
+
+        List<ForgeManifest> manifest = [];
+        foreach (var version in versions)
+        {
+            var parts = version.Split('.');
+            string gameVersion = $"1.{parts[0]}.{parts[1]}";
+
+            manifest.Add(new ForgeManifest(version, gameVersion));
+        }
+
+        await JsonHelper.WriteJsonFileAsync(manifestPath, manifest, CoreJsonContext.Default.ListForgeManifest, cancellationToken);
+        FileSystemHelper.DeleteFile(tempPath);
+
         // Invalidate cache
         _neoForgeManifest = null;
         return await GetNeoForgeManifestAsync(manifestPath, cancellationToken);
