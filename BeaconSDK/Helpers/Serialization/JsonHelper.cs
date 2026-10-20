@@ -322,7 +322,15 @@ public static class JsonHelper
     /// </returns>
     private static string GetTempPath(string path)
     {
-        var dir = Path.GetDirectoryName(path);
-        return Path.Combine(string.IsNullOrEmpty(dir) ? path : dir, Guid.NewGuid().ToString());
+        string dir;
+        if (Path.EndsInDirectorySeparator(path))
+            dir = path;
+        else
+        {
+            string[] parts = path.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            dir = string.Join(Path.DirectorySeparatorChar, parts.SkipLast(1));
+        }
+
+        return Path.Combine(dir, Guid.NewGuid().ToString());
     }
 }
