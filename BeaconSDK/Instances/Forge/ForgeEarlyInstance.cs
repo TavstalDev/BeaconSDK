@@ -13,7 +13,7 @@ namespace Tavstal.BeaconSDK.Instances.Forge;
 /// <summary>
 ///     Instance implementation for legacy Forge versions (approximately 1.1 - 1.5.2).
 ///     This class handles the legacy installation flow where a "universal" zip is applied
-///     to a vanilla jar to produce a patched (forge-enabled) jar, and legacy libraries are staged.
+///     to a vanilla jar to produce a patched (forge-enabled) jar, and missing legacy libraries are downloaded.
 /// </summary>
 /// <param name="forgeVersionName">The Forge version identifier used to build download URLs (e.g. "10.13.4.1614").</param>
 /// <param name="universalName">The name of the universal artifact inside the Forge distribution (used in download URL).</param>
@@ -85,26 +85,25 @@ public class ForgeEarlyInstance(
         if (!Directory.Exists(forgeLibDir))
             Directory.CreateDirectory(forgeLibDir);
 
-        // Copy legacy libraries to the forge lib directory
+        // Download missing legacy libraries to the forge lib directory
+        var downloadEntires = new List<DownloadEntry>();
         foreach (var library in libraries)
         {
-            var libraryFileName = library.Replace("Tavstal.BeaconSDK.Assets.Fmllib.", "");
-            var libraryTargetPath = Path.Combine(forgeLibDir, libraryFileName);
+            var libraryTargetPath = Path.Combine(forgeLibDir, library);
 
             if (File.Exists(libraryTargetPath))
                 continue;
 
-            await using var stream = GetType().Assembly.GetManifestResourceStream(library);
-            if (stream == null)
+            if (!_appConfiguration.Libraries.Forge.TryGetValue(library, out var libraryEntry) ||
+                string.IsNullOrEmpty(libraryEntry.Url))
             {
-                _logger.LogError($"Failed to get resource stream for {library}");
+                _logger.LogWarning($"The '{library}' library URL is missing in the configuration file.");
                 continue;
             }
 
-            await using var outFile = new FileStream(libraryTargetPath, FileMode.Create, FileAccess.Write);
-            await stream.CopyToAsync(outFile, cancellationToken);
+            downloadEntires.Add(new DownloadEntry(libraryEntry.Url, libraryTargetPath, libraryEntry.Sha1));
         }
-
+        await httpService.ParallelDownloadFilesAsync(downloadEntires, cancellationToken);
         return moddedData;
     }
 }

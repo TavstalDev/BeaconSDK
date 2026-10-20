@@ -110,16 +110,12 @@ public static class ForgeInstance
     ///     issues).
     /// </summary>
     /// <param name="minecraftVersion">The Minecraft version string to match against (e.g. "1.5.2").</param>
-    /// <param name="path">
-    ///     Optional base path prefix for the returned library entries. Defaults to the embedded asset path
-    ///     <c>"Tavstal.BeaconSDK.Assets.Fmllib."</c>. Each returned entry is the concatenation of this
-    ///     prefix and the actual library filename.
-    /// </param>
     /// <returns>
-    ///     A list of string library identifiers (path + filename) appropriate for the given Minecraft version.
+    ///     A list of library file names appropriate for the given Minecraft version. Each name is a key of
+    ///     <see cref="BeaconConfiguration.Libraries" />'s <see cref="LibrariesConfig.Forge" /> dictionary, which
+    ///     provides the download URL; an empty list is returned for unsupported versions.
     /// </returns>
-    public static List<string> GetLegacyLibraries(string minecraftVersion,
-        string path = "Tavstal.BeaconSDK.Assets.Fmllib.")
+    public static List<string> GetLegacyLibraries(string minecraftVersion)
     {
         var mcVersion = new Version(minecraftVersion);
         if (mcVersion.Major != 1)
@@ -129,43 +125,43 @@ public static class ForgeInstance
         {
             (3, _) =>
             [
-                $"{path}argo-2.25.jar",
-                $"{path}asm-all-4.0.jar",
-                $"{path}guava-12.0.1.jar"
+                "argo-2.25.jar",
+                "asm-all-4.0.jar",
+                "guava-12.0.1.jar"
             ],
             (4, _) =>
             [
-                $"{path}argo-2.25.jar",
-                $"{path}asm-all-4.0.jar",
-                $"{path}guava-12.0.1.jar",
-                $"{path}bcprov-jdk15on-147.jar"
+                "argo-2.25.jar",
+                "asm-all-4.0.jar",
+                "guava-12.0.1.jar",
+                "bcprov-jdk15on-147.jar"
             ],
             (5, 1) =>
             [
-                $"{path}argo-small-3.2.jar",
-                $"{path}asm-all-4.1.jar",
-                $"{path}bcprov-jdk15on-148.jar",
-                $"{path}deobfuscation_data_1.5.1.zip",
-                $"{path}guava-14.0-rc3.jar",
-                $"{path}scala-library.jar"
+                "argo-small-3.2.jar",
+                "asm-all-4.1.jar",
+                "bcprov-jdk15on-148.jar",
+                "deobfuscation_data_1.5.1.zip",
+                "guava-14.0-rc3.jar",
+                "scala-library.jar"
             ],
             (5, 2) =>
             [
-                $"{path}argo-small-3.2.jar",
-                $"{path}asm-all-4.1.jar",
-                $"{path}bcprov-jdk15on-148.jar",
-                $"{path}deobfuscation_data_1.5.2.zip",
-                $"{path}guava-14.0-rc3.jar",
-                $"{path}scala-library.jar"
+                "argo-small-3.2.jar",
+                "asm-all-4.1.jar",
+                "bcprov-jdk15on-148.jar",
+                "deobfuscation_data_1.5.2.zip",
+                "guava-14.0-rc3.jar",
+                "scala-library.jar"
             ],
             (5, _) =>
             [
-                $"{path}argo-small-3.2.jar",
-                $"{path}asm-all-4.1.jar",
-                $"{path}bcprov-jdk15on-148.jar",
-                $"{path}deobfuscation_data_1.5.zip",
-                $"{path}guava-14.0-rc3.jar",
-                $"{path}scala-library.jar"
+                "argo-small-3.2.jar",
+                "asm-all-4.1.jar",
+                "bcprov-jdk15on-148.jar",
+                "deobfuscation_data_1.5.zip",
+                "guava-14.0-rc3.jar",
+                "scala-library.jar"
             ],
             _ => []
         };

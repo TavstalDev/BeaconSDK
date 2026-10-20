@@ -214,26 +214,25 @@ public class ForgeClassicInstance(
         if (!Directory.Exists(forgeLibDir))
             Directory.CreateDirectory(forgeLibDir);
 
-        // Copy legacy libraries to the forge lib directory
+        // Download missing legacy libraries to the forge lib directory
+        var downloadEntires = new List<DownloadEntry>();
         foreach (var library in legacyLibraries)
         {
-            var libraryFileName = library.Replace("Tavstal.BeaconSDK.Assets.Fmllib.", "");
-            var libraryTargetPath = Path.Combine(forgeLibDir, libraryFileName);
+            var libraryTargetPath = Path.Combine(forgeLibDir, library);
 
             if (File.Exists(libraryTargetPath))
                 continue;
 
-            await using var stream = GetType().Assembly.GetManifestResourceStream(library);
-            if (stream == null)
+            if (!_appConfiguration.Libraries.Forge.TryGetValue(library, out var libraryEntry) ||
+                string.IsNullOrEmpty(libraryEntry.Url))
             {
-                _logger.LogError($"Failed to get resource stream for {library}");
+                _logger.LogWarning($"The '{library}' library URL is missing in the configuration file.");
                 continue;
             }
 
-            await using var outFile = new FileStream(libraryTargetPath, FileMode.Create, FileAccess.Write);
-            await stream.CopyToAsync(outFile, cancellationToken);
+            downloadEntires.Add(new DownloadEntry(libraryEntry.Url, libraryTargetPath, libraryEntry.Sha1));
         }
-
+        await httpService.ParallelDownloadFilesAsync(downloadEntires, cancellationToken);
         return moddedData;
     }
 }
