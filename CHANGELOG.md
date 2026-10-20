@@ -73,7 +73,8 @@ superseded along the way are omitted.
   sources for debugging.
 - **Documentation & samples** - getting started, authentication, installing &
   launching, Java management and API reference guides under `docs/`, a runnable
-  `BeaconSDK.Example` (vanilla and Fabric workers), and a unit test suite.
+  `BeaconSDK.Example` (vanilla, Fabric, Quilt, Forge and NeoForge workers), and a
+  unit test suite.
 
 </details>
 
