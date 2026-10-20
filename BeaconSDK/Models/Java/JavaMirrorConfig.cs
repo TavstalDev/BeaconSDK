@@ -22,6 +22,12 @@ public class JavaMirrorConfig
                 [
                     new JavaMirror
                     {
+                        Version  = 7,
+                        IsArm = false,
+                        Url = "https://cdn.azul.com/zulu/bin/zulu7.56.0.11-ca-jdk7.0.352-win_x64.zip"
+                    },
+                    new JavaMirror
+                    {
                         Version = 8,
                         IsArm = false,
                         Url = "https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u462-b08/OpenJDK8U-jdk_x64_windows_hotspot_8u462b08.zip"
@@ -57,6 +63,12 @@ public class JavaMirrorConfig
                 [
                     new JavaMirror
                     {
+                        Version  = 7,
+                        IsArm = false,
+                        Url = "https://cdn.azul.com/zulu/bin/zulu7.56.0.11-ca-jdk7.0.352-linux_x64.tar.gz"
+                    },
+                    new JavaMirror
+                    {
                         Version = 8,
                         IsArm = false,
                         Url = "https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u462-b08/OpenJDK8U-jdk_x64_linux_hotspot_8u462b08.tar.gz"
@@ -90,6 +102,12 @@ public class JavaMirrorConfig
             {
                 EOperatingSystem.MACOS,
                 [
+                    new JavaMirror
+                    {
+                        Version = 7,
+                        IsArm = false,
+                        Url = "https://cdn.azul.com/zulu/bin/zulu7.56.0.11-ca-jdk7.0.352-macosx_x64.tar.gz"
+                    },
                     new JavaMirror
                     {
                         Version = 8,
