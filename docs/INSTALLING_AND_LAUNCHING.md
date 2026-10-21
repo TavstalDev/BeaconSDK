@@ -136,13 +136,17 @@ Installation downloads and verifies:
 - the launch wrapper, downloaded into the libraries directory from
   `BeaconConfiguration.Libraries.LaunchWrapper`,
 - the mod loader (installer, libraries and processors for modded instances),
+- the legacy Forge compatibility libraries for Minecraft 1.3 - 1.5, downloaded into
+  the instance `lib` directory from `BeaconConfiguration.Libraries.Forge`,
 - plus any files listed in `PathDetails.CustomNativeFiles`, which are copied into the
   natives directory.
 
-Libraries are SHA-1 verified during download. `InstallAsync` returns `false` on
-failure and logs details through `IBeaconLogger<T>`. On success it also populates
-`instance.ArgumentBuilder` and `instance.MinecraftVersionMeta`, so read the required
-Java version from there:
+Libraries are SHA-1 verified during download. The support files configured in
+`BeaconConfiguration.Libraries` carry their own SHA-1 hash, which is used to
+verify the download and to reuse a copy that is already present. `InstallAsync`
+returns `false` on failure and logs details through `IBeaconLogger<T>`. On success
+it also populates `instance.ArgumentBuilder` and `instance.MinecraftVersionMeta`, so
+read the required Java version from there:
 
 ```csharp
 var major = instance.MinecraftVersionMeta.JavaVersionMeta?.MajorVersion ?? 8;
@@ -209,7 +213,9 @@ are tracked in a thread-safe collection keyed by instance id.
 ## Putting it together
 
 See the [`BeaconSDK.Example`](https://github.com/TavstalDev/BeaconSDK/tree/master/BeaconSDK.Example)
-project for complete interactive samples: `ExampleVanillaWorker` fetches the manifest,
+project for complete interactive samples: `ExampleLoginWorker` asks whether to sign in
+with a Microsoft account or to play offline and exposes the resulting display name, UUID
+and access token to the other workers. `ExampleVanillaWorker` fetches the manifest,
 installs a vanilla instance, ensures Java and launches the game, and
 `ExampleFabricWorker`, `ExampleQuiltWorker`, `ExampleForgeWorker` and
 `ExampleNeoForgeWorker` do the same for the respective loader instances.
