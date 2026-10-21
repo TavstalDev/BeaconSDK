@@ -46,7 +46,7 @@ public static class Program
         {
             Auth = new AuthConfiguration
             {
-                MicrosoftClientId = string.Empty, // Can be empty because this example does not use Microsoft authentication
+                MicrosoftClientId = "496a0c42-aa74-41fe-b7bc-0ad155cdaa26",
             },
             DataProtection = new DataProtectionConfig
             {
@@ -62,6 +62,8 @@ public static class Program
         hostBuilder = hostBuilder.ConfigureServices(services =>
         {
             services.AddBeaconServices(config);
+            services.AddSingleton<ExampleLoginWorker>();
+            services.AddHostedService(x => x.GetRequiredService<ExampleLoginWorker>());
             switch (workerIndex)
             {
                 case 0:

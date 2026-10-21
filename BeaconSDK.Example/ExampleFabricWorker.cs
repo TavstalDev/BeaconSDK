@@ -18,18 +18,20 @@ namespace Tavstal.BeaconSDK.Example;
 
 public class ExampleFabricWorker : IHostedService, IProgressReporter
 {
-    private readonly IInstanceInstallService _instanceInstallService;
-    private readonly IInstanceLaunchService _instanceLaunchService;
-    private readonly IJavaService _javaService;
     private readonly IBeaconLogger<ExampleFabricWorker> _logger;
+    private readonly ExampleLoginWorker _loginWorker;
+    private readonly IJavaService _javaService;
+    private readonly IInstanceLaunchService _instanceLaunchService;
+    private readonly IInstanceInstallService _instanceInstallService;
     private readonly IManifestService _manifestService;
     private readonly BeaconConfiguration _appConfiguration;
 
-    public ExampleFabricWorker(IBeaconLogger<ExampleFabricWorker> logger, IJavaService javaService,
+    public ExampleFabricWorker(IBeaconLogger<ExampleFabricWorker> logger, ExampleLoginWorker loginWorker, IJavaService javaService,
         IInstanceLaunchService instanceLaunchService, IInstanceInstallService instanceInstallService,
         IManifestService manifestService, BeaconConfiguration appConfiguration)
     {
         _logger = logger;
+        _loginWorker = loginWorker;
         _javaService = javaService;
         _instanceLaunchService = instanceLaunchService;
         _instanceInstallService = instanceInstallService;
@@ -39,6 +41,12 @@ public class ExampleFabricWorker : IHostedService, IProgressReporter
 
     public async Task StartAsync(CancellationToken cts)
     {
+        if (string.IsNullOrEmpty(_loginWorker.Username) || string.IsNullOrEmpty(_loginWorker.Uuid))
+        {
+            _logger.LogError("Can not process further due to failed login.");
+            return;
+        }
+
         var workingDir = Directory.GetCurrentDirectory();
         var manifestPath = Path.Combine(workingDir, "manifest.json");
         var fabricManifestPath = Path.Combine(workingDir, "fabric.json");
@@ -59,26 +67,6 @@ public class ExampleFabricWorker : IHostedService, IProgressReporter
         {
             _logger.LogError("Failed to fetch minecraft manifest. Please try again.");
             return;
-        }
-
-        _logger.LogInformation("Please provide your minecraft username:");
-        string? minecraftUsername;
-        while (true)
-        {
-            minecraftUsername = Console.ReadLine();
-            if (string.IsNullOrEmpty(minecraftUsername))
-            {
-                _logger.LogInformation("Please provide a valid minecraft username:");
-                continue;
-            }
-
-            if (minecraftUsername.Length < 3 || minecraftUsername.Length > 16)
-            {
-                _logger.LogInformation("Please provide a username that is between 3 and 16 characters:");
-                continue;
-            }
-
-            break;
         }
 
         _logger.LogInformation("Please provide a minecraft version to start:");
@@ -156,8 +144,7 @@ public class ExampleFabricWorker : IHostedService, IProgressReporter
         );
         var pathDetails = new PathDetails(assetsDir, cacheDir, libsDir, versionsDir, []);
         var launcherDetails = new LauncherDetails("exampleApp", "1.0.0");
-        var uuid = GameHelper.GetOfflinePlayerUUID(minecraftUsername);
-        var clientDetails = new ClientDetails(null, minecraftUsername, uuid, true);
+        var clientDetails = new ClientDetails(_loginWorker.Token, _loginWorker.Username, _loginWorker.Uuid, string.IsNullOrEmpty(_loginWorker.Token));
 
         var config = new InstanceConfiguration
         {
