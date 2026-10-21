@@ -68,14 +68,17 @@ var javaPath = await java.DownloadJavaVersionAsync(
 
 Notes:
 
-- The built-in `JavaMirrorConfig` ships Java 7 (Azul Zulu) plus Temurin builds for
-  major versions **7, 8, 16, 17, 21 and 25**. Any other version returns `null`
-  unless you add a mirror entry for it.
+- The built-in `JavaMirrorConfig` ships Azul Zulu for major version **7** and
+  Temurin builds for major versions **8, 16, 17, 21 and 25**. Any other version
+  returns `null` unless you add a mirror entry for it.
 - The mirror is picked by OS **and** by `OSHelper.IsArmBased()`, so a machine whose
   architecture has no entry for that version returns `null`.
-- Archives are `.zip` (Windows) or `.tar.gz` (Linux/macOS); both are extracted to a
-  temporary directory and then moved to `targetDir/jdk{majorVersion}`, so a partial
-  extraction never leaves a broken runtime behind.
+- The archive is `.zip` (Windows) or `.tar.gz` (Linux/macOS). It is extracted into
+  `targetDir/.{majorVersion}tmp`, and the single top-level folder it contains is
+  then moved into `targetDir/jdk{majorVersion}`, replacing an existing
+  installation of that version.
+- The download is verified against the mirror's optional `Hash` when one is
+  configured.
 - On non-Windows platforms the extracted `bin/java` is marked executable.
 - On success the method returns the path to `javaw.exe` (Windows) or `bin/java`
   (Linux/macOS) inside that `jdk{majorVersion}` directory; it returns `null` if the
@@ -97,7 +100,8 @@ JavaMirrorConfig
 ```
 
 Edit this file to point at your own mirrors or to add versions that are not
-built in.
+built in. The file is read once per `JavaService` instance and kept in memory
+afterwards, so write it before the first download.
 
 ---
 
