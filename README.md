@@ -61,7 +61,7 @@ dotnet add package BeaconSDK
 Or add the package reference directly:
 
 ```xml
-<PackageReference Include="BeaconSDK" Version="0.1.0" />
+<PackageReference Include="BeaconSDK" Version="0.1.1" />
 ```
 
 ---
@@ -168,9 +168,12 @@ public class Launcher(IManifestService manifests,
 ```
 
 A complete, runnable sample lives in
-[`BeaconSDK.Example`](BeaconSDK.Example). For modded instances, construct a
-`FabricInstance`, `QuiltInstance`, `ForgeInstance.GetForgeInstance(...)` or
-`NeoForgeInstance` and pass it to the same services.
+[`BeaconSDK.Example`](BeaconSDK.Example). It signs in with a Microsoft account or
+plays offline through `ExampleLoginWorker`, and installs and launches vanilla,
+Fabric, Quilt, Forge and NeoForge instances through the matching workers. For
+modded instances, construct a `FabricInstance`, `QuiltInstance`,
+`ForgeInstance.GetForgeInstance(...)` or `NeoForgeInstance` and pass it to the same
+services.
 
 ---
 
