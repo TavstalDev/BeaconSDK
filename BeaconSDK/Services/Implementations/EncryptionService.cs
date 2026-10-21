@@ -127,7 +127,7 @@ public class EncryptionService : IEncryptionService
         byte[] unencryptedBytes = [];
         try
         {
-            unencryptedBytes = Decrypt(cipherBytes);
+            unencryptedBytes = Decrypt(cipherBytes, true);
             return Encrypt(unencryptedBytes);
         }
         catch (Exception ex)
