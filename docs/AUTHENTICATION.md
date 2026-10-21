@@ -159,6 +159,13 @@ account.SetAccessToken(plainAccessToken, encryptionService);
 account.SetRefreshToken(plainRefreshToken, encryptionService);
 ```
 
+The setters *re-protect* the value: it is decrypted with the scheme it was
+stored with and encrypted again with the scheme that is available in the current
+environment. A plaintext token is therefore accepted as well - it is simply
+encrypted as-is - while a token that was encrypted with an older or a foreign
+scheme is migrated to the current one. The array you pass in is never modified,
+so keep your own copy if you still need the plaintext afterwards.
+
 The obsolete `EncryptedAccessToken` / `EncryptedRefreshToken` properties are exposed
 only for serialization; use the `Get*`/`Set*` methods instead.
 
