@@ -172,13 +172,35 @@ public class EncryptionServiceTests
         }
     }
 
-    [Fact(DisplayName = "Reprotect returns unencrypted input unchanged")]
-    public void Reprotect_WithUnencryptedInput_ReturnsInputUnchanged()
+    [Fact(DisplayName = "Reprotect encrypts unencrypted input instead of leaving it unchanged")]
+    public void Reprotect_WithUnencryptedInput_EncryptsInput()
     {
         var service = CreateFallback();
         var input = "plain-and-unknown-format"u8.ToArray();
 
-        Assert.Equal(input, service.Reprotect(input));
+        var reprotected = service.Reprotect(input);
+
+        Assert.NotEqual(input, reprotected);
+        Assert.Equal(input, service.Decrypt(reprotected));
+    }
+
+    [Fact(DisplayName = "Reprotect encrypts unencrypted input with the data protection provider")]
+    public void Reprotect_WithUnencryptedInput_EncryptsWithDataProvider()
+    {
+        var service = CreateWithDataProtection(out var keyDirectory);
+        try
+        {
+            var input = "plain-and-unknown-format"u8.ToArray();
+
+            var reprotected = service.Reprotect(input);
+
+            Assert.Equal("dpsv1:", PrefixOf(reprotected));
+            Assert.Equal(input, service.Decrypt(reprotected));
+        }
+        finally
+        {
+            Directory.Delete(keyDirectory, true);
+        }
     }
 
     [Fact(DisplayName = "Reprotect transforms encrypted input and round-trips")]
@@ -212,6 +234,25 @@ public class EncryptionServiceTests
             service.Decrypt(cipher);
 
             Assert.Equal(original, cipher);
+        }
+        finally
+        {
+            Directory.Delete(keyDirectory, true);
+        }
+    }
+
+    [Fact(DisplayName = "Reprotect does not mutate the caller's input array")]
+    public void Reprotect_DoesNotMutateCallerInputArray()
+    {
+        var service = CreateWithDataProtection(out var keyDirectory);
+        try
+        {
+            var input = "immutable-input"u8.ToArray();
+            var original = input.ToArray();
+
+            service.Reprotect(input);
+
+            Assert.Equal(original, input);
         }
         finally
         {

@@ -35,8 +35,8 @@ public class AccountTests
         Assert.Equal(0, encryption.EncryptCallCount);
     }
 
-    [Fact(DisplayName = "SetAccessToken leaves plaintext input unchanged when Reprotect fails")]
-    public void SetAccessToken_WithPlainTextInput_LeavesInputUnchanged_WhenReprotectFails()
+    [Fact(DisplayName = "SetAccessToken encrypts plaintext input")]
+    public void SetAccessToken_WithPlainTextInput_EncryptsInput()
     {
         Assert.SkipUnless(
             Tavstal.BeaconSDK.Helpers.Platform.OSHelper.GetOperatingSystem() == EOperatingSystem.LINUX,
@@ -48,7 +48,8 @@ public class AccountTests
 
         account.SetAccessToken(plain, encryption);
 
-        Assert.Equal(plain, account.EncryptedAccessToken);
+        Assert.NotEqual(plain, account.EncryptedAccessToken);
+        Assert.Equal(plain, account.GetAccessToken(encryption));
     }
 
     [Fact(DisplayName = "Token arrays are initialized to empty by the constructor")]
