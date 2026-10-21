@@ -11,7 +11,7 @@ public interface IJavaService
     ///     Downloads a specific Java major version and extracts it to the specified target directory.
     /// </summary>
     /// <param name="majorVersion">The major version of Java to download (e.g., 8, 11, 17, 21).</param>
-    /// <param name="targetDir">The directory where the downloaded and extracted Java installation will be placed.</param>
+    /// <param name="targetDir">The directory where the downloaded and extracted Java installation will be placed. The runtime is extracted into a <c>jdk{majorVersion}</c> subdirectory of this directory.</param>
     /// <param name="mirrorsPath">Path to the JSON file where the mirror config is stored.</param>
     /// <param name="progress">An optional progress reporter that receives download progress as a percentage (0–100).</param>
     /// <param name="cancellationToken">A cancellation token observed during the download and extraction operations.</param>

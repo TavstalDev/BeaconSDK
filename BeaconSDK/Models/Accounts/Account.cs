@@ -105,7 +105,7 @@ public class Account
     /// <summary>
     ///     Sets the access token and encrypts it for storage.
     /// </summary>
-    /// <param name="plainAccessToken">The access token to set.</param>
+    /// <param name="plainAccessToken">The access token to set. Plaintext and already encrypted values are both accepted.</param>
     /// <param name="encryptionService">The encryption service used to encrypt the token for storage.</param>
     public void SetAccessToken(byte[] plainAccessToken, IEncryptionService encryptionService)
     {
@@ -125,7 +125,7 @@ public class Account
     /// <summary>
     ///     Sets the refresh token and encrypts it for storage.
     /// </summary>
-    /// <param name="plainRefreshToken">The refresh token to set.</param>
+    /// <param name="plainRefreshToken">The refresh token to set. Plaintext and already encrypted values are both accepted.</param>
     /// <param name="encryptionService">The encryption service used to encrypt the token for storage.</param>
     public void SetRefreshToken(byte[] plainRefreshToken, IEncryptionService encryptionService)
     {

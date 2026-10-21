@@ -30,7 +30,9 @@ public interface IEncryptionService
     ///     Reprotects encrypted bytes by decrypting them and re-encrypting them with the encryption scheme available in the
     ///     current environment.
     /// </summary>
-    /// <param name="cipherBytes">The encrypted bytes to reprotect.</param>
-    /// <returns>The reprotected bytes, or the original input if reprotection fails.</returns>
+    /// <param name="cipherBytes">The encrypted bytes to reprotect. Values whose format is not recognized are treated as plaintext.</param>
+    /// <returns>
+    ///     The reprotected bytes, or the original input if reprotection fails. The input array is never modified.
+    /// </returns>
     public byte[] Reprotect(byte[] cipherBytes);
 }

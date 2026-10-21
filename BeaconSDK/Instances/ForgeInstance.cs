@@ -113,7 +113,7 @@ public static class ForgeInstance
     /// <returns>
     ///     A list of library file names appropriate for the given Minecraft version. Each name is a key of
     ///     <see cref="BeaconConfiguration.Libraries" />'s <see cref="LibrariesConfig.Forge" /> dictionary, which
-    ///     provides the download URL; an empty list is returned for unsupported versions.
+    ///     provides the download URL and the expected SHA1 hash; an empty list is returned for unsupported versions.
     /// </returns>
     public static List<string> GetLegacyLibraries(string minecraftVersion)
     {

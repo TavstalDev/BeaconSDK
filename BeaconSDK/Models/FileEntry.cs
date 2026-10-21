@@ -15,7 +15,8 @@ public class FileEntry
     public required string Url { get; set; }
 
     /// <summary>
-    ///     Gets or sets the expected SHA1 hash of the file used to verify an already existing local copy.
+    ///     Gets or sets the expected SHA1 hash of the file. It is used to verify the download and to decide whether an
+    ///     already existing local copy can be reused.
     ///     When null or empty, the hash check is skipped.
     /// </summary>
     [JsonPropertyName("Sha1")]

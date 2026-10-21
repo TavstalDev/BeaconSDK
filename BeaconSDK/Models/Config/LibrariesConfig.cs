@@ -10,6 +10,7 @@ public class LibrariesConfig
 {
     /// <summary>
     ///     Gets or sets the download entry for the launch wrapper jar used by vanilla, Fabric and Quilt instances.
+    ///     The SHA1 hash is used to verify the download and to reuse an already downloaded copy.
     /// </summary>
     [JsonPropertyName("LaunchWrapper")]
     public FileEntry LaunchWrapper { get; set; } = new()
@@ -21,6 +22,7 @@ public class LibrariesConfig
     /// <summary>
     ///     Gets or sets the legacy Forge support libraries keyed by file name.
     ///     The keys match the values returned by <see cref="Instances.ForgeInstance.GetLegacyLibraries" />.
+    ///     Libraries that are missing locally are downloaded from the configured URL and verified with the SHA1 hash.
     /// </summary>
     [JsonPropertyName("Forge")]
     public Dictionary<string, FileEntry> Forge { get; set; } = new()
