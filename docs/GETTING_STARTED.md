@@ -19,7 +19,7 @@ dotnet add package BeaconSDK
 ```
 
 ```xml
-<PackageReference Include="BeaconSDK" Version="0.1.0" />
+<PackageReference Include="BeaconSDK" Version="0.1.1" />
 ```
 
 The package targets `net10.0`, is trimmable/AOT compatible, and ships XML
@@ -113,6 +113,11 @@ files that are not bundled in the assembly: `LaunchWrapper` (the launch wrapper 
 vanilla, Fabric and Quilt) and `Forge` (the legacy Forge support libraries keyed by file name,
 matching the values returned by `ForgeInstance.GetLegacyLibraries`). Point them at your own
 mirror to install without reaching GitHub.
+
+Each entry is a `FileEntry` with a `Url` and an optional `Sha1` hash. The hash is used to
+verify the download and to decide whether an already downloaded copy can be reused, so
+re-running an install does not re-download files that are already present and intact. Leave
+`Url` empty to disable a download, and leave `Sha1` empty to skip the integrity check.
 
 ---
 
