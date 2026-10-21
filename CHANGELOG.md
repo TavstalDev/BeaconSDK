@@ -11,6 +11,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 </details>
 
+## [0.1.1] - 2026-10-21
+<details>
+<summary>Changes since 0.1.0</summary>
+
+- **Token re-protection** - `IEncryptionService.Reprotect` now decrypts with unknown
+  formats ignored, so a value that is stored in plaintext or in a foreign scheme is
+  encrypted with the current scheme instead of failing. `Account.SetAccessToken` and
+  `Account.SetRefreshToken` therefore accept plaintext and already encrypted tokens.
+  `Reprotect` no longer clears the array it was given.
+- **Support file integrity** - the legacy Forge compatibility libraries in
+  `LibrariesConfig.Forge` now ship with their SHA1 hashes, so missing libraries are
+  downloaded and verified like every other file.
+- **Java 7 runtimes** - Azul Zulu mirrors for Java 7 are available for Windows, Linux
+  and macOS next to the existing Temurin builds.
+- **Java download layout** - `DownloadJavaVersionAsync` takes a `targetDir` and
+  extracts the archive into a `jdk{majorVersion}` subdirectory of it, replacing an
+  existing installation of the same version.
+- **Forge and NeoForge manifests** - the manifest downloads parse the maven metadata
+  XML and extract the available versions from it.
+- **Logging** - the automatic JVM error logging moved to the debug level, and the
+  SSL socket options of the `default` `HttpClient` no longer carry loggers.
+- **Samples** - `ExampleLoginWorker` signs in with a Microsoft account or plays
+  offline, and `ExampleForgeWorker`, `ExampleNeoForgeWorker` and `ExampleQuiltWorker`
+  install and launch their respective loader instances.
+
+</details>
+
 ## [0.1.0] - 2026-10-20
 <details>
 <summary>Initial release</summary>
@@ -79,5 +106,6 @@ superseded along the way are omitted.
 </details>
 
 
-[unreleased]: https://github.com/TavstalDev/BeaconSDK/compare/v0.1.0...HEAD
+[unreleased]: https://github.com/TavstalDev/BeaconSDK/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/TavstalDev/BeaconSDK/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/TavstalDev/BeaconSDK/releases/tag/v0.1.0
