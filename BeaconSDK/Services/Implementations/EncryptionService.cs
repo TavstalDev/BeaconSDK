@@ -122,6 +122,10 @@ public class EncryptionService : IEncryptionService
     }
 
     /// <inheritdoc />
+    /// <remarks>
+    ///     Input whose format is not recognized is treated as plaintext and encrypted with the current scheme.
+    ///     The input array is never modified.
+    /// </remarks>
     public byte[] Reprotect(byte[] cipherBytes)
     {
         byte[] unencryptedBytes = [];
@@ -137,7 +141,9 @@ public class EncryptionService : IEncryptionService
         }
         finally
         {
-            Array.Clear(unencryptedBytes);
+            bool isCallerOwned = ReferenceEquals(unencryptedBytes, cipherBytes);
+            if (!isCallerOwned)
+                Array.Clear(unencryptedBytes);
         }
     }
 
