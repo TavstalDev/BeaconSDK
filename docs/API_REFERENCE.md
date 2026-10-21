@@ -49,8 +49,14 @@ created by `IHttpService` itself.
 ### `IEncryptionService`
 
 `Encrypt(byte[])`, `Decrypt(byte[], bool ignoreUnknown = false)`,
-`Reprotect(byte[])`. Throws `CryptographicException` on unknown formats or when
-data protection is unavailable.
+`Reprotect(byte[])`. `Decrypt` throws `CryptographicException` on unknown formats
+unless `ignoreUnknown` is set, and when data protection is unavailable.
+
+`Reprotect` decrypts the input and encrypts it again with the scheme that is
+available in the current environment. Input whose format is not recognized is
+treated as plaintext and encrypted as-is, so values stored with an older or
+foreign scheme are migrated instead of failing. The input array is never
+modified, and the original input is returned when reprotection fails.
 
 ### `IManifestService`
 
@@ -74,6 +80,12 @@ endpoint and convert it into a local JSON manifest.
 `DownloadJavaVersionAsync`, `GetJavaVersionAsync`, `IsJavaInstalledAsync`,
 `GetJavaVersionDetailsAsync`, `LocateJavaInstallationsAsync`.
 
+`DownloadJavaVersionAsync(majorVersion, targetDir, mirrorsPath, progress, ct)`
+downloads the archive listed in the mirror config and extracts it into a
+`jdk{majorVersion}` subdirectory of `targetDir`. It returns the path of
+`bin/javaw.exe` (Windows) or `bin/java` (Linux/macOS), or `null` when the
+version is unsupported, no URL is configured or the download fails.
+
 ### `ILibraryDownloadService`
 
 Downloads and prepares everything an instance needs: `DownloadVersionAsync`
@@ -82,6 +94,11 @@ Downloads and prepares everything an instance needs: `DownloadVersionAsync`
 (the launch wrapper downloaded from `LibrariesConfig.LaunchWrapper`) and `DownloadLibrariesAsync` (classpath, libraries and
 natives). Registered in DI and used by `InstanceInstallService`; useful when you
 need a subset of the install steps or want to control the classpath yourself.
+
+`ExtractLaunchWrapperAsync` places the wrapper in
+`<libsDir>/io/github/tavstaldev/launchWrapper` and reuses an already downloaded
+copy when its SHA1 matches `LibrariesConfig.LaunchWrapper.Sha1`. It returns
+`null` when no URL is configured or the download fails.
 
 ### `IMojangSkinService`
 
@@ -136,7 +153,7 @@ so all outbound HTTP requests share the configuration applied by `AddBeaconServi
 | `MinecraftInstance` | Base instance. Constructor takes `(id, BeaconConfiguration, InstanceConfiguration, IBeaconLogger, IProgressReporter?)`. Key members: `Id`, `Config`, `VersionData`, `MinecraftVersionMeta`, `ArgumentBuilder`, `GetCombinedLibraries`, `InstallModdedAsync`, `GetVersionName`. |
 | `FabricInstance`, `QuiltInstance` | Modded instances with constructor `(id, BeaconConfiguration, InstanceConfiguration, IBeaconLogger, IProgressReporter?)`. |
 | `NeoForgeInstance` | Constructor `(id, BeaconConfiguration, InstanceConfiguration, IBeaconLogger, IProgressReporter?)`. Derives from `ForgeInstanceBase`. |
-| `ForgeInstance` (static) | `GetForgeInstance(...)` returns the right Forge implementation. `GetLegacyLibraries(string mcVersion)` returns the file names of the legacy Forge compatibility libraries for Minecraft 1.3 – 1.5 (an empty list for other versions); each name is a key of `BeaconConfiguration.Libraries.Forge`, which provides the download URL. |
+| `ForgeInstance` (static) | `GetForgeInstance(...)` returns the right Forge implementation. `GetLegacyLibraries(string mcVersion)` returns the file names of the legacy Forge compatibility libraries for Minecraft 1.3 – 1.5 (an empty list for other versions); each name is a key of `BeaconConfiguration.Libraries.Forge`, which provides the download URL and the expected SHA1 hash. Missing libraries are downloaded into the instance `lib` directory and verified with that hash. |
 | `ForgeEarlyInstance`, `ForgeClassicInstance`, `ForgeLegacyInstance`, `ForgeModernInstance` | Forge implementations for each era. `ForgeEarlyInstance` and `ForgeClassicInstance` take two extra leading arguments (`forgeVersionName`, `universalName` / `universalFormat`) before `id`; `ForgeLegacyInstance` takes one (`forgeVersionName`); `ForgeModernInstance` matches the base shape. |
 | `Forge/ForgeInstanceBase` | Shared Forge/NeoForge install logic. |
 
@@ -150,7 +167,7 @@ so all outbound HTTP requests share the configuration applied by `AddBeaconServi
 | --- | --- |
 | `IProgressReporter` | `Report(double)`, `Report(double, string, bool)`, `Report(EProgressKind, double)`, `ReportExpectedTask(int?)`, `ReportTaskCompleted()` |
 | `DownloadEntry` | `Url`, `Path`, `Sha1`, `Progress` (an `IProgress<double>` built from an optional `IProgressReporter`) |
-| `FileEntry` | A configured remote file: `Url` (download location; an empty value disables the download) and optional `Sha1` used to verify an existing local copy |
+| `FileEntry` | A configured remote file: `Url` (download location; an empty value disables the download) and optional `Sha1` used to verify the download and to decide whether an already existing local copy can be reused |
 | `EProgressKind` | Progress-stage enum (see Enums) |
 | `LockEntry` | Semaphore plus reference count used by `LogWriter` and `JsonHelper` for file locking |
 
@@ -178,7 +195,7 @@ so all outbound HTTP requests share the configuration applied by `AddBeaconServi
 
 | Type | Notes |
 | --- | --- |
-| `Account` | `Id`, `Uuid`, `DisplayName`, `Type`, `AccessTokenExpireDate`, `Skins`, `MojangProfile`, `CanExpire`; `Get/SetAccessToken`, `Get/SetRefreshToken` |
+| `Account` | `Id`, `Uuid`, `DisplayName`, `Type`, `AccessTokenExpireDate`, `Skins`, `MojangProfile`, `CanExpire`; `Get/SetAccessToken`, `Get/SetRefreshToken`. The setters re-protect the value, so plaintext and already encrypted tokens are both accepted |
 | `AccountSkin` | Skin/cape metadata |
 
 `Tavstal.BeaconSDK.Models.Java`
@@ -186,6 +203,10 @@ so all outbound HTTP requests share the configuration applied by `AddBeaconServi
 `JavaVersion` (`Major`, `Version`, `Architecture`, `Path`), `JavaMirrorConfig`
 (`Mirrors`, keyed by `EOperatingSystem`), `JavaMirror` (`Version`, `IsArm`, `Url`,
 optional `Hash` for integrity verification).
+
+A new `JavaMirrorConfig` ships with the built-in mirrors: Azul Zulu for Java 7
+and Temurin for Java 8, 16, 17, 21 and 25 (x86_64 on Windows and Linux, x86_64
+plus ARM on macOS for 17, 21 and 25).
 
 `Tavstal.BeaconSDK.Models.Logging`
 
@@ -263,7 +284,7 @@ SDK service can resolve it. `Auth` is the only required member.
 | Type | Notes |
 | --- | --- |
 | `BeaconConfiguration` | `Auth` (required), `DataProtection`, `Http`, `Endpoints`, `Logging`, `Libraries` |
-| `LibrariesConfig` | `LaunchWrapper` (a `FileEntry` for the launch wrapper jar), `Forge` (a `Dictionary<string, FileEntry>` of legacy Forge libraries keyed by file name) |
+| `LibrariesConfig` | `LaunchWrapper` (a `FileEntry` for the launch wrapper jar), `Forge` (a `Dictionary<string, FileEntry>` of legacy Forge libraries keyed by file name). Each entry carries a URL and an optional SHA1 hash that is used to verify the download and to reuse an already downloaded copy |
 | `LoggingConfig` | `LogLevel` (default `Information`) sets the minimum level for DI-created loggers; `EnableCustomLogger` (default `true`) keeps output on the console, set it to `false` to forward to the host's `ILogger<T>` instead; `DefaultLogFilePath` (default `null`) is the file entries are appended to, and `null` disables file logging |
 | `AuthConfiguration` | `MicrosoftClientId` (required, may be `null`/empty only if Microsoft login is unused), `DeviceCodePollInterval` (`TimeSpan`, defaults to 5 seconds; the SDK does not read it, pass it to `IMicrosoftDeviceAuthService.StartListeningAsync` yourself) |
 | `HttpConfig` | `Agent`, `AcceptHeader`, `Timeout`, `AutomaticDecompression`, `AllowAutoRedirect`, `EnableMultipleHttp2Connections`, `MaxParallelDownloads`, `BufferSize`, `TempFileSuffix`, `UseTls12Protocol` |
