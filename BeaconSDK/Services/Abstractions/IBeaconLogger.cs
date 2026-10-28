@@ -34,7 +34,12 @@ public interface IBeaconLogger
     ///     Gets the minimum log level supported by this logger.
     /// </summary>
     /// <returns>The current log level threshold.</returns>
-    LogLevel LogLevel { get; }
+    LogLevel LogLevel { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the optional custom log file path used for persisting log entries.
+    /// </summary>
+    string? CustomLogFilePath { get; set; }
 }
 
 /// <summary>

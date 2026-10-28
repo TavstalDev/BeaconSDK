@@ -20,8 +20,7 @@ public class BeaconLogger : IBeaconLogger
     private readonly ILogger? _msLogger;
     private readonly Lock _logLock = new();
 
-    private readonly string? _customLogFilePath;
-    private readonly LogLevel _logLevel;
+    private LogLevel _logLevel;
     private readonly string _moduleName;
     private readonly bool _printLogs;
 
@@ -44,7 +43,7 @@ public class BeaconLogger : IBeaconLogger
         _moduleName = moduleName;
         _logLevel = logLevel;
         _printLogs = printLogs;
-        _customLogFilePath = customLogFilePath;
+        CustomLogFilePath = customLogFilePath;
         _logWriter = logWriter;
         _msLogger = logger;
     }
@@ -83,14 +82,21 @@ public class BeaconLogger : IBeaconLogger
             }
         }
 
-        _logWriter?.EnqueueLog(text, _customLogFilePath);
+        _logWriter?.EnqueueLog(text, CustomLogFilePath);
     }
 
     /// <inheritdoc />
     public string ModuleName => _moduleName;
 
     /// <inheritdoc />
-    public LogLevel LogLevel => _logLevel;
+    public LogLevel LogLevel
+    {
+        get => _logLevel;
+        set => _logLevel = value;
+    }
+
+    /// <inheritdoc />
+    public string? CustomLogFilePath { get; set; }
 
     #endregion
 
