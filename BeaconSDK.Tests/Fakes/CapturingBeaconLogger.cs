@@ -23,6 +23,6 @@ public sealed class CapturingBeaconLogger<T> : IBeaconLogger<T> where T : class
     }
 
     public string ModuleName => typeof(T).Name;
-
-    public LogLevel LogLevel => LogLevel.Trace;
+    public LogLevel LogLevel { get; set; } = LogLevel.Trace;
+    public string? CustomLogFilePath { get; set; }
 }
