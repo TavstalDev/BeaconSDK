@@ -1,6 +1,6 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Tavstal.BeaconSDK.Enums;
-using Tavstal.BeaconSDK.Helpers.Domain;
 using Tavstal.BeaconSDK.Instances;
 using Tavstal.BeaconSDK.Models;
 using Tavstal.BeaconSDK.Models.Config;
@@ -9,7 +9,6 @@ using Tavstal.BeaconSDK.Models.Instance.Config;
 using Tavstal.BeaconSDK.Models.Logging;
 using Tavstal.BeaconSDK.Models.ModLoaders;
 using Tavstal.BeaconSDK.Services.Abstractions;
-using Tavstal.BeaconSDK.Services.Implementations;
 
 // ReSharper disable UnusedMember.Global
 // ReSharper disable ClassNeverInstantiated.Global
@@ -19,6 +18,7 @@ namespace Tavstal.BeaconSDK.Example;
 public class ExampleForgeWorker : IHostedService, IProgressReporter
 {
     private readonly IBeaconLogger<ExampleForgeWorker> _logger;
+    private readonly IServiceProvider _serviceProvider;
     private readonly ExampleLoginWorker _loginWorker;
     private readonly IJavaService _javaService;
     private readonly IInstanceLaunchService _instanceLaunchService;
@@ -26,11 +26,12 @@ public class ExampleForgeWorker : IHostedService, IProgressReporter
     private readonly IManifestService _manifestService;
     private readonly BeaconConfiguration _appConfiguration;
 
-    public ExampleForgeWorker(IBeaconLogger<ExampleForgeWorker> logger, ExampleLoginWorker loginWorker, IJavaService javaService,
-        IInstanceLaunchService instanceLaunchService, IInstanceInstallService instanceInstallService,
+    public ExampleForgeWorker(IBeaconLogger<ExampleForgeWorker> logger, IServiceProvider serviceProvider, ExampleLoginWorker loginWorker,
+        IJavaService javaService, IInstanceLaunchService instanceLaunchService, IInstanceInstallService instanceInstallService,
         IManifestService manifestService, BeaconConfiguration appConfiguration)
     {
         _logger = logger;
+        _serviceProvider = serviceProvider;
         _loginWorker = loginWorker;
         _javaService = javaService;
         _instanceLaunchService = instanceLaunchService;
@@ -161,7 +162,9 @@ public class ExampleForgeWorker : IHostedService, IProgressReporter
           Client = clientDetails
         };
 
-        var instance = ForgeInstance.GetForgeInstance(minecraftVersion, _appConfiguration, config, new BeaconLogger<MinecraftInstance>(_logger.LogLevel), this);
+        var logger = _serviceProvider.GetRequiredService<IBeaconLogger<MinecraftInstance>>();
+        logger.LogLevel = _logger.LogLevel;
+        var instance = ForgeInstance.GetForgeInstance(minecraftVersion, _appConfiguration, config, logger, this);
         var installResult = await _instanceInstallService.InstallAsync(instance, this, cts);
         if (!installResult)
         {
