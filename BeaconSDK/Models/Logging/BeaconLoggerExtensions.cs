@@ -15,10 +15,9 @@ public static class BeaconLoggerExtensions
     /// </summary>
     private static readonly Func<LogEntry, Exception?, string> _messageFormatter = (state, exception) =>
     {
-        var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-
         var sb = new StringBuilder();
-        sb.Append($"[{timestamp}] [{state.LogLevel}] [{state.ModuleName}] {state.Message}");
+        string moduleName = string.IsNullOrWhiteSpace(state.ModuleName) ? string.Empty : $"[{state.ModuleName}] ";
+        sb.Append($"{moduleName}[{state.LogLevel}] {state.Message}");
 
         if (exception != null)
         {
