@@ -56,7 +56,7 @@ dotnet add package BeaconSDK
 Or add the package reference directly:
 
 ```xml
-<PackageReference Include="BeaconSDK" Version="0.1.1" />
+<PackageReference Include="BeaconSDK" Version="0.1.2" />
 ```
 
 ---
