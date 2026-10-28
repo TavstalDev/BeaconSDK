@@ -11,6 +11,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 </details>
 
+## [0.1.2] - 2026-10-28
+<details>
+<summary>Changes since 0.1.1</summary>
+
+- **Logging** - Added `CustomLogFilePath` property and made `LogLevel` settable in `CapturingBeaconLogger` for improved test support.
+- **Logging** - `InstanceLaunchService` now uses dependency injection to resolve loggers (including `JavaVirtualMachine` logger) with configurable log levels and custom log file paths.
+- **Examples** - Integrated dependency injection for logging across all example worker classes (`ExampleFabricWorker`, `ExampleForgeWorker`, `ExampleNeoForgeWorker`, `ExampleQuiltWorker`, `ExampleVanillaWorker`), resolving loggers via `IServiceProvider`.
+- **Documentation** - Added XML documentation for `JavaVirtualMachine` and `BeaconLogger.CustomLogFilePath`.
+
+</details>
+
 ## [0.1.1] - 2026-10-21
 <details>
 <summary>Changes since 0.1.0</summary>
