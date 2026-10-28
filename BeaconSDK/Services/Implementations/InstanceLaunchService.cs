@@ -1,13 +1,14 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Text;
-using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
 using Tavstal.BeaconSDK.Enums;
 using Tavstal.BeaconSDK.Helpers.Domain;
 using Tavstal.BeaconSDK.Helpers.IO;
 using Tavstal.BeaconSDK.Helpers.Platform;
 using Tavstal.BeaconSDK.Instances;
 using Tavstal.BeaconSDK.Models;
+using Tavstal.BeaconSDK.Models.Java;
 using Tavstal.BeaconSDK.Models.Logging;
 using Tavstal.BeaconSDK.Services.Abstractions;
 
@@ -18,14 +19,17 @@ public class InstanceLaunchService : IInstanceLaunchService
 {
     private readonly IBeaconLogger _logger;
     private readonly ConcurrentDictionary<string, Process> _runningProcesses = [];
+    private readonly IServiceProvider _serviceProvider;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="InstanceLaunchService" /> class.
     /// </summary>
     /// <param name="logger">The logger used to record launch lifecycle events, process output, and error diagnostics.</param>
-    public InstanceLaunchService(IBeaconLogger<InstanceLaunchService> logger)
+    /// <param name="serviceProvider">The service provider used to resolve dependencies for process management and logging.</param>
+    public InstanceLaunchService(IBeaconLogger<InstanceLaunchService> logger, IServiceProvider serviceProvider)
     {
         _logger = logger;
+        _serviceProvider = serviceProvider;
     }
 
     /// <inheritdoc />
@@ -169,20 +173,6 @@ public class InstanceLaunchService : IInstanceLaunchService
         if (process != null)
         {
             process.EnableRaisingEvents = true;
-#if DEBUG
-            process.OutputDataReceived += (_, e) =>
-            {
-                if (string.IsNullOrEmpty(e.Data))
-                    return;
-                _logger.LogDebug($"[JVM Process Output] {e.Data}");
-            };
-            process.ErrorDataReceived += (_, e) =>
-            {
-                if (string.IsNullOrEmpty(e.Data))
-                    return;
-                _logger.LogError($"[JVM Process Error] {e.Data}");
-            };
-#endif
             process.Exited += (sender, e) =>
             {
                 _runningProcesses.TryRemove(instance.Id, out _);
@@ -229,7 +219,9 @@ public class InstanceLaunchService : IInstanceLaunchService
 
             if (shouldHandleLogs)
             {
-                var jvmLogger = new BeaconLogger("Game", LogLevel.Trace, false, customLogPath);
+                var jvmLogger = _serviceProvider.GetRequiredService<IBeaconLogger<JavaVirtualMachine>>();
+                jvmLogger.CustomLogFilePath = customLogPath;
+                jvmLogger.LogLevel = _logger.LogLevel;
                 var replaceSD = sensitiveDataToReplace != null;
                 process.OutputDataReceived += (_, e) =>
                 {
