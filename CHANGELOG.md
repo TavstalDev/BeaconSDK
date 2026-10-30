@@ -11,6 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 </details>
 
+## [0.1.3] - 2026-10-30
+<details>
+<summary>Changes since 0.1.2</summary>
+
+- **Installation** - `IInstanceInstallService.InstallAsync` accepts an optional `Stopwatch` so callers can monitor the duration of each installation stage. The stage timings are now logged at debug level and only when a stopwatch is supplied.
+- **Authentication & Java** - access token expiration and the Java version cache now use UTC (`DateTime.UtcNow`) instead of local time, avoiding incorrect expiry/caching on machines that are not in the UTC time zone.
+
+</details>
+
 ## [0.1.2] - 2026-10-28
 <details>
 <summary>Changes since 0.1.1</summary>
@@ -117,6 +126,8 @@ superseded along the way are omitted.
 </details>
 
 
-[unreleased]: https://github.com/TavstalDev/BeaconSDK/compare/v0.1.1...HEAD
+[unreleased]: https://github.com/TavstalDev/BeaconSDK/compare/v0.1.3...HEAD
+[0.1.3]: https://github.com/TavstalDev/BeaconSDK/compare/v0.1.2...v0.1.3
+[0.1.2]: https://github.com/TavstalDev/BeaconSDK/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/TavstalDev/BeaconSDK/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/TavstalDev/BeaconSDK/releases/tag/v0.1.0
