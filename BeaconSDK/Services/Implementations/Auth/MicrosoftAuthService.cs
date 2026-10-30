@@ -496,7 +496,7 @@ public class MicrosoftAuthService : IMicrosoftAuthService
                 Uuid = _mojangProfile.Id,
                 DisplayName = _mojangProfile.Name,
                 Type = EAccountType.MICROSOFT,
-                AccessTokenExpireDate = DateTime.Now.AddSeconds(expireSecs),
+                AccessTokenExpireDate = DateTime.UtcNow.AddSeconds(expireSecs),
                 Skins = skins,
                 MojangProfile = _mojangProfile
             };

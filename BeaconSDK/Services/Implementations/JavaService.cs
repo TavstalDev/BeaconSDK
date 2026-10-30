@@ -292,7 +292,7 @@ public class JavaService : IJavaService
             _cacheExpiration = DateTime.MinValue;
         }
 
-        if (_cachedJavaVersions.Count > 0 && _cacheExpiration > DateTime.Now)
+        if (_cachedJavaVersions.Count > 0 && _cacheExpiration > DateTime.UtcNow)
             return _cachedJavaVersions;
 
         List<JavaVersion> javaVersions = [];
@@ -308,7 +308,7 @@ public class JavaService : IJavaService
         }
 
         _cachedJavaVersions = javaVersions;
-        _cacheExpiration = DateTime.Now.AddMinutes(10); // Cache for 10 minutes
+        _cacheExpiration = DateTime.UtcNow.AddMinutes(10); // Cache for 10 minutes
 
         return javaVersions;
     }
