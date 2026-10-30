@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Tavstal.BeaconSDK.Enums;
 using Tavstal.BeaconSDK.Helpers.Domain;
 using Tavstal.BeaconSDK.Helpers.IO;
@@ -38,7 +39,7 @@ public class InstanceInstallService : IInstanceInstallService
 
     /// <inheritdoc />
     public async Task<bool> InstallAsync(MinecraftInstance instance, IProgressReporter? progress = null,
-        CancellationToken cancellationToken = default)
+        Stopwatch? stopwatch = null, CancellationToken cancellationToken = default)
     {
         var tempDir = Path.Combine(FileSystemHelper.TempDir, Path.GetRandomFileName());
         Directory.CreateDirectory(tempDir);
@@ -47,10 +48,10 @@ public class InstanceInstallService : IInstanceInstallService
         try
         {
             _logger.LogDebug("Downloading core files...");
-            var startTime = DateTime.Now;
+            stopwatch?.Start();
             await DownloadCoreFilesAsync(instance, progress, cancellationToken);
-            var endTime = DateTime.Now;
-            _logger.LogInformation($"Core files downloaded in {(endTime - startTime).TotalMilliseconds}ms.");
+            stopwatch?.Stop();
+            _logger.LogDebug($"Core files downloaded in {stopwatch?.ElapsedMilliseconds}ms.");
 
 
             instance.ArgumentBuilder = new ArgumentBuilder(
@@ -74,11 +75,11 @@ public class InstanceInstallService : IInstanceInstallService
             }
 
             _logger.LogDebug("Installing modded data if applicable...");
-            startTime = DateTime.Now;
+            stopwatch?.Start();
             var moddedData = await instance.InstallModdedAsync(tempDir, _httpService, cancellationToken);
-            endTime = DateTime.Now;
-            _logger.LogInformation(
-                $"Modded data installation completed in {(endTime - startTime).TotalMilliseconds}ms.");
+            stopwatch?.Stop();
+            _logger.LogDebug(
+                $"Modded data installation completed in {stopwatch?.ElapsedMilliseconds}ms.");
             var mainClass = moddedData?.MainClass ?? instance.MinecraftVersionMeta.MainClass;
 
             // Force update main class
@@ -90,10 +91,10 @@ public class InstanceInstallService : IInstanceInstallService
 
             _logger.LogDebug("Downloading dependencies...");
             var libraries = instance.GetCombinedLibraries(moddedData);
-            startTime = DateTime.Now;
+            stopwatch?.Start();
             await DownloadDependenciesAsync(instance, libraries, progress, cancellationToken);
-            endTime = DateTime.Now;
-            _logger.LogInformation($"Dependencies downloaded in {(endTime - startTime).TotalMilliseconds}ms.");
+            stopwatch?.Stop();
+            _logger.LogDebug($"Dependencies downloaded in {stopwatch?.ElapsedMilliseconds}ms.");
 
             // Fix for Forge: 1.17.x-1.20.3 unable to launch issue
             if (instance.Config.Game.Kind != EMinecraftKind.FORGE ||
@@ -105,7 +106,7 @@ public class InstanceInstallService : IInstanceInstallService
 
             // Copy custom natives if specified
             _logger.LogDebug("Copying custom native files if specified...");
-            startTime = DateTime.Now;
+            stopwatch?.Start();
             foreach (var nativePath in instance.Config.Path.CustomNativeFiles)
             {
                 if (!File.Exists(nativePath))
@@ -114,8 +115,8 @@ public class InstanceInstallService : IInstanceInstallService
                 File.Copy(nativePath, destPath, true);
             }
 
-            endTime = DateTime.Now;
-            _logger.LogInformation($"Custom native files copied in {(endTime - startTime).TotalMilliseconds}ms.");
+            stopwatch?.Stop();
+            _logger.LogDebug($"Custom native files copied in {stopwatch?.ElapsedMilliseconds}ms.");
             return true;
         }
         finally

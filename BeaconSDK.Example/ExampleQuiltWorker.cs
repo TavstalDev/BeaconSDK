@@ -159,7 +159,7 @@ public class ExampleQuiltWorker : IHostedService, IProgressReporter
         var logger = _serviceProvider.GetRequiredService<IBeaconLogger<QuiltInstance>>();
         logger.LogLevel = _logger.LogLevel;
         var instance = new QuiltInstance(minecraftVersion, _appConfiguration, config, logger, this);
-        var installResult = await _instanceInstallService.InstallAsync(instance, this, cts);
+        var installResult = await _instanceInstallService.InstallAsync(instance, this, null, cts);
         if (!installResult)
         {
             _logger.LogError("Failed to install minecraft instance.");

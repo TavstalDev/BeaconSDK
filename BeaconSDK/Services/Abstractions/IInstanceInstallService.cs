@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Tavstal.BeaconSDK.Instances;
 using Tavstal.BeaconSDK.Models;
 
@@ -13,6 +14,7 @@ public interface IInstanceInstallService
     /// </summary>
     /// <param name="instance">The Minecraft instance to install.</param>
     /// <param name="progress">Optional progress reporter for installation status updates.</param>
+    /// <param name="stopwatch">Optional stopwatch for installation monitoring.</param>
     /// <param name="cancellationToken">Cancellation token observed during installation.</param>
     /// <returns>
     ///     A task that resolves to <see langword="true" /> if installation completed successfully; otherwise,
@@ -21,5 +23,6 @@ public interface IInstanceInstallService
     Task<bool> InstallAsync(
         MinecraftInstance instance,
         IProgressReporter? progress = null,
+        Stopwatch? stopwatch = null,
         CancellationToken cancellationToken = default);
 }
